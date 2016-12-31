@@ -38,7 +38,8 @@
 
 ;;; make file compiler
 (defclass make-flex-compiler (config-flex-compiler)
-  ())
+  ()
+  :documentation "Invoke make on a configured makefile.")
 
 (defmethod initialize-instance ((this make-flex-compiler) &rest rest)
   (oset this :name "make")
@@ -51,6 +52,9 @@
   (require 'compile))
 
 (defmethod flex-compiler-run-make ((this make-flex-compiler) &optional target)
+  "Invoke a make compilation in an async inferior buffer.
+
+This is done by creating a command with `make' found in the executable path."
   (let* ((makefile (flex-compiler-config this))
 	 (dir (file-name-directory makefile))
 	 (dir-switch (if dir (format "-C %s" dir)))
@@ -79,6 +83,7 @@
 (defmethod flex-compiler-clean ((this make-flex-compiler))
   (flex-compiler-run-make this "clean"))
 
+;; register the compiler
 (flex-compile-manager-register the-flex-compile-manager
 			       (make-flex-compiler nil))
 

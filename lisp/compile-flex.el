@@ -646,6 +646,7 @@ If it isn't settable, warn the user with a message and do nothing."
 
 (defun flex-compiler-read (last-compiler-p)
   "Read a flexible compiler to use.
+
 LAST-COMPILER-P, if non-nil, use the last chosen compiler."
   (or (if last-compiler-p
 	  (let ((arg (cl-second flex-compiler-read-history)))
@@ -662,6 +663,7 @@ LAST-COMPILER-P, if non-nil, use the last chosen compiler."
 ;;;###autoload
 (defun flex-compiler-activate (compiler-name)
   "Activate/select a compiler.
+
 COMPILER-NAME the name of the compiler to activate."
   (interactive (list (flex-compiler-read current-prefix-arg)))
   (let ((this the-flex-compile-manager))
@@ -690,7 +692,7 @@ before invoking the compilation."
 (defun flex-compile-run-or-set-config (action)
   "This either invokes the `run' compilation functionality or it configures it.
 
-ACTION is the interactive argument given by the read funcction."
+ACTION is the interactive argument given by the read function."
   (interactive
    (list (cond ((null current-prefix-arg) 'run)
 	       ;; universal arg
