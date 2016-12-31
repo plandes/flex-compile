@@ -7,7 +7,7 @@
 ;; Maintainer: Paul Landes
 ;; Keywords: compile interpret evaluation
 ;; URL: https://github.com/plandes/compile-flex
-;; Package-Requires: ((choice-program "0.1"))
+;; Package-Requires: ((emacs "24") (noflet "0.0.15") (choice-program "0.1"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -39,7 +39,10 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'comint)
 (require 'eieio)
+(require 'noflet)
+(require 'time-stamp)
 (require 'choice-program-complete)
 
 (defgroup compile-flex nil
@@ -67,7 +70,8 @@
 (defclass flex-compiler ()
   ((name :initarg :name
 	 :type string)
-   (manager :initarg :manager))
+   (manager :initarg :manager
+	    :type flex-compile-manager))
   :abstract true
   :documentation "Base class for compilation executors (do the work).")
 
@@ -164,7 +168,7 @@ configuration file.")
   "Read the configuration file from the user."
   (let (file)
     (if (flex-compiler-validate-buffer-file this)
-	(let ((conf-desc (oref active :config-file-desc)))
+	(let ((conf-desc (oref this :config-file-desc)))
 	  (setq file (read-file-name
 		      (format "%s: " (capitalize conf-desc))
 		      nil (buffer-file-name))))
@@ -284,7 +288,7 @@ The caller raises and error if it doesn't start in time."
     (dotimes (i count-down)
       (setq buf (flex-compiler-repl-buffer this))
       (if buf
-	(return buf)
+	(cl-return buf)
 	(message "Waiting for buffer to start... (%d)"
 		 (- count-down i))
 	(sit-for 1)))))
@@ -369,7 +373,7 @@ The caller raises and error if it doesn't start in time."
   (dolist (buf (buffer-list))
     (let ((buf-name (buffer-name buf)))
       (when (string-match (oref this :repl-buffer-regexp) buf-name)
-	(return buf)))))
+	(cl-return buf)))))
 
 (defmethod flex-compiler-kill-repl ((this repl-flex-compiler))
   "Kill the compiler's REPL."
@@ -383,7 +387,7 @@ The caller raises and error if it doesn't start in time."
 		   nil
 		 kill-buffer-query-functions)))
 	  (kill-buffer buf))
-	(incf count)))
+	(cl-incf count)))
     (message "%s killed %d buffer(s)"
 	     (capitalize (oref this :name)) count)))
 
@@ -470,7 +474,7 @@ See the `:eval-form' slot."
   (noflet
     ((invoke-mode
       (mode)
-      (case mode
+      (cl-case mode
 	(eval-config (flex-comiler-repl--eval-config-and-show this))
 	(buffer (flex-compiler-repl-display this))
 	(minibuffer (let ((res (flex-compiler-evaluate-form this)))
@@ -503,6 +507,10 @@ See the `:eval-form' slot."
 	      :documentation "The list of compiler instances."))
   :documentation "Manages flexible compiler instances.")
 
+(defvar the-flex-compile-manager
+  (flex-compile-manager "singleton")
+  "The singleton manager instance.")
+
 (defmethod flex-compile-manager-register ((this flex-compile-manager) compiler)
   "Register a compiler instance with the manager \(compilation framework)."
   (with-slots (compilers) this
@@ -526,7 +534,7 @@ See the `:eval-form' slot."
   "Return the compiler instance with NAME or nil if not registered."
   (dolist (compiler (oref this :compilers))
     (if (equal name (flex-compiler-name compiler))
-	(return compiler))))
+	(cl-return compiler))))
 
 (defmethod flex-compile-manager-active ((this flex-compile-manager))
   "Return the currently selected or active manager."
@@ -566,9 +574,9 @@ If it isn't settable, warn the user with a message and do nothing."
   "Return all configurable compilers."
   (let ((this the-flex-compile-manager))
     (->> (oref this :compilers)
-	 (remove-if-not #'(lambda (comp)
-			    (-> (eieio-object-class comp)
-				(child-of-class-p 'config-flex-compiler))))
+	 (cl-remove-if-not #'(lambda (comp)
+			       (-> (eieio-object-class comp)
+				   (child-of-class-p 'config-flex-compiler))))
 	 (mapcar #'(lambda (comp)
 		     (let ((conf (flex-compiler-config-persist comp)))
 		       (and conf (cons (flex-compiler-name comp) conf)))))
@@ -636,10 +644,6 @@ If it isn't settable, warn the user with a message and do nothing."
   "Convenience function to get a compiler by it's NAME."
   (flex-compile-manager-compiler the-flex-compile-manager name))
 
-(defvar the-flex-compile-manager
-  (flex-compile-manager "singleton")
-  "The singleton manager instance.")
-
 
 
 ;;; interactive functions
@@ -701,8 +705,8 @@ ACTION is the interactive argument given by the read function."
 	       ((eq 1 current-prefix-arg) 'set-config)
 	       (t (error "Unknown prefix state: %s" current-prefix-arg)))))
   (cl-flet ((assert-settable
-	     ()
-	     (if (not (flex-compile-manager-settable this))
+	     (active)
+	     (if (not (flex-compile-manager-settable active))
 		 (error "Not settable compiler: %s"
 			(flex-compiler-name active)))))
     (let* ((this the-flex-compile-manager)
@@ -710,7 +714,7 @@ ACTION is the interactive argument given by the read function."
       (flex-compile-manager-assert-ready this)
       (cl-case action
 	(run (flex-compiler-run active))
-	(find (assert-settable)
+	(find (assert-settable active)
 	      (pop-to-buffer (flex-compiler-config-buffer active)))
 	(set-config (let ((file (flex-compiler-read-config active)))
 		      (flex-compile-manager-set-config this file)))
@@ -736,7 +740,7 @@ FORM is the form to evaluate \(if implemented)."
 	 (form (or form (flex-compile-read-form))))
     (flex-compile-manager-assert-ready mgr)
     (let ((res (flex-compiler-evaluate-form this form)))
-      (when (and res (interactive-p))
+      (when (and res (called-interactively-p 'interactive))
 	(kill-new res)
 	(message "%s" res))
       res)))
