@@ -75,24 +75,29 @@
   (error "Un-implemented method: `flex-compiler-%s' for class `%S'"
 	 method (eieio-object-class this)))
 
-(defmethod flex-compiler-load-libraries ((this flex-compiler)))
+(defmethod flex-compiler-load-libraries ((this flex-compiler))
+  "Call back for to load and require libraries needed by the compiler.")
 
 (defmethod flex-compiler-name ((this flex-compiler))
+  "Return the name of the compiler, which defaults to the `:name` slot."
   (oref this :name))
 
 (defmethod flex-compiler-run ((this flex-compiler))
+  "Invoke the run functionality of the compiler."
   (flex-compiler--unimplemented this "run"))
 
 (defmethod flex-compiler-compile ((this flex-compiler))
+  "Invoke the compile functionality of the compiler."
   (flex-compiler--unimplemented this "compile"))
 
 (defmethod flex-compiler-clean ((this flex-compiler))
+  "Invoke the clean functionality of the compiler."
   (flex-compiler--unimplemented this "clean"))
 
 
 (defclass no-op-flex-compiler (flex-compiler)
   ()
-  :documentation "Does nothing for disabled state.")
+  :documentation "A no-op compiler For disabled state.")
 
 (defmethod initialize-instance ((this no-op-flex-compiler) &rest rest)
   (oset this :name "disable")
@@ -105,15 +110,24 @@
 
 (defclass config-flex-compiler (flex-compiler)
   ((config-file :initarg :config-file
-		:type string)
+		:type string
+		:documentation "\
+The file to use for `configuring' the compiler.")
    (config-file-desc :initarg :config-file-desc
 		     :initform "config file"
-		     :type string)
-   (major-mode :initarg :major-mode)
+		     :type string
+		     :documentation "\
+Description of the configuration file and used in user input prompts.")
+   (major-mode :initarg :major-mode "\
+The major mode to use to validate/select `config-file` buffers.")
    (mode-desc :initarg :mode-desc
-	      :type string)))
+	      :type string))
+  :documentation "A configurable compiler with a configuration file.
+Instances of this class are also persistable and their state is stored in a
+configuration file.")
 
 (defmethod flex-compiler-validate-buffer-file ((this config-flex-compiler))
+  "Return an error string if the current buffer isn't the right type of config."
   (if (not (eq major-mode (oref this :major-mode)))
       (format "This doesn't seem like a %s file" (oref this :mode-desc))))
 
@@ -122,18 +136,22 @@
 		  (flex-compiler-name this))))
 
 (defmethod flex-compiler-config-persist ((this config-flex-compiler))
+  "Persist the state of the compiler instance."
   (let ((conf-file (and (slot-boundp this :config-file)
 			(oref this :config-file))))
     (if conf-file `((config-file . ,conf-file)))))
 
 (defmethod flex-compiler-config-unpersist ((this config-flex-compiler) config)
+  "Restore the previous state of the compiler instance."
   (oset this :config-file (cdr (assq 'config-file config))))
 
 (defmethod flex-compiler-save-config ((this config-flex-compiler))
+  "Tell the compiler manager to persist the configuration of all compilers."
   (with-slots (manager) this
     (flex-compile-manager-config-persist manager)))
 
 (defmethod flex-compiler-set-config ((this config-flex-compiler) &optional file)
+  "Set the file for the configuration compiler."
   (unless file
     (let ((errmsg (flex-compiler-validate-buffer-file this)))
       (if errmsg (error errmsg))))
@@ -143,6 +161,7 @@
   (message "Set %s to `%s'" (oref this mode-desc) file))
 
 (defmethod flex-compiler-read-config ((this config-flex-compiler))
+  "Read the configuration file from the user."
   (let (file)
     (if (flex-compiler-validate-buffer-file this)
 	(let ((conf-desc (oref active :config-file-desc)))
@@ -152,6 +171,7 @@
       file)))
 
 (defmethod flex-compiler-config ((this config-flex-compiler))
+  "Validate and return the configuration file."
   (if (not (slot-boundp this :config-file))
       (let ((conf-var (flex-compiler--config-variable this)))
 	(if (boundp conf-var)
@@ -165,9 +185,9 @@
     config-file))
 
 (defmethod flex-compiler-config-buffer ((this config-flex-compiler))
+  "Return a (new) buffer of the configuration file."
   (let ((file (flex-compiler-config this)))
     (find-file-noselect file)))
-
 
 
 

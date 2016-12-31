@@ -66,8 +66,8 @@ use:
 
 ## Usage
 
-Most flexible compilers define a specific source file called the *config* file
-in *compile flex* parlance.
+Most flexible compilers (any subclass of `config-flex-compiler`) define a
+specific source file called the *config* file.
 
 There are the operations (also included are the [given](#key-bindings) key
 bindings):
