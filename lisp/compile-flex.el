@@ -506,10 +506,10 @@ See the `:eval-form' slot."
   "Register a compiler instance with the manager \(compilation framework)."
   (with-slots (compilers) this
     (setq compilers
-	  (delete* compiler compilers
-		   :test #'(lambda (a b)
-			     (equal (flex-compiler-name a)
-				    (flex-compiler-name b)))))
+	  (cl-delete compiler compilers
+		     :test #'(lambda (a b)
+			       (equal (flex-compiler-name a)
+				      (flex-compiler-name b)))))
     (setq compilers (append compilers (cons compiler nil)))
     (oset compiler :manager this)
     (let* ((name (flex-compiler-name compiler))
