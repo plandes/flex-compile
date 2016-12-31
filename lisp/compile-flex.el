@@ -194,40 +194,50 @@ configuration file.")
 (defclass optionable-flex-compiler (flex-compiler)
   ((compile-options :initarg :compile-options
 		    :initform nil
-		    :type list)
+		    :type list
+		    :documentation "\
+A list of options used to configure the run of the compiler.")
    (force-set-compile-options-p :initarg :force-set-compile-options-p
 				:initform nil
-				:type boolean)))
+				:type boolean
+				:documentation "\
+If non-nil force the user to set this before the compilation run.")))
 
 (defmethod flex-compiler-read-set-options ((this optionable-flex-compiler))
+  "Set the `:compile-options' slot of the compiler."
   (let ((args (flex-compiler-read-options this)))
     (if (stringp args)
 	(setq args (split-string args)))
     (oset this :compile-options args)))
 
 (defmethod flex-compiler-options ((this optionable-flex-compiler))
+  "Validate and return the compiler options."
   (with-slots (compile-options force-set-compile-options-p) this
     (if (and force-set-compile-options-p (null compile-options))
 	(error "No options set, use `flex-compile-compile' with argument (C-u)"))
     compile-options))
 
-
 (defmethod flex-compiler-read-options ((this optionable-flex-compiler))
+  "Read the options of the compiler."
   (flex-compiler--unimplemented this "read-options"))
 
 
 (defclass run-args-flex-compiler (config-flex-compiler optionable-flex-compiler)
-  ())
+  ()
+  :documentation "A configurable and optionable compiler.")
 
 (defmethod flex-compiler-run-with-args ((this run-args-flex-compiler) args)
+  "Run the compilation with given arguments."
   (flex-compiler--unimplemented this "run-with-args"))
 
 (defmethod flex-compiler--post-config ((this run-args-flex-compiler)))
 
 (defmethod flex-compiler-compile ((this run-args-flex-compiler))
+  "Run the compiler with user provided arguments."
   (flex-compiler-run-with-args this (flex-compiler-options this)))
 
 (defmethod flex-compiler-run ((this run-args-flex-compiler))
+  "Configure compiler by prompting for user given arguments."
   (flex-compiler-set-config this)
   (flex-compiler--post-config this))
 
@@ -255,12 +265,20 @@ If this is 0, don't wait or display the buffer when it comes up.")
 If non-`nil' then don't prompt to kill a REPL buffer on clean.")))
 
 (defmethod flex-compiler-repl-start ((this repl-flex-compiler))
+  "Start the REPL."
   (flex-compiler--unimplemented this "start-repl"))
 
 (defmethod flex-compiler-repl-compile ((this repl-flex-compiler))
+  "Invoked by `compile' type messages from the compiler manager.
+
+This method is meant to allow for REPL compiles \(really some kind of
+evaluation), while allowing base class compilation features.."
   (flex-compiler--unimplemented this "repl-compile"))
 
 (defmethod flex-compiler-wait-for-buffer ((this repl-flex-compiler))
+  "Wait for the compilation to start.
+
+The caller raises and error if it doesn't start in time."
   (let ((count-down (oref this :repl-buffer-start-timeout))
 	buf)
     (dotimes (i count-down)
@@ -272,13 +290,16 @@ If non-`nil' then don't prompt to kill a REPL buffer on clean.")))
 	(sit-for 1)))))
 
 (defmethod flex-compiler-repl-running-p ((this repl-flex-compiler))
+  "Return whether or not the REPL is currently running."
   (not (null (flex-compiler-repl-buffer this))))
 
 (defmethod flex-compiler-repl-assert-running ((this repl-flex-compiler))
+  "Raise an error if the REPL IS running."
   (unless (flex-compiler-repl-running-p this)
     (error "The REPL for %s isn't started" (flex-compiler-name this))))
 
 (defmethod flex-compiler-repl-assert-not-running ((this repl-flex-compiler))
+  "Raise an error if the REPL isn't running."
   (if (flex-compiler-repl-running-p this)
       (error "Compiler %s is already running"
 	     (flex-compiler-name this))))
@@ -295,10 +316,12 @@ If non-`nil' then don't prompt to kill a REPL buffer on clean.")))
 		 (flex-compiler-name this)))))))
 
 (defmethod flex-compiler-run ((this repl-flex-compiler))
+  "Start the REPL and display it."
   (flex-compiler-repl--run-start this)
   (flex-compiler-repl-display this))
 
 (defmethod flex-compiler-repl-display ((this repl-flex-compiler))
+  "Show the REPL in an adjacent buffer or the current buffer."
   (let ((buf (flex-compiler-repl-buffer this))
 	fn)
     (when buf
@@ -310,12 +333,14 @@ If non-`nil' then don't prompt to kill a REPL buffer on clean.")))
 
 (defmethod flex-compiler-send-input ((this repl-flex-compiler)
 				     &optional command)
+  "Send input/commands to the REPL."
   (goto-char (point-max))
   (insert command)
   (comint-send-input))
 
 (defmethod flex-compiler-run-command ((this repl-flex-compiler)
 				      &optional command)
+  "Send commands to the REPL to evaluate an expression or start a process."
   (flex-compiler-repl-assert-running this)
   (let ((buf (flex-compiler-repl-buffer this))
 	pos win)
@@ -324,6 +349,7 @@ If non-`nil' then don't prompt to kill a REPL buffer on clean.")))
 	  (flex-compiler-send-input this command)))))
 
 (defmethod flex-compiler-compile ((this repl-flex-compiler))
+  "Start the REPL (if not alrady started) and invoke the compile callback."
   (let ((file (flex-compiler-config this))
 	(runningp (flex-compiler-repl-running-p this)))
     (unless runningp
@@ -335,6 +361,7 @@ If non-`nil' then don't prompt to kill a REPL buffer on clean.")))
 	(message "REPL still starting, please wait")))))
 
 (defmethod flex-compiler-clean ((this repl-flex-compiler))
+  "`Clean' by killing the REPL."
   (flex-compiler-kill-repl this))
 
 (defmethod flex-compiler-repl-buffer ((this repl-flex-compiler))
@@ -345,6 +372,7 @@ If non-`nil' then don't prompt to kill a REPL buffer on clean.")))
 	(return buf)))))
 
 (defmethod flex-compiler-kill-repl ((this repl-flex-compiler))
+  "Kill the compiler's REPL."
   (let ((bufs (append (mapcar 'get-buffer (oref this :derived-buffer-names))
 		      (cons (flex-compiler-repl-buffer this) nil)))
 	(count 0))
@@ -398,10 +426,12 @@ Whether or not to show the buffer after the file is evlauated or not.")))
   nil)
 
 (defmethod flex-compiler-query-read-form ((this evaluate-flex-compiler))
+  "Read a form, meaningful for the compiler, from the user."
   (let ((init (flex-compiler-eval-initial-at-point this)))
     (read-string "Form: " init 'flex-compiler-query-eval-form)))
 
 (defmethod flex-compiler-query-eval ((this evaluate-flex-compiler))
+  "Prompt the user for the evaluation mode \(see the `:eval-mode' slot)."
   (with-slots (eval-mode form) this
     (setq eval-mode
 	  (choice-program-complete
@@ -418,6 +448,9 @@ Whether or not to show the buffer after the file is evlauated or not.")))
 
 (defmethod flex-compiler-evaluate-form ((this evaluate-flex-compiler)
 					&optional form)
+  "Return the evaluation form.
+
+See the `:eval-form' slot."
   (if (and (null form) (not (slot-boundp this :form)))
       (flex-compiler-query-eval this))
   (let ((res (flex-compiler-eval-form-impl this (or form (oref this :form)))))
@@ -433,6 +466,7 @@ Whether or not to show the buffer after the file is evlauated or not.")))
     (flex-compiler-repl-display this)))
 
 (defmethod flex-compiler-repl-compile ((this evaluate-flex-compiler))
+  "Invoke the compilation based on the `eval-mode' slot."
   (noflet
     ((invoke-mode
       (mode)
@@ -460,12 +494,16 @@ Whether or not to show the buffer after the file is evlauated or not.")))
 (defclass flex-compile-manager ()
   ((active :initarg :active
 	   :initform (no-op-flex-compiler nil)
-	   :type flex-compiler)
+	   :type flex-compiler
+	   :documentation "The currently active/selected compiler.")
    (compilers :initarg :compilers
-	     :initform (list (no-op-flex-compiler nil))
-	      :type list)))
+	      :initform (list (no-op-flex-compiler nil))
+	      :type list
+	      :documentation "The list of compiler instances."))
+  :documentation "Manages flexible compiler instances.")
 
 (defmethod flex-compile-manager-register ((this flex-compile-manager) compiler)
+  "Register a compiler instance with the manager \(compilation framework)."
   (with-slots (compilers) this
     (setq compilers
 	  (delete* compiler compilers
@@ -480,17 +518,21 @@ Whether or not to show the buffer after the file is evlauated or not.")))
 	(flex-compiler-config-unpersist compiler config)))))
 
 (defmethod flex-compile-manager-compiler-names ((this flex-compile-manager))
+  "Return the names of all registered compilers."
   (mapcar #'flex-compiler-name (oref this :compilers)))
 
 (defmethod flex-compile-manager-compiler ((this flex-compile-manager) name)
+  "Return the compiler instance with NAME or nil if not registered."
   (dolist (compiler (oref this :compilers))
     (if (equal name (flex-compiler-name compiler))
 	(return compiler))))
 
 (defmethod flex-compile-manager-active ((this flex-compile-manager))
+  "Return the currently selected or active manager."
   (oref this :active))
 
 (defmethod flex-compile-manager-activate ((this flex-compile-manager) name)
+  "Activate/select the registered compiler with NAME."
   (let ((compiler (flex-compile-manager-compiler this name)))
     (if (null compiler)
 	(error "Compiler `%s' not found" name))
@@ -499,21 +541,28 @@ Whether or not to show the buffer after the file is evlauated or not.")))
     compiler))
 
 (defmethod flex-compile-manager-settable ((this flex-compile-manager))
+  "Return whether the currently active/selected compiler is configurable.
+In other words, if it extends `config-flex-compiler'."
   (with-slots (active) this
     (child-of-class-p (eieio-object-class active) 'config-flex-compiler)))
 
 (defmethod flex-compile-manager-set-config ((this flex-compile-manager)
 					    &optional file)
+  "Set the configuration file of the currently active/selected compiler.
+
+If it isn't settable, warn the user with a message and do nothing."
   (with-slots (active) this
     (if (flex-compile-manager-settable this)
 	(flex-compiler-set-config active file)
       (message "Compiler `%s' not settable" (flex-compiler-name active)))))
 
 (defmethod flex-compile-manager-assert-ready ((this flex-compile-manager))
+  "Make sure the active/selected compiler is ready and libraries loaded."
   (with-slots (active) this
     (flex-compiler-load-libraries active)))
 
 (defmethod flex-compile-manager-config ((this flex-compile-manager))
+  "Return all configurable compilers."
   (let ((this the-flex-compile-manager))
     (->> (oref this :compilers)
 	 (remove-if-not #'(lambda (comp)
@@ -547,6 +596,7 @@ Whether or not to show the buffer after the file is evlauated or not.")))
       (message "Wrote %s" compile-flex-persistency-file-name))))
 
 (defmethod flex-compile-manager-persisted-config ((this flex-compile-manager))
+  "Persist the configuration of all configurable managers."
   (let ((this the-flex-compile-manager)
 	(fname compile-flex-persistency-file-name))
     (when (file-exists-p fname)
@@ -556,6 +606,7 @@ Whether or not to show the buffer after the file is evlauated or not.")))
 
 (defmethod flex-compile-manager-compiler-config ((this flex-compile-manager)
 						 name)
+  "Read and parse the compilers configuration from the config file."
   (->> (flex-compile-manager-persisted-config this)
        (assq 'compilers) cdr (assoc name) cdr))
 
