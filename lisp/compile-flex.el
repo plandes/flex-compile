@@ -3,35 +3,42 @@
 ;; Copyright (C) 2015 - 2017 Paul Landes
 
 ;; Version: 0.1
-;; Author: Paul Landes <landes at mailc dot net>
-;; Maintainer: Paul Landes <landes at mailc dot net>
-;; Keywords: compile flexible
-;; Package-Requires: ((choice-program "0.0.1"))
-;; URL: https://github.com/plandes/epkgs/compile-flex
+;; Author: Paul Landes
+;; Maintainer: Paul Landes
+;; Keywords: compile interpret evaluation
+;; URL: https://github.com/plandes/compile-flex
+;; Package-Requires: ((choice-program "0.1"))
 
-;; This file is part of Emacs.
+;; This file is not part of GNU Emacs.
 
-;; Emacs is free software; you can redistribute it and/or modify it
-;; under the terms of the GNU General Public License as published by
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
 ;; the Free Software Foundation; either version 2, or (at your option)
 ;; any later version.
 
-;; Emacs is distributed in the hope that it will be useful, but
-;; WITHOUT ANY WARRANTY; without even the implied warranty of
-;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-;; General Public License for more details.
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with Emacs; see the file COPYING.  If not, write to the
-;; Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-;; Boston, MA 02111-1307, USA.
+;; along with this program; if not, write to the Free Software
+;; Foundation, Inc., 51 Franklin Street, Fifth Floor,
+;; Boston, MA 02110-1301, USA.
 
 ;;; Commentary:
 
-;; Convenience functions for compile like functionality and shortcuts etc.
+;; Run, evaluate and compile functionality for a variety of different languages
+;; and modes.  The specific "compilation" method is different across each
+;; add-on library.  For example, for ESS and Clojure you can evaluate a
+;; specific file and/or evaluate a specfic expression via a REPL.  For running
+;; a script or starting a `make` an async process is started.
+;;
+;; For more information see https://github.com/plandes/compile-flex
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'eieio)
 (require 'choice-program-complete)
 
@@ -382,7 +389,7 @@ Whether or not to show the buffer after the file is evlauated or not.")))
 	   '(eval-config buffer minibuffer
 			 copy eval-repl both-eval-repl both-eval-minibuffer)
 	   nil t nil 'flex-compiler-query-eval-mode
-	   (or (first flex-compiler-query-eval-mode) 'minibuffer) nil nil t))
+	   (or (cl-first flex-compiler-query-eval-mode) 'minibuffer) nil nil t))
     (when (memq eval-mode '(minibuffer copy eval-repl
 				       both-eval-repl both-eval-minibuffer))
       (let ((init (flex-compiler-eval-initial-at-point this)))
@@ -554,7 +561,7 @@ Whether or not to show the buffer after the file is evlauated or not.")))
   (flex-compile-manager-config-unpersist the-flex-compile-manager))
 
 (defun flex-compiler-by-name (name)
-  "Convenience function"
+  "Convenience function to get a compiler by it's NAME."
   (flex-compile-manager-compiler the-flex-compile-manager name))
 
 (defvar the-flex-compile-manager
@@ -567,8 +574,10 @@ Whether or not to show the buffer after the file is evlauated or not.")))
 (defvar flex-compiler-read-history nil)
 
 (defun flex-compiler-read (last-compiler-p)
+  "Read a flexible compiler to use.
+LAST-COMPILER-P, if non-nil, use the last chosen compiler."
   (or (if last-compiler-p
-	  (let ((arg (second flex-compiler-read-history)))
+	  (let ((arg (cl-second flex-compiler-read-history)))
 	    (setq flex-compiler-read-history
 		  (append (cons arg nil) flex-compiler-read-history))
 	    arg))
@@ -576,17 +585,23 @@ Whether or not to show the buffer after the file is evlauated or not.")))
 	     (names (flex-compile-manager-compiler-names this)))
 	(choice-program-complete "Compiler" names t t nil
 				'flex-compiler-read-history
-				(second flex-compiler-read-history)
+				(cl-second flex-compiler-read-history)
 				nil t t))))
 
 ;;;###autoload
 (defun flex-compiler-activate (compiler-name)
+  "Activate/select a compiler.
+COMPILER-NAME the name of the compiler to activate."
   (interactive (list (flex-compiler-read current-prefix-arg)))
   (let ((this the-flex-compile-manager))
     (flex-compile-manager-activate this compiler-name)))
 
 ;;;###autoload
 (defun flex-compile-compile (config-options-p)
+  "Invoke compilation polymorphically.
+
+CONFIG-OPTIONS-P, if non-nil invoke the configuration options for the compiler
+before invoking the compilation."
   (interactive "P")
   (let* ((this the-flex-compile-manager)
 	 (active (flex-compile-manager-active this)))
@@ -602,6 +617,9 @@ Whether or not to show the buffer after the file is evlauated or not.")))
 
 ;;;###autoload
 (defun flex-compile-run-or-set-config (action)
+  "This either invokes the `run' compilation functionality or it configures it.
+
+ACTION is the interactive argument given by the read funcction."
   (interactive
    (list (cond ((null current-prefix-arg) 'run)
 	       ;; universal arg
@@ -625,6 +643,10 @@ Whether or not to show the buffer after the file is evlauated or not.")))
 	(t (error "Unknown action: %S" action))))))
 
 (defun flex-compile-read-form ()
+  "Read the compilation query form from the user.
+
+This invokes the `flex-compiler-query-read-form method' on the
+currently activated compiler."
   (let* ((mgr the-flex-compile-manager)
 	 (this (flex-compile-manager-active mgr)))
     (flex-compile-manager-assert-ready mgr)
@@ -632,6 +654,8 @@ Whether or not to show the buffer after the file is evlauated or not.")))
 
 ;;;###autoload
 (defun flex-compile-eval (&optional form)
+  "Evaluate the current form for the \(usually REPL based compiler).
+FORM is the form to evaluate \(if implemented)."
   (interactive (list (flex-compile-read-form)))
   (let* ((mgr the-flex-compile-manager)
 	 (this (flex-compile-manager-active mgr))
@@ -645,6 +669,7 @@ Whether or not to show the buffer after the file is evlauated or not.")))
 
 ;;;###autoload
 (defun flex-compile-clean ()
+  "Invoke the clean functionality of the compiler."
   (interactive)
   (let* ((this the-flex-compile-manager)
 	 (active (flex-compile-manager-active this)))

@@ -27,25 +27,7 @@ add-on libraries, which include:
 * compile-flex-ess
 
 
-## Usage
-
-Most flexible compilers define a specific source file called the *config* file
-in *compile flex* parlance.
-
-There are four operations:
-* **Compile** (`C-x C-u`): This is the default *make something* command.  For
-  make it invokes the first target, for REPL languages like Clojure and ESS it
-  evaluates a `.clj` or `.r` file.
-* **Run** (`C-x C-i`): This starts invokes a `run` target for make, starts the
-  REPL for REPL type languages.
-* **Clean** (`C-x C-y`): This invokes the `clean` target for make and kills the
-  REPL for REPL based compilers.
-* **Set Config File** (`C-u C-x C-i`): This sets the *config* file, which is the
-  `Makefile`, `.clj`, `.r`, `.sh` file etc. *compile*, run or interpret.  Note
-  that the prefix `C-u` isn't needed for some compilers like the `script`
-  compiler.
-* **Go to Config File** (`C-x C-i`): This pops the *config* file/buffer to the
-  current buffer.
+## Configuration
 
 Add the following to your `~/.emacs` file:
 ```lisp
@@ -67,8 +49,55 @@ For each specific *flexible* compilation method you want:
      (require 'compile-flex-ess)))
 ```
 
-Now select a which *compilation* library you'd like to use with `C-x -C-p` and
-then auto complete the library name.
+### Key Bindings
+
+I use the following key bindings since they clobber Emacs functions I don't
+use:
+```lisp
+;; switch compiler; clobbers `mark-page'
+(global-set-key "\C-x\C-p" 'flex-compiler-activate)
+(global-set-key "\C-x\C-u" 'flex-compile-compile)
+(global-set-key "\C-x\C-y" 'flex-compile-clean)
+(global-set-key "\C-x\C-i" 'flex-compile-run-or-set-config)
+;; clobbers `delete-blank-lines'
+(global-set-key "\C-x\C-o" 'flex-compile-eval)
+```
+
+
+## Usage
+
+Most flexible compilers define a specific source file called the *config* file
+in *compile flex* parlance.
+
+There are the operations (also included are the [given](#key-bindings) key
+bindings):
+* **Choose a Compiler** (`C-x C-p` or `M-x flex-compiler-activate`):
+  select/activate a flex compiler.
+* **Compile** (`C-x C-u` or `M-x flex-compile-compile`): This is the default
+  *make something* command.  For make it invokes the first target, for REPL
+  languages like Clojure and ESS it evaluates a `.clj` or `.r` file.
+* **Run** (`C-x C-i` or `M-x flex-compile-run-or-set-config`): This starts
+  invokes a `run` target for make, starts the REPL for REPL type languages.
+* **Evaluate** (`C-x C=o` or `M-x flex-compile-eval`): This invokes the
+  compiler's evaluation functionality.  For REPL based languages, this
+  evaluates the current form and stores the result in the kill buffer.
+* **Clean** (`C-x C-y` or `M-x flex-compile-clean`): This invokes the `clean`
+  target for make and kills the REPL for REPL based compilers.
+* **Set Config File** (`C-u 1 C-x C-i`): This sets the *config* file, which is the
+  `Makefile`, `.clj`, `.r`, `.sh` file etc. *compile*, run or interpret.  Note
+  that the prefix `C-u` isn't needed for some compilers like the `script`
+  compiler.
+* **Go to Config File** (`C-u C-x C-i` or `C-u M-x
+  flex-compile-run-or-set-config`): This pops the *config* file/buffer to the
+  current buffer.
+
+Each compiler also has configuration setting ability, which is invoked with the
+`C-u` universal argument to the compile `C-x C-u` invocation per the
+aforementioned `flex-compile-run-or-set-config`.  You can remap the
+
+To select which *compilation* (flex compiler) library you'd like to use with
+`C-x C-p` and then auto complete the library name.
+
 
 
 ## License
