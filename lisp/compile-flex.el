@@ -40,6 +40,7 @@
 
 (require 'cl-lib)
 (require 'eieio)
+(require 'eieio-core)
 (require 'choice-program-complete)
 
 (defgroup compile-flex nil
@@ -488,6 +489,7 @@ See the `:eval-form' slot."
 	(both-eval-minibuffer (invoke-mode 'eval-config)
 			      (invoke-mode 'minibuffer)))))
     (invoke-mode (oref this :eval-mode))))
+
 
 ;;; compiler manager/orchestration
 
