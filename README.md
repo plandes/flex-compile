@@ -15,8 +15,8 @@ via a REPL.  For running a script or starting a `make` an async process is
 started.
 
 The top level library `compile-flex` library provides a plugin architecture for
-add-on libraries, which include:
-* compile-flex-make
+[add-on libraries](#compilers), which include:
+* [compile-flex-make](#make)
 * compile-flex-beanshell
 * compile-flex-script
 * compile-flex-maven
@@ -93,11 +93,19 @@ bindings):
 
 Each compiler also has configuration setting ability, which is invoked with the
 `C-u` universal argument to the compile `C-x C-u` invocation per the
-aforementioned `flex-compile-run-or-set-config`.  You can remap the
+aforementioned `flex-compile-run-or-set-config`.
 
-To select which *compilation* (flex compiler) library you'd like to use with
-`C-x C-p` and then auto complete the library name.
 
+## Compilers
+
+You can write your own compilers as add-on plugins.  However, there are many
+that come with this package.
+
+### Make
+
+This compiler invokes make as an asynchronous process in a buffer.  The first
+target, `run` target, and `clean` target are invoked respectfully with
+*compile*, *run* and *clean* Emacs commands (see [usage](#usage)).
 
 
 ## License
