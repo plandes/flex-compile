@@ -1,0 +1,9 @@
+language: emacs-lisp
+sudo: required
+env:
+  - EMACS=emacs24
+before_script:
+  - sh vagrant/provision.sh
+  - make EMACS=${EMACS} elpa
+script:
+  - make EMACS=${EMACS} test
