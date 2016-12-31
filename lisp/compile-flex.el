@@ -40,7 +40,6 @@
 
 (require 'cl-lib)
 (require 'eieio)
-(require 'eieio-core)
 (require 'choice-program-complete)
 
 (defgroup compile-flex nil
