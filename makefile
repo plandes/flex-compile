@@ -1,8 +1,8 @@
-APP_NAME ?=	$(shell grep package-file Cask | sed 's/.*lisp\/\(.*\)\.el.*/\1/')
+APP_NAME ?=	$(shell grep package-file Cask | sed 's/.*\"\(.*\)\.el.*/\1/')
 EMACS ?=	emacs
 EMACSFLAGS =	-L .
 CASK ?=		cask
-LISP_DIR=	lisp
+LISP_DIR=	.
 DOC_DIR=	doc
 ELPA_FILE=	elpa
 ELS=		$(wildcard $(LISP_DIR)/*.el)

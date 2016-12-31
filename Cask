@@ -5,9 +5,9 @@
 (depends-on "noflet")
 (depends-on "choice-program")
 
-(package-file "lisp/compile-flex.el")
+(package-file "compile-flex.el")
 
-(files "lisp/*.el" "doc/*.texi" (:exclude ".dir-locals.el"))
+(files "*.el" "doc/*.texi" (:exclude ".dir-locals.el"))
 
 (development
  (depends-on "dash")

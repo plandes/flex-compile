@@ -29,6 +29,8 @@
 
 ;;; Code:
 
+(require 'cl-lib)
+(require 'compile)
 (require 'compile-flex)
 
 (defcustom compile-flex-make-display-compile-buffer t
@@ -61,7 +63,7 @@ This is done by creating a command with `make' found in the executable path."
 	 (command (concat "make -k " dir-switch " -f "
 			  (file-name-nondirectory makefile)
 			  (if target " ") target))
-	 (process-environment (cl-copy-tree process-environment)))
+	 (process-environment (copy-tree process-environment)))
     (setenv "EMACS" "emacs")
     ;; ignore annoying 'A compilation process is running; kill it? (yes or no)'
     ;; in latex
