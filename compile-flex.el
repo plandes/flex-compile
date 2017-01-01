@@ -705,8 +705,8 @@ ACTION is the interactive argument given by the read function."
 	       ((eq 1 current-prefix-arg) 'set-config)
 	       (t (error "Unknown prefix state: %s" current-prefix-arg)))))
   (cl-flet ((assert-settable
-	     (active)
-	     (if (not (flex-compile-manager-settable active))
+	     (fcm active)
+	     (if (not (flex-compile-manager-settable fcm))
 		 (error "Not settable compiler: %s"
 			(flex-compiler-name active)))))
     (let* ((this the-flex-compile-manager)
@@ -714,7 +714,7 @@ ACTION is the interactive argument given by the read function."
       (flex-compile-manager-assert-ready this)
       (cl-case action
 	(run (flex-compiler-run active))
-	(find (assert-settable active)
+	(find (assert-settable this active)
 	      (pop-to-buffer (flex-compiler-config-buffer active)))
 	(set-config (let ((file (flex-compiler-read-config active)))
 		      (flex-compile-manager-set-config this file)))
