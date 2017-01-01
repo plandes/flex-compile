@@ -1,6 +1,5 @@
 APP_NAME ?=	$(shell grep package-file Cask | sed 's/.*\"\(.*\)\.el.*/\1/')
 EMACS ?=	emacs
-EMACSFLAGS =	-L .
 CASK ?=		cask
 LISP_DIR=	.
 DOC_DIR=	doc
@@ -32,7 +31,7 @@ build:		$(ELPA_FILE) $(OBJECTS)
 
 .PHONY:		test
 test:		build cleantest
-		$(CASK) exec ert-runner -L $(LISP_DIR) -L .
+		$(CASK) exec ert-runner -L $(LISP_DIR)
 
 $(DOC_DIR):
 		mkdir -p $(DOC_DIR)
