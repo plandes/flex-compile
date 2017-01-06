@@ -1,5 +1,4 @@
 language: generic
-sudo: false
 
 before_install:
   - sudo apt-get -yq update
