@@ -2,7 +2,6 @@
 (source gnu)
 (source melpa)
 
-(depends-on "noflet")
 (depends-on "choice-program")
 
 (package-file "compile-flex.el")

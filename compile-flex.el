@@ -7,7 +7,7 @@
 ;; Maintainer: Paul Landes
 ;; Keywords: compile interpret evaluation
 ;; URL: https://github.com/plandes/compile-flex
-;; Package-Requires: ((emacs "24") (noflet "0.0.15") (choice-program "0.1"))
+;; Package-Requires: ((emacs "24") (choice-program "0.1"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -41,7 +41,6 @@
 (require 'cl-lib)
 (require 'comint)
 (require 'eieio)
-(require 'noflet)
 (require 'time-stamp)
 (require 'choice-program-complete)
 
@@ -463,35 +462,38 @@ See the `:eval-form' slot."
 	res
       (prin1-to-string res))))
 
-(defmethod flex-comiler-repl--eval-config-and-show ((this evaluate-flex-compiler))
+(defmethod flex-compiler-repl--eval-config-and-show ((this evaluate-flex-compiler))
   (flex-compiler-repl--run-start this)
   (flex-compiler-eval-config this (flex-compiler-config this))
   (when (oref this :show-repl-after-eval-p)
     (flex-compiler-repl-display this)))
 
+(defmethod flex-compiler-repl--invoke-mode ((this evaluate-flex-compiler) mode)
+  "Invoke a flex compilation by mnemonic.
+
+MODE is the compilation mnemonic, which can range from evaluating a buffer,
+form from a minibuffer and from the REPL directly."
+  (cl-case mode
+    (eval-config (flex-compiler-repl--eval-config-and-show this))
+    (buffer (flex-compiler-repl-display this))
+    (minibuffer (let ((res (flex-compiler-evaluate-form this)))
+		  (message res)
+		  res))
+    (copy (let ((res (flex-compiler-evaluate-form this)))
+	    (kill-new res)
+	    (message res)
+	    res))
+    (eval-repl (progn
+		 (flex-compiler-run-command this (oref this :form))
+		 (flex-compiler-repl-display this)))
+    (both-eval-repl (flex-compiler-repl--invoke-mode this 'eval-config)
+		    (flex-compiler-repl--invoke-mode this 'eval-repl))
+    (both-eval-minibuffer (flex-compiler-repl--invoke-mode this 'eval-config)
+			  (flex-compiler-repl--invoke-mode this 'minibuffer))))
+
 (defmethod flex-compiler-repl-compile ((this evaluate-flex-compiler))
   "Invoke the compilation based on the `eval-mode' slot."
-  (noflet
-    ((invoke-mode
-      (mode)
-      (cl-case mode
-	(eval-config (flex-comiler-repl--eval-config-and-show this))
-	(buffer (flex-compiler-repl-display this))
-	(minibuffer (let ((res (flex-compiler-evaluate-form this)))
-		      (message res)
-		      res))
-	(copy (let ((res (flex-compiler-evaluate-form this)))
-		(kill-new res)
-		(message res)
-		res))
-	(eval-repl (progn
-		     (flex-compiler-run-command this (oref this :form))
-		     (flex-compiler-repl-display this)))
-	(both-eval-repl (invoke-mode 'eval-config)
-			(invoke-mode 'eval-repl))
-	(both-eval-minibuffer (invoke-mode 'eval-config)
-			      (invoke-mode 'minibuffer)))))
-    (invoke-mode (oref this :eval-mode))))
+  (flex-compiler-repl--invoke-mode this (oref this :eval-mode)))
 
 
 ;;; compiler manager/orchestration
