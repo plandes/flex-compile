@@ -1,6 +1,6 @@
 ;;; compile-flex-command.el --- func compile functions
 
-;; Copyright (C) 2015 Paul Landes
+;; Copyright (C) 2015 - 2017 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
@@ -55,8 +55,7 @@ NO-READ-P, if non-nil, read the expression with `read'."
     ret))
 
 ;;; func file compiler
-(defclass command-flex-compiler (optionable-flex-compiler)
-  ())
+(defclass command-flex-compiler (optionable-flex-compiler) ())
 
 (defmethod initialize-instance ((this command-flex-compiler) &rest rest)
   (oset this :name "command")

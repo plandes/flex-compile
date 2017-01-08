@@ -5,9 +5,9 @@
 ;; Version: 0.1
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
-;; Keywords: compile interpret evaluation
+;; Keywords: compilation integration
 ;; URL: https://github.com/plandes/compile-flex
-;; Package-Requires: ((emacs "24") (choice-program "0.1"))
+;; Package-Requires: ((emacs "24.5") (choice-program "0.1") (dash))
 
 ;; This file is not part of GNU Emacs.
 
