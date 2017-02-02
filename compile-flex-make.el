@@ -81,8 +81,12 @@ This is done by creating a command with `make' found in the executable path."
       (save-window-excursion (compile command)))))
 
 (defmethod flex-compiler-makefile-targets ((this make-flex-compiler))
-  (let (targets)
-    (with-current-buffer (flex-compiler-config-buffer this)
+  (let* ((this (flex-compiler-by-name "make"))
+	 (makefile (flex-compiler-config this))
+	 (dir (file-name-directory makefile))
+	 (targets))
+    (with-temp-buffer
+      (insert (shell-command-to-string (format "make -prRn -C %s" dir)))
       (goto-char (point-min))
       (while (re-search-forward "^\\([a-zA-Z0-9-]+\\):" nil t)
 	(setq targets
