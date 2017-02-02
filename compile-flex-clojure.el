@@ -25,7 +25,7 @@
 
 ;;; Commentary:
 
-;; Implementation compiler for Clojure with Cider 0.12 integration
+;; Implementation compiler for Clojure with Cider integration
 
 ;;; Code:
 
