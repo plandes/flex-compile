@@ -32,6 +32,7 @@
 (require 'cl-lib)
 (require 'dash)
 (require 'compile-flex)
+(require 'choice-program-complete)
 
 ;; silence the compiler
 (eval-when-compile
