@@ -63,7 +63,7 @@ NO-READ-P, if non-nil, read the expression with `read'."
 
 (defvar flex-compiler-read-options-command-history nil)
 
-(defmethod flex-compiler-read-options ((this optionable-flex-compiler))
+(defmethod flex-compiler-read-options ((this command-flex-compiler))
   (list
    (let ((cmd (read-command "Function to invoke (or RET for sexp): ")))
      (if (eq '## cmd)
@@ -74,7 +74,7 @@ NO-READ-P, if non-nil, read the expression with `read'."
 		    ,func)))
        cmd))))
 
-(defmethod flex-compiler-compile ((this flex-compiler))
+(defmethod flex-compiler-compile ((this command-flex-compiler))
   (let ((res (apply (flex-compiler-options this))))
     (message "%S "res)
     res))
