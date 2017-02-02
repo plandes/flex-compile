@@ -41,7 +41,7 @@ $(DOC_DIR):
 mkdoc:		$(DOC_DIR)
 
 .PHONY:		package
-package:	test mkdoc
+package:	test
 		$(CASK) package
 
 # clean
