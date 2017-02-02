@@ -32,14 +32,18 @@
 (require 'cl-lib)
 (require 'compile)
 (require 'compile-flex)
+(require 'choice-program-complete)
 
 (defcustom compile-flex-make-display-compile-buffer t
   "Whether or not to display the compile buffer when activated."
   :group 'compile-flex
   :type 'boolean)
 
+(defvar compile-flex-make-target-history nil
+  "History for makefile targets on compile.")
+
 ;;; make file compiler
-(defclass make-flex-compiler (config-flex-compiler)
+(defclass make-flex-compiler (run-args-flex-compiler)
   ()
   :documentation "Invoke make on a configured makefile.")
 
@@ -76,8 +80,37 @@ This is done by creating a command with `make' found in the executable path."
 	(compile command)
       (save-window-excursion (compile command)))))
 
-(defmethod flex-compiler-compile ((this make-flex-compiler))
-  (flex-compiler-run-make this))
+(defmethod flex-compiler-makefile-targets ((this make-flex-compiler))
+  (let (targets)
+    (with-current-buffer (flex-compiler-config-buffer this)
+      (goto-char (point-min))
+      (while (re-search-forward "^\\([a-zA-Z0-9-]+\\):" nil t)
+	(setq targets
+	      (->> (match-string 1)
+		   substring-no-properties
+		   list
+		   (append targets)))))
+    (->> targets
+	 (cl-remove-if #'(lambda (elt)
+			   (member elt '("run" "clean")))))))
+
+(defmethod flex-compiler-run-with-args ((this make-flex-compiler) args)
+  (flex-compiler-run-make this (car args)))
+
+(defmethod flex-compiler-read-options ((this make-flex-compiler))
+  (let ((targets (flex-compiler-makefile-targets this))
+	(none "<none>"))
+    (->> (choice-program-complete "Target" targets t nil nil
+				  'compile-flex-make-target-history
+				  none
+				  nil nil t)
+	 (funcall #'(lambda (elt)
+		      (if (equal none elt) nil elt))))))
+
+(defmethod flex-compiler-set-config ((this make-flex-compiler) &optional file)
+  (with-slots (compile-options) this
+    (setq compile-options nil))
+  (call-next-method this file))
 
 (defmethod flex-compiler-run ((this make-flex-compiler))
   (flex-compiler-run-make this "run"))
