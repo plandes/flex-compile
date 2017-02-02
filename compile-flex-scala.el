@@ -46,7 +46,7 @@
 		(eval `(defun ,sym (&rest x))))
 	    fns)))
 
-(defvar flex-compiler-scala-query-eval-mode-history nil
+(defvar compiler-flex-scala-query-eval-mode-history nil
   "History for interactive read for Scala/SBT/REPL evaluations.")
 
 (defun flex-compiler-scala-trim (str)
@@ -151,8 +151,8 @@
     (setq sbt-eval-mode
 	  (choice-program-complete
 	   "Evaluation mode" '(run compile test eval eval-spark)
-	   nil t nil 'flex-compiler-scala-query-eval-mode-history
-	   (cl-second flex-compiler-scala-query-eval-mode-history)
+	   nil t nil 'compiler-flex-scala-query-eval-mode-history
+	   (cl-second compiler-flex-scala-query-eval-mode-history)
 	   nil nil t))))
 
 (defmethod flex-compiler-kill-repl ((this scala-flex-compiler))
