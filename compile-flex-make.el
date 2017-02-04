@@ -39,6 +39,12 @@
   :group 'compile-flex
   :type 'boolean)
 
+(defun compile-flex-make-display-compile-buffer-toggle ()
+  "Toggle variable `compile-flex-make-display-compile-buffer'."
+  (interactive)
+  (setq compile-flex-make-display-compile-buffer
+	(not compile-flex-make-display-compile-buffer)))
+
 (defvar compile-flex-make-target-history nil
   "History for makefile targets on compile.")
 
