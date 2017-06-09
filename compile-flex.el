@@ -206,8 +206,12 @@ A list of options used to configure the run of the compiler.")
 				:documentation "\
 If non-nil force the user to set this before the compilation run.")))
 
-(defmethod flex-compiler-read-set-options ((this optionable-flex-compiler))
-  "Set the `:compile-options' slot of the compiler."
+(defmethod flex-compiler-read-set-options ((this optionable-flex-compiler)
+					   config-options)
+  "Set the `:compile-options' slot of the compiler.
+
+CONFIG-OPTIONS is the numeric argument (if any) passed in the iteractive mode
+with \\[universal-argument]."
   (let ((args (flex-compiler-read-options this)))
     (if (stringp args)
 	(setq args (split-string args)))
@@ -433,21 +437,26 @@ Whether or not to show the buffer after the file is evlauated or not.")))
   (let ((init (flex-compiler-eval-initial-at-point this)))
     (read-string "Form: " init 'flex-compiler-query-eval-form)))
 
-(defmethod flex-compiler-query-eval ((this evaluate-flex-compiler))
-  "Prompt the user for the evaluation mode \(see the `:eval-mode' slot)."
-  (with-slots (eval-mode form) this
-    (setq eval-mode
-	  (choice-program-complete
-	   "Evaluation mode"
-	   '(eval-config buffer minibuffer
-			 copy eval-repl both-eval-repl both-eval-minibuffer)
-	   nil t nil 'flex-compiler-query-eval-mode
-	   (or (cl-first flex-compiler-query-eval-mode) 'minibuffer) nil nil t))
-    (when (memq eval-mode '(minibuffer copy eval-repl
-				       both-eval-repl both-eval-minibuffer))
-      (let ((init (flex-compiler-eval-initial-at-point this)))
-	(setq form
-	      (read-string "Form: " init 'flex-compiler-query-eval-form))))))
+(defmethod flex-compiler-query-eval ((this evaluate-flex-compiler)
+				     config-options)
+  "Prompt the user for the evaluation mode \(see the `:eval-mode' slot).
+
+CONFIG-OPTIONS is the numeric argument (if any) passed in the iteractive mode
+with \\[universal-argument]."
+  (when (or (not config-options) (equal config-options '(4)))
+    (with-slots (eval-mode form) this
+      (setq eval-mode
+	    (choice-program-complete
+	     "Evaluation mode"
+	     '(eval-config buffer minibuffer
+			   copy eval-repl both-eval-repl both-eval-minibuffer)
+	     nil t nil 'flex-compiler-query-eval-mode
+	     (or (cl-first flex-compiler-query-eval-mode) 'minibuffer) nil nil t))
+      (when (memq eval-mode '(minibuffer copy eval-repl
+					 both-eval-repl both-eval-minibuffer))
+	(let ((init (flex-compiler-eval-initial-at-point this)))
+	  (setq form
+		(read-string "Form: " init 'flex-compiler-query-eval-form)))))))
 
 (defmethod flex-compiler-evaluate-form ((this evaluate-flex-compiler)
 					&optional form)
@@ -455,7 +464,7 @@ Whether or not to show the buffer after the file is evlauated or not.")))
 
 See the `:eval-form' slot."
   (if (and (null form) (not (slot-boundp this :form)))
-      (flex-compiler-query-eval this))
+      (flex-compiler-query-eval this nil))
   (let ((res (flex-compiler-eval-form-impl this (or form (oref this :form)))))
     (oset this :last-eval res)
     (if (stringp res)
@@ -677,22 +686,28 @@ COMPILER-NAME the name of the compiler to activate."
     (flex-compile-manager-activate this compiler-name)))
 
 ;;;###autoload
-(defun flex-compile-compile (config-options-p)
+(defun flex-compile-compile (config-options)
   "Invoke compilation polymorphically.
 
-CONFIG-OPTIONS-P, if non-nil invoke the configuration options for the compiler
-before invoking the compilation."
+CONFIG-OPTIONS, if non-nil invoke the configuration options for the compiler
+before invoking the compilation.  By default CONFIG-OPTIONS is only detected
+config-options by the \\[universal-argument] but some compilers use the numeric
+argument as well.  This creates the need for an awkward key combination of:
+
+  \\[digital-argument] \\[universal-argument] \\[flex-compile-compile]
+
+to invoke this command with full configuration support."
   (interactive "P")
   (let* ((this the-flex-compile-manager)
 	 (active (flex-compile-manager-active this)))
     (flex-compile-manager-assert-ready this)
-    (when config-options-p
+    (when config-options
       (cond ((child-of-class-p (eieio-object-class active)
 			       'optionable-flex-compiler)
-	     (flex-compiler-read-set-options active))
+	     (flex-compiler-read-set-options active config-options))
 	    ((child-of-class-p (eieio-object-class active)
 			       'evaluate-flex-compiler)
-	     (flex-compiler-query-eval active))))
+	     (flex-compiler-query-eval active config-options))))
     (flex-compiler-compile active)))
 
 ;;;###autoload

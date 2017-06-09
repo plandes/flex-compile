@@ -41,7 +41,26 @@
 		(eval `(defun ,sym (&rest x))))
 	    fns)))
 
-(defclass clojure-flex-compiler (evaluate-flex-compiler) ())
+(defvar flex-compiler-clojure-connect-history nil
+  "History for connection mode prompt read in `flex-compiler-query-eval'.")
+
+(defclass clojure-flex-compiler (evaluate-flex-compiler)
+  ((repl-host :initarg :repl-host
+	      :type string
+	      :initform "localhost"
+	      :documentation "The host running the REPL; default: localhost")
+   (repl-port :initarg :repl-port
+	      :type integer
+	      :initform 32345
+	      :documentation "The port running the REPL; default: 32345")
+   (connect-mode :initarg :connect-mode
+		 :type symbol
+		 :initform 'jack-in
+		 :documentation "\
+The conection mode, which is either:
+- 'jack-in local mode, which invokes `cider-jack-in'
+- 'connect remote mode, which invokes `cider-connect' using slots:
+  `repl-host' and `repl-port'")))
 
 (defmethod initialize-instance ((this clojure-flex-compiler) &rest rest)
   (oset this :name "clojure")
@@ -91,9 +110,32 @@
   (sit-for 1)
   (apply 'call-next-method this nil))
 
+(defmethod flex-compiler-query-eval ((this clojure-flex-compiler)
+				     config-options)
+  "If invoked with interactively with from `flex-compile-compile':
+
+   \\[digital-argument] \\[universal-argument] \\[flex-compile-compile]
+
+with `digital-argument' of `1' the compiler prompts to switch between local
+`cider-jack-in' mode or remote `cider-connect' mode."
+  (if (and (not (consp config-options))
+	   (= config-options 1))
+      (with-slots (connect-mode) this
+	(->> (choice-program-complete "Connection mode" '(jack-in connect) nil t nil
+				      'flex-compiler-clojure-connect-history
+				      (or (cl-second flex-compiler-clojure-connect-history)
+					  'connect)
+				      nil t t)
+	     (setq connect-mode))))
+  (apply 'call-next-method this (list config-options)))
+
 (defmethod flex-compiler-repl-start ((this clojure-flex-compiler))
-  (with-current-buffer (flex-compiler-config-buffer this)
-    (cider-jack-in)))
+  (with-slots (connect-mode repl-host repl-port) this
+    (with-current-buffer (flex-compiler-config-buffer this)
+      (cl-case connect-mode
+	(connect (cider-connect repl-host repl-port))
+	(jack-in (cider-jack-in))
+	(t (error "No such connection mode supported: %S" connection-mode))))))
 
 (flex-compile-manager-register the-flex-compile-manager
 			       (clojure-flex-compiler nil))
