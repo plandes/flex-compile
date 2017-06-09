@@ -147,7 +147,8 @@
        (compile (flex-compiler-sbt-command this "compile"))
        (test (flex-compiler-sbt-command this "test"))))))
 
-(defmethod flex-compiler-query-eval ((this scala-flex-compiler))
+(defmethod flex-compiler-query-eval ((this scala-flex-compiler)
+				     config-option)
   (with-slots (sbt-eval-mode) this
     (setq sbt-eval-mode
 	  (choice-program-complete
