@@ -1,4 +1,4 @@
-;;; compile-flex-manage.el --- manager for flexible compilers
+;;; flex-compile-manage.el --- manager for flexible compilers
 
 ;; Copyright (C) 2015 - 2017 Paul Landes
 
@@ -31,7 +31,7 @@
 ;; specific file and/or evaluate a specfic expression via a REPL.  For running
 ;; a script or starting a `make` an async process is started.
 ;;
-;; For more information see https://github.com/plandes/compile-flex
+;; For more information see https://github.com/plandes/flex-compile
 
 ;;; Code:
 
@@ -42,19 +42,19 @@
 (require 'config-manage)
 (require 'choice-program-complete)
 
-(defgroup compile-flex nil
+(defgroup flex-compile nil
   "Compile Helper Functions"
   :group 'tools
   :group 'compilation
-  :prefix '"compile-flex")
+  :prefix '"flex-compile")
 
-(defcustom compile-flex-show-repl-mode 'display
+(defcustom flex-compile-show-repl-mode 'display
   "How to show/switch to the REPL buffer.
 `Switch to buffer' means to first pop then switch to the buffer.
 `Display buffer' means to show the buffer in a different window."
   :type '(choice (const :tag "Switch to buffer" switch)
 		 (const :tag "Display buffer" display))
-  :group 'compile-flex)
+  :group 'flex-compile)
 
 
 
@@ -317,7 +317,7 @@ The caller raises and error if it doesn't start in time."
   (let ((buf (flex-compiler-repl-buffer this))
 	fn)
     (when buf
-      (setq fn (cl-case compile-flex-show-repl-mode
+      (setq fn (cl-case flex-compile-show-repl-mode
 		 (switch 'pop-to-buffer)
 		 (display 'display-buffer)))
       (funcall fn buf)
@@ -585,7 +585,7 @@ If it isn't settable, warn the user with a message and do nothing."
   (expand-file-name "flex-compile" user-emacs-directory)
   "File containing the Flex compile configuration data."
   :type 'file
-  :group 'compile-flex
+  :group 'flex-compile
   :set (lambda (sym val)
 	 (set-default sym val)
 	 (if (and (boundp 'the-flex-compile-manager)
@@ -708,6 +708,6 @@ FORM is the form to evaluate \(if implemented)."
     (flex-compile-manager-assert-ready this)
     (flex-compiler-clean active)))
 
-(provide 'compile-flex-manage)
+(provide 'flex-compile-manage)
 
-;;; compile-flex-manage.el ends here
+;;; flex-compile-manage.el ends here

@@ -1,4 +1,4 @@
-;;; compile-flex-make.el --- compile functions
+;;; flex-compile-make.el --- compile functions
 
 ;; Copyright (C) 2015 - 2017 Paul Landes
 
@@ -31,21 +31,21 @@
 
 (require 'cl-lib)
 (require 'compile)
-(require 'compile-flex-manage)
+(require 'flex-compile-manage)
 (require 'choice-program-complete)
 
-(defcustom compile-flex-make-display-compile-buffer t
+(defcustom flex-compile-make-display-compile-buffer t
   "Whether or not to display the compile buffer when activated."
-  :group 'compile-flex
+  :group 'flex-compile
   :type 'boolean)
 
-(defun compile-flex-make-display-compile-buffer-toggle ()
-  "Toggle variable `compile-flex-make-display-compile-buffer'."
+(defun flex-compile-make-display-compile-buffer-toggle ()
+  "Toggle variable `flex-compile-make-display-compile-buffer'."
   (interactive)
-  (setq compile-flex-make-display-compile-buffer
-	(not compile-flex-make-display-compile-buffer)))
+  (setq flex-compile-make-display-compile-buffer
+	(not flex-compile-make-display-compile-buffer)))
 
-(defvar compile-flex-make-target-history nil
+(defvar flex-compile-make-target-history nil
   "History for makefile targets on compile.")
 
 ;;; make file compiler
@@ -82,7 +82,7 @@ This is done by creating a command with `make' found in the executable path."
       (let ((kill-buffer-query-functions nil))
 	(kill-buffer (get-buffer "*compilation*"))))
     (message "Compile command: %s" command)
-    (if compile-flex-make-display-compile-buffer
+    (if flex-compile-make-display-compile-buffer
 	(compile command)
       (save-window-excursion (compile command)))))
 
@@ -111,7 +111,7 @@ This is done by creating a command with `make' found in the executable path."
   (let ((targets (flex-compiler-makefile-targets this))
 	(none "<none>"))
     (->> (choice-program-complete "Target" targets t nil nil
-				  'compile-flex-make-target-history
+				  'flex-compile-make-target-history
 				  none
 				  nil nil t)
 	 (funcall #'(lambda (elt)
@@ -132,6 +132,6 @@ This is done by creating a command with `make' found in the executable path."
 (flex-compile-manager-register the-flex-compile-manager
 			       (make-flex-compiler nil))
 
-(provide 'compile-flex-make)
+(provide 'flex-compile-make)
 
-;;; compile-flex-make.el ends here
+;;; flex-compile-make.el ends here

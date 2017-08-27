@@ -1,4 +1,4 @@
-;;; compile-flex.el --- user defined flexible compilers
+;;; flex-compile.el --- user defined flexible compilers
 
 ;; Copyright (C) 2015 - 2017 Paul Landes
 
@@ -6,7 +6,7 @@
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
 ;; Keywords: compilation integration
-;; URL: https://github.com/plandes/compile-flex
+;; URL: https://github.com/plandes/flex-compile
 ;; Package-Requires: ((emacs "24.5") (choice-program "0.1") (buffer-manage "0.4") (dash))
 
 ;; This file is not part of GNU Emacs.
@@ -34,15 +34,15 @@
 ;; specific file and/or evaluate a specfic expression via a REPL.  For running
 ;; a script or starting a `make` an async process is started.
 ;;
-;; For more information see https://github.com/plandes/compile-flex
+;; For more information see https://github.com/plandes/flex-compile
 
 ;;; Code:
 
-(require 'compile-flex-manage)
-(require 'compile-flex-make)
+(require 'flex-compile-manage)
+(require 'flex-compile-make)
 
 (flex-compiler-config-load)
 
-(provide 'compile-flex)
+(provide 'flex-compile)
 
-;;; compile-flex.el ends here
+;;; flex-compile.el ends here
