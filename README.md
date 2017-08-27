@@ -24,6 +24,19 @@ The top level library `compile-flex` library provides a plugin architecture for
 * compile-flex-ess
 
 
+<!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
+## Table of Contents
+
+- [Configuration](#configuration)
+    - [Key Bindings](#key-bindings)
+- [Usage](#usage)
+- [Compilers](#compilers)
+    - [Make](#make)
+- [License](#license)
+
+<!-- markdown-toc end -->
+
+
 ## Configuration
 
 Add the following to your `~/.emacs` file:
@@ -97,6 +110,7 @@ aforementioned `flex-compile-run-or-set-config`.
 
 You can write your own compilers as add-on plugins.  However, there are many
 that come with this package.
+
 
 ### Make
 
