@@ -291,7 +291,7 @@ The caller raises and error if it doesn't start in time."
     (dotimes (i count-down)
       (setq buf (flex-compiler-repl-buffer this))
       (if buf
-	(cl-return buf)
+	  (cl-return buf)
 	(message "Waiting for buffer to start... (%d)"
 		 (- count-down i))
 	(sit-for 1)))))
@@ -527,9 +527,9 @@ form from a minibuffer and from the REPL directly."
   (with-slots (compilers) this
     (setq compilers
 	  (cl-delete compiler compilers
-		     :test #'(lambda (a b)
-			       (equal (flex-compiler-name a)
-				      (flex-compiler-name b)))))
+		     :test '(lambda (a b)
+			      (equal (flex-compiler-name a)
+				     (flex-compiler-name b)))))
     (setq compilers (append compilers (cons compiler nil)))
     (oset compiler :manager this)
     (let* ((name (flex-compiler-name compiler))
@@ -585,12 +585,12 @@ If it isn't settable, warn the user with a message and do nothing."
   "Return all configurable compilers."
   (let ((this the-flex-compile-manager))
     (->> (oref this :compilers)
-	 (cl-remove-if-not #'(lambda (comp)
-			       (-> (eieio-object-class comp)
-				   (child-of-class-p 'config-flex-compiler))))
-	 (mapcar #'(lambda (comp)
-		     (let ((conf (flex-compiler-config-persist comp)))
-		       (and conf (cons (flex-compiler-name comp) conf)))))
+	 (cl-remove-if-not '(lambda (comp)
+			      (-> (eieio-object-class comp)
+				  (child-of-class-p 'config-flex-compiler))))
+	 (mapcar '(lambda (comp)
+		    (let ((conf (flex-compiler-config-persist comp)))
+		      (and conf (cons (flex-compiler-name comp) conf)))))
 	 (remove nil))))
 
 (defmethod flex-compile-manager-config-persist ((this flex-compile-manager))
@@ -635,11 +635,11 @@ If it isn't settable, warn the user with a message and do nothing."
   (->> (flex-compile-manager-persisted-config the-flex-compile-manager)
        (assq 'compilers)
        cdr
-       (mapcar #'(lambda (conf)
-		   (let ((comp (flex-compile-manager-compiler
-				this (car conf))))
-		     (when comp
-		       (flex-compiler-config-unpersist comp conf)))))))
+       (mapcar '(lambda (conf)
+		  (let ((comp (flex-compile-manager-compiler
+			       this (car conf))))
+		    (when comp
+		      (flex-compiler-config-unpersist comp conf)))))))
 
 (defun flex-compiler-config-save ()
   "Save all compiler and manager configuration."
@@ -672,9 +672,9 @@ LAST-COMPILER-P, if non-nil, use the last chosen compiler."
       (let* ((this the-flex-compile-manager)
 	     (names (flex-compile-manager-compiler-names this)))
 	(choice-program-complete "Compiler" names t t nil
-				'flex-compiler-read-history
-				(cl-second flex-compiler-read-history)
-				nil t t))))
+				 'flex-compiler-read-history
+				 (cl-second flex-compiler-read-history)
+				 nil t t))))
 
 ;;;###autoload
 (defun flex-compiler-activate (compiler-name)
