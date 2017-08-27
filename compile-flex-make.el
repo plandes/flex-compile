@@ -31,7 +31,7 @@
 
 (require 'cl-lib)
 (require 'compile)
-(require 'compile-flex)
+(require 'compile-flex-manage)
 (require 'choice-program-complete)
 
 (defcustom compile-flex-make-display-compile-buffer t
