@@ -53,17 +53,17 @@
   ()
   :documentation "Invoke make on a configured makefile.")
 
-(defmethod initialize-instance ((this make-flex-compiler) &rest rest)
+(cl-defmethod initialize-instance ((this make-flex-compiler) &optional args)
   (oset this :name "make")
   (oset this :major-mode 'makefile-gmake-mode)
   (oset this :mode-desc "make")
   (oset this :config-file-desc "makefile")
-  (apply 'call-next-method this rest))
+  (cl-call-next-method this args))
 
-(defmethod flex-compiler-load-libraries ((this make-flex-compiler))
+(cl-defmethod flex-compiler-load-libraries ((this make-flex-compiler))
   (require 'compile))
 
-(defmethod flex-compiler-run-make ((this make-flex-compiler) &optional target)
+(cl-defmethod flex-compiler-run-make ((this make-flex-compiler) &optional target)
   "Invoke a make compilation in an async inferior buffer.
 
 This is done by creating a command with `make' found in the executable path."
@@ -86,7 +86,7 @@ This is done by creating a command with `make' found in the executable path."
 	(compile command)
       (save-window-excursion (compile command)))))
 
-(defmethod flex-compiler-makefile-targets ((this make-flex-compiler))
+(cl-defmethod flex-compiler-makefile-targets ((this make-flex-compiler))
   (let* ((this (flex-compiler-by-name "make"))
 	 (makefile (flex-compiler-config this))
 	 (dir (file-name-directory makefile))
@@ -104,10 +104,10 @@ This is done by creating a command with `make' found in the executable path."
 	 (cl-remove-if #'(lambda (elt)
 			   (member elt '("run" "clean")))))))
 
-(defmethod flex-compiler-run-with-args ((this make-flex-compiler) args)
+(cl-defmethod flex-compiler-run-with-args ((this make-flex-compiler) args)
   (flex-compiler-run-make this (car args)))
 
-(defmethod flex-compiler-read-options ((this make-flex-compiler))
+(cl-defmethod flex-compiler-read-options ((this make-flex-compiler))
   (let ((targets (flex-compiler-makefile-targets this))
 	(none "<none>"))
     (->> (choice-program-complete "Target" targets t nil nil
@@ -117,15 +117,15 @@ This is done by creating a command with `make' found in the executable path."
 	 (funcall #'(lambda (elt)
 		      (if (equal none elt) nil elt))))))
 
-(defmethod flex-compiler-set-config ((this make-flex-compiler) &optional file)
+(cl-defmethod flex-compiler-set-config ((this make-flex-compiler) &optional file)
   (with-slots (compile-options) this
     (setq compile-options nil))
-  (call-next-method this file))
+  (cl-call-next-method this file))
 
-(defmethod flex-compiler-run ((this make-flex-compiler))
+(cl-defmethod flex-compiler-run ((this make-flex-compiler))
   (flex-compiler-run-make this "run"))
 
-(defmethod flex-compiler-clean ((this make-flex-compiler))
+(cl-defmethod flex-compiler-clean ((this make-flex-compiler))
   (flex-compiler-run-make this "clean"))
 
 ;; register the compiler
