@@ -129,8 +129,7 @@ This is done by creating a command with `make' found in the executable path."
   (flex-compiler-run-make this "clean"))
 
 ;; register the compiler
-(flex-compile-manager-register the-flex-compile-manager
-			       (make-flex-compiler nil))
+(flex-compile-manager-register the-flex-compile-manager (make-flex-compiler))
 
 (provide 'flex-compile-make)
 

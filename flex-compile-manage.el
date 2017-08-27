@@ -135,6 +135,8 @@ configuration file.")
 
 (cl-defmethod flex-compiler-save-config ((this config-flex-compiler))
   "Tell the compiler manager to persist the configuration of all compilers."
+  (unless (oref this :manager)
+    (error "No manager set in compiler: %S" (object-print this)))
   (with-slots (manager) this
     (config-persistable-save manager)))
 
