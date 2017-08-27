@@ -195,7 +195,7 @@ A list of options used to configure the run of the compiler.")
 If non-nil force the user to set this before the compilation run.")))
 
 (cl-defmethod flex-compiler-read-set-options ((this optionable-flex-compiler)
-					   config-options)
+					      config-options)
   "Set the `:compile-options' slot of the compiler.
 
 CONFIG-OPTIONS is the numeric argument (if any) passed in the iteractive mode
@@ -327,14 +327,14 @@ The caller raises and error if it doesn't start in time."
       buf)))
 
 (cl-defmethod flex-compiler-send-input ((this repl-flex-compiler)
-				     &optional command)
+					&optional command)
   "Send input/commands to the REPL."
   (goto-char (point-max))
   (insert command)
   (comint-send-input))
 
 (cl-defmethod flex-compiler-run-command ((this repl-flex-compiler)
-				      &optional command)
+					 &optional command)
   "Send commands to the REPL to evaluate an expression or start a process."
   (flex-compiler-repl-assert-running this)
   (let ((buf (flex-compiler-repl-buffer this))
@@ -426,7 +426,7 @@ Whether or not to show the buffer after the file is evlauated or not.")))
     (read-string "Form: " init 'flex-compiler-query-eval-form)))
 
 (cl-defmethod flex-compiler-query-eval ((this evaluate-flex-compiler)
-				     config-options)
+					config-options)
   "Prompt the user for the evaluation mode \(see the `:eval-mode' slot).
 
 CONFIG-OPTIONS is the numeric argument (if any) passed in the iteractive mode
@@ -447,7 +447,7 @@ with \\[universal-argument]."
 		(read-string "Form: " init 'flex-compiler-query-eval-form)))))))
 
 (cl-defmethod flex-compiler-evaluate-form ((this evaluate-flex-compiler)
-					&optional form)
+					   &optional form)
   "Return the evaluation form.
 
 See the `:eval-form' slot."
@@ -517,13 +517,7 @@ form from a minibuffer and from the REPL directly."
 			       (equal (config-entry-name a)
 				      (config-entry-name b)))))
     (setq entries (append entries (cons compiler nil)))
-    (oset compiler :manager this)
-    ;; (let* ((name (config-entry-name compiler))
-    ;; 	   (config (config-manager-entry-config this name)))
-    ;;   (when config
-    ;;   	(flex-compiler-config-unpersist compiler config))
-    ;;   )
-    ))
+    (oset compiler :manager this)))
 
 (cl-defmethod config-manager-entry-names ((this flex-compile-manager))
   "Return the names of all registered compilers."
@@ -545,7 +539,7 @@ In other words, if it extends `config-flex-compiler'."
     (child-of-class-p (eieio-object-class active) 'config-flex-compiler)))
 
 (cl-defmethod flex-compile-manager-set-config ((this flex-compile-manager)
-					    &optional file)
+					       &optional file)
   "Set the configuration file of the currently active/selected compiler.
 
 If it isn't settable, warn the user with a message and do nothing."
