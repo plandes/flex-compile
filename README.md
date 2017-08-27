@@ -11,17 +11,17 @@ Clojure you can evaluate a specific file and/or evaluate a specfic expression
 via a REPL.  For running a script or starting a `make` an async process is
 started.
 
-The top level library `compile-flex` library provides a plugin architecture for
+The top level library `flex-compile` library provides a plugin architecture for
 [add-on libraries](#compilers), which include:
-* [compile-flex-make](#make)
-* compile-flex-beanshell
-* compile-flex-script
-* compile-flex-maven
-* compile-flex-clojure
-* compile-flex-scala
-* compile-flex-command
-* compile-flex-python
-* compile-flex-ess
+* [flex-compile-make](#make)
+* flex-compile-beanshell
+* flex-compile-script
+* flex-compile-maven
+* flex-compile-clojure
+* flex-compile-scala
+* flex-compile-command
+* flex-compile-python
+* flex-compile-ess
 
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
@@ -41,22 +41,22 @@ The top level library `compile-flex` library provides a plugin architecture for
 
 Add the following to your `~/.emacs` file:
 ```lisp
-(require 'compile-flex)
+(require 'flex-compile)
 ```
 This loads the file and creates global key bindings.
 
 For each specific *flexible* compilation method you want:
 ```lisp
 (eval-after-load
-    "compile-flex"
+    "flex-compile"
   '(progn
-     (require 'compile-flex-make)
-     (require 'compile-flex-script)
-     (require 'compile-flex-clojure)
-     (require 'compile-flex-scala)
-     (require 'compile-flex-command)
-     (require 'compile-flex-python)
-     (require 'compile-flex-ess)))
+     (require 'flex-compile-make)
+     (require 'flex-compile-script)
+     (require 'flex-compile-clojure)
+     (require 'flex-compile-scala)
+     (require 'flex-compile-command)
+     (require 'flex-compile-python)
+     (require 'flex-compile-ess)))
 ```
 
 ### Key Bindings
@@ -127,9 +127,9 @@ GNU Lesser General Public License, Version 2.0
 
 
 <!-- links -->
-[melpa-link]: https://melpa.org/#/compile-flex
-[melpa-stable-link]: https://stable.melpa.org/#/compile-flex
-[melpa-badge]: https://melpa.org/packages/compile-flex-badge.svg
-[melpa-stable-badge]: https://stable.melpa.org/packages/compile-flex-badge.svg
-[travis-link]: https://travis-ci.org/plandes/compile-flex
-[travis-badge]: https://travis-ci.org/plandes/compile-flex.svg?branch=master
+[melpa-link]: https://melpa.org/#/flex-compile
+[melpa-stable-link]: https://stable.melpa.org/#/flex-compile
+[melpa-badge]: https://melpa.org/packages/flex-compile-badge.svg
+[melpa-stable-badge]: https://stable.melpa.org/packages/flex-compile-badge.svg
+[travis-link]: https://travis-ci.org/plandes/flex-compile
+[travis-badge]: https://travis-ci.org/plandes/flex-compile.svg?branch=master
