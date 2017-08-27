@@ -1,4 +1,4 @@
-;;; compile-flex.el --- flexible compile
+;;; compile-flex-manage.el --- manager for flexible compilers
 
 ;; Copyright (C) 2015 - 2017 Paul Landes
 
@@ -711,6 +711,6 @@ FORM is the form to evaluate \(if implemented)."
     (flex-compile-manager-assert-ready this)
     (flex-compiler-clean active)))
 
-(provide 'compile-flex)
+(provide 'compile-flex-manage)
 
-;;; compile-flex.el ends here
+;;; compile-flex-manage.el ends here
