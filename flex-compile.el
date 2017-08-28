@@ -46,6 +46,7 @@
 (require 'flex-compile-ess)
 (require 'flex-compile-python)
 (require 'flex-compile-scala)
+(require 'flex-compile-xml-validate)
 
 ;;;###autoload
 (defun flex-compile-init ()

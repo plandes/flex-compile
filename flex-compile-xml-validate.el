@@ -1,4 +1,4 @@
-;;; compile-flex-xml-validate.el --- xml validation
+;;; flex-compile-xml-validate.el --- xml validation
 
 ;; Copyright (C) 2015 - 2017 Paul Landes
 
@@ -29,7 +29,8 @@
 
 ;;; Code:
 
-(require 'compile-flex)
+(require 'flex-compile-manage)
+
 (eval-when-compile (require 'xml))
 
 (defclass xml-validate-flex-compiler (run-args-flex-compiler)
@@ -43,17 +44,18 @@
 		:documentation "\
 Location of the schema file to validate against.")))
 
-(defmethod initialize-instance ((this xml-validate-flex-compiler) &rest rest)
+(cl-defmethod initialize-instance ((this xml-validate-flex-compiler)
+				   &optional args)
   (oset this :name "xml-validate")
   (oset this :config-file-desc "XML instance file")
   (oset this :major-mode 'nxml-mode)
   (oset this :mode-desc "xml-validate")
-  (apply 'call-next-method this rest))
+  (cl-call-next-method this args))
 
-(defmethod flex-compiler-load-libraries ((this xml-validate-flex-compiler))
+(cl-defmethod flex-compiler-load-libraries ((this xml-validate-flex-compiler))
   (require 'xml))
 
-(defmethod flex-compiler-guess-schema-file ((this xml-validate-flex-compiler))
+(cl-defmethod flex-compiler-guess-schema-file ((this xml-validate-flex-compiler))
   "Try to determine where the XSD is by the location "
   (with-temp-buffer
     (->> (flex-compiler-config this)
@@ -69,7 +71,7 @@ Location of the schema file to validate against.")))
 			      (match-string 1 xsi)))))
       (error))))
 
-(defmethod flex-compiler-read-options ((this xml-validate-flex-compiler))
+(cl-defmethod flex-compiler-read-options ((this xml-validate-flex-compiler))
   (let* ((schema-guess (flex-compiler-guess-schema-file this))
 	 (initial (and schema-guess (file-name-nondirectory schema-guess)))
 	 (dir (and schema-guess (file-name-directory schema-guess)))
@@ -77,21 +79,21 @@ Location of the schema file to validate against.")))
     (and schema (oset this :schema-file schema))
     nil))
 
-(defmethod flex-compiler-xml-validate-schema ((this xml-validate-flex-compiler))
+(cl-defmethod flex-compiler-xml-validate-schema ((this xml-validate-flex-compiler))
   (with-slots (schema-file) this
     (if (not schema-file)
 	(error "No schema file set"))
     schema-file))
 
-(defmethod flex-compiler-config-persist ((this xml-validate-flex-compiler))
-  (append `((schema-file . ,(oref this :schema-file)))
-	  (call-next-method this)))
+(cl-defmethod flex-compiler-config-persist ((this xml-validate-flex-compiler))
+  (append `((schema-file . ,(slot-value this 'schema-file)))
+	  (cl-call-next-method this)))
 
-(defmethod flex-compiler-config-unpersist ((this xml-validate-flex-compiler) config)
+(cl-defmethod flex-compiler-config-unpersist ((this xml-validate-flex-compiler) config)
   (oset this :schema-file (cdr (assq 'schema-file config)))
-  (call-next-method this config))
+  (cl-call-next-method this config))
 
-(defmethod flex-compiler-run-with-args ((this xml-validate-flex-compiler) args)
+(cl-defmethod flex-compiler-run-with-args ((this xml-validate-flex-compiler) args)
   (with-slots (buffer-name xmllint-program) this
     (let* ((config-file (flex-compiler-config this))
 	   (schema (flex-compiler-xml-validate-schema this))
@@ -105,9 +107,8 @@ Location of the schema file to validate against.")))
 				 buffer-name))
 	(pop-to-buffer (current-buffer))))))
 
-(flex-compile-manager-register the-flex-compile-manager
-			       (xml-validate-flex-compiler nil))
+(flex-compile-manager-register the-flex-compile-manager (xml-validate-flex-compiler))
 
-(provide 'compile-flex-xml-validate)
+(provide 'flex-compile-xml-validate)
 
-;;; compile-flex-xml-validate.el ends here
+;;; flex-compile-xml-validate.el ends here
