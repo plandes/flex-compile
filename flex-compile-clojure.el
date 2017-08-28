@@ -95,16 +95,11 @@ The conection mode, which is either:
       (let ((msg "save-excursion needed when REPL is current buffer"))
 	(display-warning 'buffer-manage msg :debug)))
     ;; silence compiler
-    (apply #'set-buffer (find-file-noselect file))
+    (apply #'set-buffer (list (find-file-noselect file)))
     (cider-load-file file)))
 
 (cl-defmethod flex-compiler-eval-initial-at-point ((this clojure-flex-compiler))
-  (if t
-      (cider-last-sexp)
-    (let ((sexp (sexp-at-point)))
-      (cond ((null sexp) nil)
-	    ((symbolp sexp) (format "(%S)" sexp))
-	    (t (prin1-to-string sexp))))))
+  (cider-last-sexp))
 
 (cl-defmethod flex-compiler-kill-repl ((this clojure-flex-compiler))
   (cider-quit t)

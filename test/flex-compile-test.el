@@ -18,7 +18,7 @@
 
 (ert-deftest test-compiler-registration ()
   "Test registration of compilers."
-  (should (equal '("clojure" "command" "disable" "make")
+  (should (equal '("clojure" "command" "disable" "make" "script")
 		 (->> (slot-value the-flex-compile-manager 'entries)
 		      (-map 'config-entry-name)
 		      (funcall #'(lambda (elt) (sort elt 'string<)))))))

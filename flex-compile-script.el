@@ -1,4 +1,4 @@
-;;; compile-flex-script.el --- script compile functions
+;;; flex-compile-script.el --- script compile functions
 
 ;; Copyright (C) 2015 - 2017 Paul Landes
 
@@ -29,12 +29,12 @@
 
 ;;; Code:
 
-(require 'compile-flex)
+(require 'flex-compile-manage)
 
-(defvar compile-flex-script-args-history nil
-  "History variable for `compile-flex-script' arg.")
+(defvar flex-compile-script-args-history nil
+  "History variable for `flex-compile-script' arg.")
 
-(defvar compile-flex-script-finish-success-function nil
+(defvar flex-compile-script-finish-success-function nil
   "A function to call (if non-nill) if the compilation is successful.")
 
 ;;; script file compiler
@@ -47,27 +47,27 @@
 			    :documentation "\
 A function to call (if non-nill) if the compilation is successful.")))
 
-(defmethod initialize-instance ((this script-flex-compiler) &rest rest)
+(cl-defmethod initialize-instance ((this script-flex-compiler) &optional args)
   (oset this :name "script")
   (oset this :mode-desc "script")
   (oset this :config-file-desc "script file")
   (oset this :major-mode 'non-existing-mode-symbol)
-  (apply 'call-next-method this rest))
+  (cl-call-next-method this args))
 
-(defmethod flex-compiler-load-libraries ((this script-flex-compiler))
+(cl-defmethod flex-compiler-load-libraries ((this script-flex-compiler))
   (require 'compile)
   (require 'choice-program))
 
-(defmethod flex-compiler-validate-buffer-file ((this script-flex-compiler))
+(cl-defmethod flex-compiler-validate-buffer-file ((this script-flex-compiler))
   (unless (memq major-mode '(sh-mode cperl-mode python-mode))
-    (apply 'call-next-method this nil)))
+    (cl-call-next-method this)))
 
-(defmethod flex-compiler-read-options ((this script-flex-compiler))
+(cl-defmethod flex-compiler-read-options ((this script-flex-compiler))
   (read-string "Script arguments: "
-	       (car compile-flex-script-args-history)
-	       'compile-flex-script-args-history))
+	       (car flex-compile-script-args-history)
+	       'flex-compile-script-args-history))
 
-(defmethod flex-compiler-run-with-args ((this script-flex-compiler) args)
+(cl-defmethod flex-compiler-run-with-args ((this script-flex-compiler) args)
   (let ((config-file (flex-compiler-config this))
 	reset-target)
     (with-slots (buffer-name finish-success-function) this
@@ -77,12 +77,11 @@ A function to call (if non-nill) if the compilation is successful.")))
 			       #'(lambda (mode-name)
 				   buffer-name))
 	  (if finish-success-function
-	      (add-to-list 'compile-flex-script-finish-success-function
+	      (add-to-list 'flex-compile-script-finish-success-function
 			   finish-success-function)))))))
 
-(flex-compile-manager-register the-flex-compile-manager
-			       (script-flex-compiler nil))
+(flex-compile-manager-register the-flex-compile-manager (script-flex-compiler))
 
-(provide 'compile-flex-script)
+(provide 'flex-compile-script)
 
-;;; compile-flex-script.el ends here
+;;; flex-compile-script.el ends here

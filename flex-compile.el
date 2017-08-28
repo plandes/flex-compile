@@ -42,6 +42,7 @@
 (require 'flex-compile-make)
 (require 'flex-compile-command)
 (require 'flex-compile-clojure)
+(require 'flex-compile-script)
 
 ;;;###autoload
 (defun flex-compile-init ()

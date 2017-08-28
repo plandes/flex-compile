@@ -238,6 +238,7 @@ with \\[universal-argument]."
   (flex-compiler--post-config this))
 
 
+
 (defclass repl-flex-compiler (flex-compiler)
   ((repl-buffer-regexp :initarg :repl-buffer-regexp
 		       :type string
