@@ -70,10 +70,6 @@
 (cl-defmethod flex-compiler-load-libraries ((this flex-compiler))
   "Call back for to load and require libraries needed by the compiler.")
 
-;; (cl-defmethod config-entry-name ((this flex-compiler))
-;;   "Return the name of the compiler, which defaults to the `:name` slot."
-;;   (oref this :name))
-
 (cl-defmethod flex-compiler-run ((this flex-compiler))
   "Invoke the run functionality of the compiler."
   (flex-compiler--unimplemented this "run"))
@@ -504,6 +500,15 @@ form from a minibuffer and from the REPL directly."
 					;list-header-fields '("C" "Name" "TMP?")
   (cl-call-next-method this args))
 
+(cl-defmethod config-persistable-load ((this flex-compile-manager))
+  (cl-call-next-method this)
+  (with-slots (entries) this
+    (dolist (compiler entries)
+      (if (flex-compile-manager-settable this compiler)
+	  (oset compiler :manager this))
+      ;(message "ENTRY: %S" entry)
+      )))
+
 (cl-defmethod config-manager-entry-default-name ((this flex-compile-manager))
   "flexible-compiler")
 
@@ -531,11 +536,12 @@ form from a minibuffer and from the REPL directly."
     (message "Active compiler is now %s" (config-entry-name compiler))
     compiler))
 
-(cl-defmethod flex-compile-manager-settable ((this flex-compile-manager))
+(cl-defmethod flex-compile-manager-settable ((this flex-compile-manager)
+					     &optional compiler)
   "Return whether the currently active/selected compiler is configurable.
 In other words, if it extends `config-flex-compiler'."
-  (let ((active (flex-compile-manager-active this)))
-    (child-of-class-p (eieio-object-class active) 'config-flex-compiler)))
+  (let ((compiler (or compiler (flex-compile-manager-active this))))
+    (child-of-class-p (eieio-object-class compiler) 'config-flex-compiler)))
 
 (cl-defmethod flex-compile-manager-set-config ((this flex-compile-manager)
 					       &optional file)
@@ -552,17 +558,16 @@ If it isn't settable, warn the user with a message and do nothing."
   (let ((active (flex-compile-manager-active this)))
     (flex-compiler-load-libraries active)))
 
-(cl-defmethod flex-compile-manager-config ((this flex-compile-manager))
-  "Return all configurable compilers."
-  (let ((this the-flex-compile-manager))
-    (->> (oref this :entries)
-	 (cl-remove-if-not #'(lambda (comp)
-			       (-> (eieio-object-class comp)
-				   (child-of-class-p 'config-flex-compiler))))
-	 (mapcar #'(lambda (comp)
-		     (let ((conf (flex-compiler-config-persist comp)))
-		       (and conf (cons (config-entry-name comp) conf)))))
-	 (remove nil))))
+;; (cl-defmethod flex-compile-manager-config ((this flex-compile-manager))
+;;   "Return all configurable compilers."
+;;   (->> (oref this :entries)
+;;        (cl-remove-if-not #'(lambda (comp)
+;; 			     (-> (eieio-object-class comp)
+;; 				 (child-of-class-p 'config-flex-compiler))))
+;;        (mapcar #'(lambda (comp)
+;; 		   (let ((conf (flex-compiler-config-persist comp)))
+;; 		     (and conf (cons (config-entry-name comp) conf)))))
+;;        (remove nil)))
 
 (defun flex-compiler-by-name (name)
   "Convenience function to get a compiler by it's NAME."
