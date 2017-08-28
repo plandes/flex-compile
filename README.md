@@ -11,15 +11,21 @@ Clojure you can evaluate a specific file and/or evaluate a specfic expression
 via a REPL.  For running a script or starting a `make` an async process is
 started.
 
+The general idea is the keybindings to compile you get use to are "switched" to
+whatever specific problem you're working on.  For example, if you're compiling
+with a makefile, use the *make* compiler to initiate an make process.  If
+you're working with a REPL based langauage (i.e. [flex-compile-clojure],
+[flex-compile-scala] etc) instead a buffer or expression is evaluated.
+
 The top level library `flex-compile` library provides a plugin architecture for
-[add-on libraries](#compilers), which include:
-* [flex-compile-make](#make)
+[add-on libraries], which include:
+* [flex-compile-make]
+* [flex-compile-command]
 * flex-compile-beanshell
 * flex-compile-script
 * flex-compile-maven
 * flex-compile-clojure
 * flex-compile-scala
-* flex-compile-command
 * flex-compile-python
 * flex-compile-ess
 
@@ -119,6 +125,13 @@ target, `run` target, and `clean` target are invoked respectfully with
 *compile*, *run* and *clean* Emacs commands (see [usage](#usage)).
 
 
+### Command
+
+This "compiler" is more of a convenience to invoke an Emacs Lisp function or
+form.  This is handy for functions that you end up invoking over and over with
+`M-x` (i.e. `cider-test-run-ns-tests`).
+
+
 ## License
 
 Copyright © 2017 Paul Landes
@@ -127,6 +140,10 @@ GNU Lesser General Public License, Version 2.0
 
 
 <!-- links -->
+[flex-compile-make]: #make
+[flex-compile-command]: #command
+[add-on libraries]: #compilers
+
 [melpa-link]: https://melpa.org/#/flex-compile
 [melpa-stable-link]: https://stable.melpa.org/#/flex-compile
 [melpa-badge]: https://melpa.org/packages/flex-compile-badge.svg
