@@ -4,6 +4,7 @@
 
 (depends-on "choice-program")
 (depends-on "dash")
+(depends-on "cider")
 
 (package-file "flex-compile.el")
 

@@ -40,7 +40,10 @@
 
 (require 'flex-compile-manage)
 (require 'flex-compile-make)
+(require 'flex-compile-command)
+(require 'flex-compile-clojure)
 
+;;;###autoload
 (defun flex-compile-init ()
   "Initialize the flex-compile system."
   (flex-compiler-config-load)

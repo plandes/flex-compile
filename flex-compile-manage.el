@@ -258,7 +258,8 @@ If this is 0, don't wait or display the buffer when it comes up.")
 			       :initform nil
 			       :type boolean
 			       :documentation "\
-If non-`nil' then don't prompt to kill a REPL buffer on clean.")))
+If non-`nil' then don't prompt to kill a REPL buffer on clean."))
+  :documentation "Compiles by evaluating expressions in the REPL.")
 
 (cl-defmethod flex-compiler-repl-start ((this repl-flex-compiler))
   "Start the REPL."

@@ -60,13 +60,13 @@ NO-READ-P, if non-nil, read the expression with `read'."
   ()
   :documentation "Convenience compiler that evaluates Emacs Lisp.")
 
-(defmethod initialize-instance ((this command-flex-compiler) &optional args)
+(cl-defmethod initialize-instance ((this command-flex-compiler) &optional args)
   (oset this :name "command")
-  (call-next-method this args))
+  (cl-call-next-method this args))
 
 (defvar flex-compiler-read-options-command-history nil)
 
-(defmethod flex-compiler-read-options ((this command-flex-compiler))
+(cl-defmethod flex-compiler-read-options ((this command-flex-compiler))
   (list
    (let ((cmd (read-command "Function to invoke (or RET for sexp): ")))
      (if (eq '## cmd)
@@ -77,7 +77,7 @@ NO-READ-P, if non-nil, read the expression with `read'."
 		    ,func)))
        cmd))))
 
-(defmethod flex-compiler-compile ((this command-flex-compiler))
+(cl-defmethod flex-compiler-compile ((this command-flex-compiler))
   (unless (flex-compiler-options this)
     (flex-compiler-read-set-options this nil))
   (let ((res (apply (flex-compiler-options this))))
