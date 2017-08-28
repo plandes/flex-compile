@@ -715,6 +715,19 @@ FORM is the form to evaluate \(if implemented)."
     (flex-compile-manager-assert-ready this)
     (flex-compiler-clean active)))
 
+;;;###autoload
+(defmacro flex-compile-declare (&rest fns)
+  "Declare functions in list FNS for the purposes of silencing the compiler.
+
+This is used in the compiler module libraries to silence the compiler in
+`eval-when-compile' scopes."
+  `(eval-when-compile
+     (mapcar #'(lambda (sym)
+		 (unless (fboundp sym)
+		   (eval `(defun ,sym (&rest x)
+			    (error "Bad declare order")))))
+	     (quote ,fns))))
+
 (provide 'flex-compile-manage)
 
 ;;; flex-compile-manage.el ends here

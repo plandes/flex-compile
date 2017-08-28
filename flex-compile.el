@@ -43,6 +43,7 @@
 (require 'flex-compile-command)
 (require 'flex-compile-clojure)
 (require 'flex-compile-script)
+(require 'flex-compile-ess)
 
 ;;;###autoload
 (defun flex-compile-init ()

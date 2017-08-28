@@ -31,15 +31,11 @@
 
 (require 'flex-compile-manage)
 
-;; silence the compiler
-(eval-when-compile
-  (let ((fns '(cider-repl-return cider-connect
-	       nrepl-dict-get nrepl-sync-request:eval
-	       cider-current-connection cider-current-session cider-current-ns
-	       cider-load-file cider-last-sexp cider-quit cider-jack-in)))
-    (mapcar #'(lambda (sym)
-		(eval `(defun ,sym (&rest x))))
-	    fns)))
+(flex-compile-declare
+ cider-repl-return cider-connect
+ nrepl-dict-get nrepl-sync-request:eval
+ cider-current-connection cider-current-session cider-current-ns
+ cider-load-file cider-last-sexp cider-quit cider-jack-in)
 
 (defvar flex-compiler-clojure-connect-history nil
   "History for connection mode prompt read in `flex-compiler-query-eval'.")

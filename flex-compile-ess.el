@@ -1,4 +1,4 @@
-;;; compile-flex-ess.el --- ess compile functions
+;;; flex-compile-ess.el --- ess compile functions
 
 ;; Copyright (C) 2015 - 2017 Paul Landes
 
@@ -29,45 +29,43 @@
 
 ;;; Code:
 
-(require 'compile-flex)
+(require 'flex-compile-manage)
 
-;; silence the compiler
-(eval-when-compile
-  (defun ess-eval-region (&rest x))
-  (defun R (&rest x)))
+(flex-compile-declare
+ ess-eval-region R)
 
-(defclass ess-flex-compiler (config-flex-compiler repl-flex-compiler) ())
+(defclass ess-flex-compiler (config-flex-compiler repl-flex-compiler)
+  ())
 
-(defmethod initialize-instance ((this ess-flex-compiler) &rest rest)
+(cl-defmethod initialize-instance ((this ess-flex-compiler) &optional args)
   (oset this :name "ess")
   (oset this :major-mode 'ess-mode)
   (oset this :mode-desc "ess")
   (oset this :config-file-desc "ess file")
   (oset this :repl-buffer-regexp "^\\*R\\*$")
-  (apply 'call-next-method this rest))
+  (cl-call-next-method this args))
 
-(defmethod flex-compiler-load-libraries ((this ess-flex-compiler))
+(cl-defmethod flex-compiler-load-libraries ((this ess-flex-compiler))
   (require 'ess-site))
 
-(defmethod flex-compiler-repl-start ((this ess-flex-compiler))
+(cl-defmethod flex-compiler-repl-start ((this ess-flex-compiler))
   (let ((ess-ask-for-ess-directory nil))
     (with-current-buffer (flex-compiler-config-buffer this)
-	(R))))
+      (R))))
 
-(defmethod flex-compiler-repl-compile-source ((this ess-flex-compiler))
+(cl-defmethod flex-compiler-repl-compile-source ((this ess-flex-compiler))
   (let ((file (flex-compiler-config this)))
     (flex-compiler-run-command this (format "source('%s')" file))
     (flex-compiler-repl-display this)))
 
-(defmethod flex-compiler-repl-compile ((this ess-flex-compiler))
+(cl-defmethod flex-compiler-repl-compile ((this ess-flex-compiler))
   (let ((buf (flex-compiler-config-buffer this)))
     (with-current-buffer buf
       (ess-eval-region (point-min) (point-max) nil)
       (flex-compiler-repl-display this))))
 
-(flex-compile-manager-register the-flex-compile-manager
-			       (ess-flex-compiler nil))
+(flex-compile-manager-register the-flex-compile-manager (ess-flex-compiler))
 
-(provide 'compile-flex-ess)
+(provide 'flex-compile-ess)
 
-;;; compile-flex-ess.el ends here
+;;; flex-compile-ess.el ends here
