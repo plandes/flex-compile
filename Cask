@@ -3,8 +3,9 @@
 (source melpa)
 
 (depends-on "choice-program")
+(depends-on "dash")
 
-(package-file "compile-flex.el")
+(package-file "flex-compile.el")
 
 (files "*.el" "doc/*.texi" (:exclude ".dir-locals.el"))
 
