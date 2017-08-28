@@ -45,6 +45,7 @@
 (require 'flex-compile-script)
 (require 'flex-compile-ess)
 (require 'flex-compile-python)
+(require 'flex-compile-scala)
 
 ;;;###autoload
 (defun flex-compile-init ()

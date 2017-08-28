@@ -1,4 +1,4 @@
-;;; compile-flex-scala.el --- scala compile functions
+;;; flex-compile-scala.el --- scala compile functions
 
 ;; Copyright (C) 2015 - 2017 Paul Landes
 
@@ -31,8 +31,8 @@
 
 (require 'cl-lib)
 (require 'dash)
-(require 'compile-flex)
 (require 'choice-program-complete)
+(require 'flex-compile-manage)
 
 ;; silence the compiler
 (eval-when-compile
@@ -47,6 +47,13 @@
 		(eval `(defun ,sym (&rest x))))
 	    fns)))
 
+(flex-compile-declare
+ buffer-manager-new-entry
+ buffer-entry-buffer buffer-entry-insert
+ ensime-config-find sbt-command ensime-inf-eval-buffer
+ ensime-inf-send-string buffer-manager-entry sbt:find-root
+ ensime-shutdown ensime-inf-quit-interpreter)
+
 (defvar compiler-flex-scala-query-eval-mode-history nil
   "History for interactive read for Scala/SBT/REPL evaluations.")
 
@@ -60,7 +67,7 @@
 		  :initform run
 		  :type symbol)))
 
-(defmethod initialize-instance ((this scala-flex-compiler) &rest rest)
+(cl-defmethod initialize-instance ((this scala-flex-compiler) &optional args)
   (oset this :name "scala")
   (oset this :major-mode 'scala-mode)
   (oset this :mode-desc "scala file")
@@ -68,49 +75,49 @@
   (oset this :repl-buffer-regexp "\\*sbt\\*.*")
   (oset this :repl-buffer-start-timeout 0)
   (oset this :no-prompt-kill-repl-buffer t)
-  (apply 'call-next-method this rest))
+  (cl-call-next-method this args))
 
-(defmethod flex-compiler-load-libraries ((this scala-flex-compiler))
+(cl-defmethod flex-compiler-load-libraries ((this scala-flex-compiler))
   (require 'ensime))
 
-(defmethod flex-compiler-config-directory ((this scala-flex-compiler))
+(cl-defmethod flex-compiler-config-directory ((this scala-flex-compiler))
   (->> (flex-compiler-config this)
        file-name-directory
        ensime-config-find
        file-name-directory))
 
-(defmethod flex-compiler-scala-repl-buffer-name ((this scala-flex-compiler))
+(cl-defmethod flex-compiler-scala-repl-buffer-name ((this scala-flex-compiler))
   "*spark-shell*")
 
-(defmethod flex-compiler-scala-repl-buffer ((this scala-flex-compiler))
+(cl-defmethod flex-compiler-scala-repl-buffer ((this scala-flex-compiler))
   (get-buffer (flex-compiler-scala-repl-buffer-name this)))
 
-(defmethod flex-compiler-send-input ((this scala-flex-compiler)
+(cl-defmethod flex-compiler-send-input ((this scala-flex-compiler)
 				     &optional command)
   (goto-char (point-max))
   (insert command)
   ;(sbt-clear)
   )
 
-(defmethod flex-compiler-eval-form-impl ((this scala-flex-compiler) form)
+(cl-defmethod flex-compiler-eval-form-impl ((this scala-flex-compiler) form)
   (error "Not implemented"))
 
-(defmethod flex-compiler-sbt-command ((this scala-flex-compiler) command)
+(cl-defmethod flex-compiler-sbt-command ((this scala-flex-compiler) command)
   (with-current-buffer (find-file-noselect (flex-compiler-config this))
     (sbt-command command)))
 
-(defmethod flex-compiler-scala-eval ((this scala-flex-compiler))
+(cl-defmethod flex-compiler-scala-eval ((this scala-flex-compiler))
   (with-current-buffer (find-file-noselect (flex-compiler-config this))
     (ensime-inf-eval-buffer)
     (display-buffer (flex-compiler-scala-repl-buffer this))))
 
-(defmethod flex-compiler-eval-initial-at-point ((this scala-flex-compiler))
+(cl-defmethod flex-compiler-eval-initial-at-point ((this scala-flex-compiler))
   (error "Not implemented"))
 
-(defmethod flex-compiler-query-read-form ((this scala-flex-compiler))
+(cl-defmethod flex-compiler-query-read-form ((this scala-flex-compiler))
   (flex-compiler-scala-trim (thing-at-point 'paragraph)))
 
-(defmethod flex-compiler-evaluate-form ((this scala-flex-compiler)
+(cl-defmethod flex-compiler-evaluate-form ((this scala-flex-compiler)
 					&optional form)
   (let ((ensime-inf-buffer-name (flex-compiler-scala-repl-buffer-name this))
 	(buf (flex-compiler-scala-repl-buffer this))
@@ -122,7 +129,7 @@
       (display-buffer buf))
     nil))
 
-(defmethod flex-compiler-eval-spark ((this scala-flex-compiler))
+(cl-defmethod flex-compiler-eval-spark ((this scala-flex-compiler))
   (require 'bshell)
   (let* ((mng bshell-manager-singleton)
 	 (bname "spark-shell")
@@ -137,9 +144,9 @@
     (and newp (buffer-entry-insert bentry "sbt console" t)))
   (flex-compiler-evaluate-form this))
 
-(defmethod flex-compiler-eval-config ((this scala-flex-compiler) file)
+(cl-defmethod flex-compiler-eval-config ((this scala-flex-compiler) file)
   (let ((ensime-inf-buffer-name (flex-compiler-scala-repl-buffer-name this)))
-   (let ((mode (oref this :sbt-eval-mode)))
+   (let ((mode (slot-value this 'sbt-eval-mode)))
      (cl-case mode
        (eval (flex-compiler-evaluate-form this))
        (eval-spark (flex-compiler-eval-spark this))
@@ -147,7 +154,7 @@
        (compile (flex-compiler-sbt-command this "compile"))
        (test (flex-compiler-sbt-command this "test"))))))
 
-(defmethod flex-compiler-query-eval ((this scala-flex-compiler)
+(cl-defmethod flex-compiler-query-eval ((this scala-flex-compiler)
 				     config-option)
   (with-slots (sbt-eval-mode) this
     (setq sbt-eval-mode
@@ -157,7 +164,7 @@
 	   (cl-second compiler-flex-scala-query-eval-mode-history)
 	   nil nil t))))
 
-(defmethod flex-compiler-kill-repl ((this scala-flex-compiler))
+(cl-defmethod flex-compiler-kill-repl ((this scala-flex-compiler))
   (condition-case err
       (ensime-shutdown)
     (error))
@@ -175,16 +182,16 @@
 		    proc)))
        (-filter #'identity)
        (-map #'kill-process))
-  (apply 'call-next-method this nil))
+  (cl-call-next-method this))
 
-(defmethod flex-compiler-rename-repl-buffer ((this scala-flex-compiler))
+(cl-defmethod flex-compiler-rename-repl-buffer ((this scala-flex-compiler))
   (let ((buf (get-buffer ensime-inf-buffer-name))
 	(new-name (flex-compiler-scala-repl-buffer-name this)))
     (when buf
       (with-current-buffer buf
 	(rename-buffer new-name)))))
 
-(defmethod flex-compiler-repl-start ((this scala-flex-compiler))
+(cl-defmethod flex-compiler-repl-start ((this scala-flex-compiler))
   (flex-compiler-sbt-command this "run")
   (when nil
    (with-current-buffer (flex-compiler-config-buffer this)
@@ -192,9 +199,8 @@
    (flex-compiler-rename-repl-buffer this)))
 
 
-(flex-compile-manager-register the-flex-compile-manager
-			       (scala-flex-compiler nil))
+(flex-compile-manager-register the-flex-compile-manager (scala-flex-compiler))
 
-(provide 'compile-flex-scala)
+(provide 'flex-compile-scala)
 
-;;; compile-flex-scala.el ends here
+;;; flex-compile-scala.el ends here
