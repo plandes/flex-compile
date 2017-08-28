@@ -44,6 +44,7 @@
 (require 'flex-compile-clojure)
 (require 'flex-compile-script)
 (require 'flex-compile-ess)
+(require 'flex-compile-python)
 
 ;;;###autoload
 (defun flex-compile-init ()

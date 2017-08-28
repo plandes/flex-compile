@@ -1,4 +1,4 @@
-;;; compile-flex-python.el --- python compile functions
+;;; flex-compile-python.el --- python compile functions
 
 ;; Copyright (C) 2015 - 2017 Paul Landes
 
@@ -29,18 +29,17 @@
 
 ;;; Code:
 
-(require 'compile-flex)
+(require 'flex-compile-manage)
 
-;; silence the compiler
-(eval-when-compile
-  (defun python-shell-send-string (&rest x))
-  (defun python-shell-send-buffer (&rest x))
-  (defun python-shell-parse-command (&rest x))
-  (defun run-python (&rest x)))
+(flex-compile-declare
+ python-shell-send-string
+ python-shell-send-buffer
+ python-shell-parse-command
+ run-python)
 
 (defclass python-flex-compiler (evaluate-flex-compiler) ())
 
-(defmethod initialize-instance ((this python-flex-compiler) &rest rest)
+(cl-defmethod initialize-instance ((this python-flex-compiler) &optional args)
   (oset this :name "python")
   (oset this :major-mode 'python-mode)
   (oset this :mode-desc "python file")
@@ -48,28 +47,27 @@
   (oset this :repl-buffer-regexp "^\\*Python")
   (oset this :repl-buffer-start-timeout 0)
   (oset this :show-repl-after-eval-p t)
-  (apply 'call-next-method this rest))
+  (cl-call-next-method this args))
 
-(defmethod flex-compiler-load-libraries ((this python-flex-compiler))
+(cl-defmethod flex-compiler-load-libraries ((this python-flex-compiler))
   (require 'python))
 
-(defmethod flex-compiler-eval-form-impl ((this python-flex-compiler) form)
+(cl-defmethod flex-compiler-eval-form-impl ((this python-flex-compiler) form)
   (python-shell-send-string form))
 
-(defmethod flex-compiler-eval-config ((this python-flex-compiler) file)
+(cl-defmethod flex-compiler-eval-config ((this python-flex-compiler) file)
   (let ((buf (find-file-noselect file)))
     (with-current-buffer buf
       (python-shell-send-buffer))))
 
-(defmethod flex-compiler-eval-initial-at-point ((this python-flex-compiler))
+(cl-defmethod flex-compiler-eval-initial-at-point ((this python-flex-compiler))
   (thing-at-point 'symbol))
 
-(defmethod flex-compiler-repl-start ((this python-flex-compiler))
+(cl-defmethod flex-compiler-repl-start ((this python-flex-compiler))
   (run-python (python-shell-parse-command)))
 
-(flex-compile-manager-register the-flex-compile-manager
-			       (python-flex-compiler nil))
+(flex-compile-manager-register the-flex-compile-manager (python-flex-compiler))
 
-(provide 'compile-flex-python)
+(provide 'flex-compile-python)
 
-;;; compile-flex-python.el ends here
+;;; flex-compile-python.el ends here
