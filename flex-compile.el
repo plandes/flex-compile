@@ -41,7 +41,10 @@
 (require 'flex-compile-manage)
 (require 'flex-compile-make)
 
-(flex-compiler-config-load)
+(defun flex-compile-init ()
+  "Initialize the flex-compile system."
+  (flex-compiler-config-load)
+  (flex-compiler-activate "disable"))
 
 (provide 'flex-compile)
 

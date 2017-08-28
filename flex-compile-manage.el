@@ -107,7 +107,9 @@ The file to use for `configuring' the compiler.")
 		     :type string
 		     :documentation "\
 Description of the configuration file and used in user input prompts.")
-   (major-mode :initarg :major-mode "\
+   (major-mode :initarg :major-mode
+	       :type (or null symbol)
+	       :documentation "\
 The major mode to use to validate/select `config-file` buffers.")
    (mode-desc :initarg :mode-desc
 	      :type string))
@@ -122,8 +124,10 @@ configuration file.")
 
 (cl-defmethod flex-compiler-validate-buffer-file ((this config-flex-compiler))
   "Return an error string if the current buffer isn't the right type of config."
-  (if (not (eq major-mode (oref this :major-mode)))
-      (format "This doesn't seem like a %s file" (oref this :mode-desc))))
+  (let ((buffer-major-mode major-mode))
+    (with-slots (mode-desc major-mode) this
+      (if (not (eq buffer-major-mode major-mode))
+	  (format "This doesn't seem like a %s file" mode-desc)))))
 
 (cl-defmethod flex-compiler--config-variable ((this config-flex-compiler))
   (intern (format "flex-compiler-config-file-%s"
@@ -131,9 +135,9 @@ configuration file.")
 
 (cl-defmethod flex-compiler-save-config ((this config-flex-compiler))
   "Tell the compiler manager to persist the configuration of all compilers."
-  (unless (oref this :manager)
-    (error "No manager set in compiler: %S" (object-print this)))
   (with-slots (manager) this
+    (unless manager
+      (error "No manager set in compiler: %S" (object-print this)))
     (config-persistable-save manager)))
 
 (cl-defmethod flex-compiler-set-config ((this config-flex-compiler) &optional file)
@@ -149,22 +153,24 @@ configuration file.")
 (cl-defmethod flex-compiler-read-config ((this config-flex-compiler))
   "Read the configuration file from the user."
   (let (file)
-    (if (flex-compiler-validate-buffer-file this)
-	(let ((conf-desc (oref this :config-file-desc)))
-	  (setq file (read-file-name
-		      (format "%s: " (capitalize conf-desc))
-		      nil (buffer-file-name))))
-      file)))
+    (with-slots (config-file-desc) this
+      (if (flex-compiler-validate-buffer-file this)
+	  (let ((conf-desc config-file-desc))
+	    (setq file (read-file-name
+			(format "%s: " (capitalize conf-desc))
+			nil (buffer-file-name))))
+	file))))
 
 (cl-defmethod flex-compiler-config ((this config-flex-compiler))
   "Validate and return the configuration file."
-  (if (not (oref this :config-file))
-      (let ((conf-var (flex-compiler--config-variable this)))
-	(if (boundp conf-var)
-	    (oset this :config-file (symbol-value conf-var))
-	  (error "The %s for compiler %s has not yet been set"
-		 (oref this :config-file-desc)
-		 (config-entry-name this)))))
+  (with-slots (config-file config-file-desc) this
+    (if (not config-file)
+	(let ((conf-var (flex-compiler--config-variable this)))
+	  (if (boundp conf-var)
+	      (setq config-file (symbol-value conf-var))
+	    (error "The %s for compiler %s has not yet been set"
+		   config-file-desc
+		   (config-entry-name this))))))
   (with-slots (config-file config-file-desc) this
     (unless (file-exists-p config-file)
       (error "No such %s: %s" config-file-desc config-file))
@@ -269,15 +275,16 @@ evaluation), while allowing base class compilation features.."
   "Wait for the compilation to start.
 
 The caller raises and error if it doesn't start in time."
-  (let ((count-down (oref this :repl-buffer-start-timeout))
-	buf)
-    (dotimes (i count-down)
-      (setq buf (flex-compiler-repl-buffer this))
-      (if buf
-	  (cl-return buf)
-	(message "Waiting for buffer to start... (%d)"
-		 (- count-down i))
-	(sit-for 1)))))
+  (with-slots (repl-buffer-start-timeout) this
+    (let ((count-down repl-buffer-start-timeout)
+	  buf)
+      (dotimes (i count-down)
+	(setq buf (flex-compiler-repl-buffer this))
+	(if buf
+	    (cl-return buf)
+	  (message "Waiting for buffer to start... (%d)"
+		   (- count-down i))
+	  (sit-for 1))))))
 
 (cl-defmethod flex-compiler-repl-running-p ((this repl-flex-compiler))
   "Return whether or not the REPL is currently running."
@@ -295,15 +302,16 @@ The caller raises and error if it doesn't start in time."
 	     (config-entry-name this))))
 
 (cl-defmethod flex-compiler-repl--run-start ((this repl-flex-compiler))
-  (let ((timeout (oref this :repl-buffer-start-timeout))
-	buf)
-    (unless (flex-compiler-repl-running-p this)
-      (flex-compiler-repl-start this)
-      (when (> timeout 0)
-	(setq buf (flex-compiler-wait-for-buffer this))
-	(unless buf
-	  (error "Couldn't create REPL for compiler %s"
-		 (config-entry-name this)))))))
+  (with-slots (repl-buffer-start-timeout) this
+    (let ((timeout repl-buffer-start-timeout)
+	  buf)
+      (unless (flex-compiler-repl-running-p this)
+	(flex-compiler-repl-start this)
+	(when (> timeout 0)
+	  (setq buf (flex-compiler-wait-for-buffer this))
+	  (unless buf
+	    (error "Couldn't create REPL for compiler %s"
+		   (config-entry-name this))))))))
 
 (cl-defmethod flex-compiler-run ((this repl-flex-compiler))
   "Start the REPL and display it."
@@ -356,26 +364,27 @@ The caller raises and error if it doesn't start in time."
 
 (cl-defmethod flex-compiler-repl-buffer ((this repl-flex-compiler))
   "Find the first REPL buffer found in the buffer list."
-  (dolist (buf (buffer-list))
-    (let ((buf-name (buffer-name buf)))
-      (when (string-match (oref this :repl-buffer-regexp) buf-name)
-	(cl-return buf)))))
+  (with-slots (repl-buffer-regexp) this
+    (dolist (buf (buffer-list))
+      (let ((buf-name (buffer-name buf)))
+	(when (string-match repl-buffer-regexp buf-name)
+	  (cl-return buf))))))
 
 (cl-defmethod flex-compiler-kill-repl ((this repl-flex-compiler))
   "Kill the compiler's REPL."
-  (let ((bufs (append (mapcar 'get-buffer (oref this :derived-buffer-names))
-		      (cons (flex-compiler-repl-buffer this) nil)))
-	(count 0))
-    (dolist (buf bufs)
-      (when (buffer-live-p buf)
-	(let ((kill-buffer-query-functions
-	       (if (oref this :no-prompt-kill-repl-buffer)
-		   nil
-		 kill-buffer-query-functions)))
-	  (kill-buffer buf))
-	(cl-incf count)))
-    (message "%s killed %d buffer(s)"
-	     (capitalize (oref this :name)) count)))
+  (with-slots (name derived-buffer-names no-prompt-kill-repl-buffer) this
+    (let ((bufs (append (mapcar 'get-buffer derived-buffer-names)
+			(cons (flex-compiler-repl-buffer this) nil)))
+	  (count 0))
+      (dolist (buf bufs)
+	(when (buffer-live-p buf)
+	  (let ((kill-buffer-query-functions
+		 (if no-prompt-kill-repl-buffer
+		     nil
+		   kill-buffer-query-functions)))
+	    (kill-buffer buf))
+	  (cl-incf count)))
+      (message "%s killed %d buffer(s)" (capitalize name) count))))
 
 
 (defvar flex-compiler-query-eval-mode nil)
@@ -448,7 +457,7 @@ with \\[universal-argument]."
 See the `:eval-form' slot."
   (if (and (null form) (not (slot-boundp this :form)))
       (flex-compiler-query-eval this nil))
-  (let ((res (flex-compiler-eval-form-impl this (or form (oref this :form)))))
+  (let ((res (flex-compiler-eval-form-impl this (or form (slot-value this 'form)))))
     (oset this :last-eval res)
     (if (stringp res)
 	res
@@ -457,7 +466,7 @@ See the `:eval-form' slot."
 (cl-defmethod flex-compiler-repl--eval-config-and-show ((this evaluate-flex-compiler))
   (flex-compiler-repl--run-start this)
   (flex-compiler-eval-config this (flex-compiler-config this))
-  (when (oref this :show-repl-after-eval-p)
+  (when (slot-value this 'show-repl-after-eval-p)
     (flex-compiler-repl-display this)))
 
 (cl-defmethod flex-compiler-repl--invoke-mode ((this evaluate-flex-compiler) mode)
@@ -476,7 +485,7 @@ form from a minibuffer and from the REPL directly."
 	    (message res)
 	    res))
     (eval-repl (progn
-		 (flex-compiler-run-command this (oref this :form))
+		 (flex-compiler-run-command this (slot-value this 'form))
 		 (flex-compiler-repl-display this)))
     (both-eval-repl (flex-compiler-repl--invoke-mode this 'eval-config)
 		    (flex-compiler-repl--invoke-mode this 'eval-repl))
@@ -485,7 +494,7 @@ form from a minibuffer and from the REPL directly."
 
 (cl-defmethod flex-compiler-repl-compile ((this evaluate-flex-compiler))
   "Invoke the compilation based on the `eval-mode' slot."
-  (flex-compiler-repl--invoke-mode this (oref this :eval-mode)))
+  (flex-compiler-repl--invoke-mode this (slot-value this 'eval-mode)))
 
 
 ;;; compiler manager/orchestration
@@ -505,14 +514,13 @@ form from a minibuffer and from the REPL directly."
   (with-slots (entries) this
     (dolist (compiler entries)
       (if (flex-compile-manager-settable this compiler)
-	  (oset compiler :manager this))
-      ;(message "ENTRY: %S" entry)
-      )))
+	  (oset compiler :manager this)))))
 
 (cl-defmethod config-manager-entry-default-name ((this flex-compile-manager))
   "flexible-compiler")
 
-(cl-defmethod flex-compile-manager-register ((this flex-compile-manager) compiler)
+(cl-defmethod flex-compile-manager-register ((this flex-compile-manager)
+					     compiler)
   "Register a compiler instance with the manager \(compilation framework)."
   (with-slots (entries) this
     (setq entries
@@ -525,11 +533,12 @@ form from a minibuffer and from the REPL directly."
 
 (cl-defmethod config-manager-entry-names ((this flex-compile-manager))
   "Return the names of all registered compilers."
-  (mapcar #'config-entry-name (oref this :entries)))
+  (with-slots (entries) this
+    (mapcar #'config-entry-name entries)))
 
 (cl-defmethod flex-compile-manager-active ((this flex-compile-manager))
   "Return the currently selected or active manager."
-  (car (oref this :entries)))
+  (car (slot-value this 'entries)))
 
 (cl-defmethod config-manager-activate ((this flex-compile-manager) name)
   (let ((compiler (cl-call-next-method this name)))
@@ -557,17 +566,6 @@ If it isn't settable, warn the user with a message and do nothing."
   "Make sure the active/selected compiler is ready and libraries loaded."
   (let ((active (flex-compile-manager-active this)))
     (flex-compiler-load-libraries active)))
-
-;; (cl-defmethod flex-compile-manager-config ((this flex-compile-manager))
-;;   "Return all configurable compilers."
-;;   (->> (oref this :entries)
-;;        (cl-remove-if-not #'(lambda (comp)
-;; 			     (-> (eieio-object-class comp)
-;; 				 (child-of-class-p 'config-flex-compiler))))
-;;        (mapcar #'(lambda (comp)
-;; 		   (let ((conf (flex-compiler-config-persist comp)))
-;; 		     (and conf (cons (config-entry-name comp) conf)))))
-;;        (remove nil)))
 
 (defun flex-compiler-by-name (name)
   "Convenience function to get a compiler by it's NAME."

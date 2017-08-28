@@ -7,11 +7,11 @@
 
 (require 'ert)
 (require 'dash)
-(require 'compile-flex)
-(require 'compile-flex-make)
+(require 'flex-compile)
+(require 'flex-compile-make)
 
 (ert-deftest test-manager-instance ()
-  "Test successful evaluation of compile-flex"
+  "Test successful evaluation of flex-compile"
   (let ((this the-flex-compile-manager))
     (should (eq t (eieio-object-p this)))
     (should (eq 'flex-compile-manager (eieio-object-class this)))))
@@ -19,6 +19,10 @@
 (ert-deftest test-compiler-registration ()
   "Test registration of compilers."
   (should (equal '("disable" "make")
-		 (-> the-flex-compile-manager
-		     flex-compile-manager-compiler-names
-		     (sort 'equal)))))
+		 (->> (slot-value the-flex-compile-manager 'entries)
+		      (-map 'config-entry-name)
+		      (funcall #'(lambda (elt) (sort elt 'string<)))))))
+
+(provide 'flex-compile-test)
+
+;;; flex-compile-test ends here
