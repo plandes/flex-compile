@@ -37,16 +37,7 @@
 ;; silence the compiler
 (eval-when-compile
   (defvar bshell-manager-singleton)
-  (defvar ensime-inf-buffer-name)
-  (let ((fns '(buffer-manager-new-entry
-	       buffer-entry-buffer buffer-entry-insert
-	       ensime-config-find sbt-command ensime-inf-eval-buffer
-	       ensime-inf-send-string buffer-manager-entry sbt:find-root
-	       ensime-shutdown ensime-inf-quit-interpreter)))
-    (mapcar #'(lambda (sym)
-		(eval `(defun ,sym (&rest x))))
-	    fns)))
-
+  (defvar ensime-inf-buffer-name))
 (flex-compile-declare
  buffer-manager-new-entry
  buffer-entry-buffer buffer-entry-insert
@@ -59,8 +50,8 @@
 
 (defun flex-compiler-scala-trim (str)
   "Trim whitespace on both ends of STR."
- (string-match "^\s*\\(.*?\\)\s*$" str)
- (replace-match "\\1" nil nil str))
+  (string-match "^\s*\\(.*?\\)\s*$" str)
+  (replace-match "\\1" nil nil str))
 
 (defclass scala-flex-compiler (evaluate-flex-compiler)
   ((sbt-eval-mode :initarg :sbt-eval-mode
@@ -93,10 +84,10 @@
   (get-buffer (flex-compiler-scala-repl-buffer-name this)))
 
 (cl-defmethod flex-compiler-send-input ((this scala-flex-compiler)
-				     &optional command)
+					&optional command)
   (goto-char (point-max))
   (insert command)
-  ;(sbt-clear)
+					;(sbt-clear)
   )
 
 (cl-defmethod flex-compiler-eval-form-impl ((this scala-flex-compiler) form)
@@ -118,7 +109,7 @@
   (flex-compiler-scala-trim (thing-at-point 'paragraph)))
 
 (cl-defmethod flex-compiler-evaluate-form ((this scala-flex-compiler)
-					&optional form)
+					   &optional form)
   (let ((ensime-inf-buffer-name (flex-compiler-scala-repl-buffer-name this))
 	(buf (flex-compiler-scala-repl-buffer this))
 	(form (or form (with-current-buffer (flex-compiler-config-buffer this)
@@ -140,22 +131,22 @@
 		       (let ((start-dir (sbt:find-root)))
 			 (buffer-manager-new-entry mng bname start-dir)))))
 	 (buf (buffer-entry-buffer bentry)))
-    ;(display-buffer buf)
+					;(display-buffer buf)
     (and newp (buffer-entry-insert bentry "sbt console" t)))
   (flex-compiler-evaluate-form this))
 
 (cl-defmethod flex-compiler-eval-config ((this scala-flex-compiler) file)
   (let ((ensime-inf-buffer-name (flex-compiler-scala-repl-buffer-name this)))
-   (let ((mode (slot-value this 'sbt-eval-mode)))
-     (cl-case mode
-       (eval (flex-compiler-evaluate-form this))
-       (eval-spark (flex-compiler-eval-spark this))
-       (run (flex-compiler-sbt-command this (concat "run " file)))
-       (compile (flex-compiler-sbt-command this "compile"))
-       (test (flex-compiler-sbt-command this "test"))))))
+    (let ((mode (slot-value this 'sbt-eval-mode)))
+      (cl-case mode
+	(eval (flex-compiler-evaluate-form this))
+	(eval-spark (flex-compiler-eval-spark this))
+	(run (flex-compiler-sbt-command this (concat "run " file)))
+	(compile (flex-compiler-sbt-command this "compile"))
+	(test (flex-compiler-sbt-command this "test"))))))
 
 (cl-defmethod flex-compiler-query-eval ((this scala-flex-compiler)
-				     config-option)
+					config-option)
   (with-slots (sbt-eval-mode) this
     (setq sbt-eval-mode
 	  (choice-program-complete
@@ -194,9 +185,9 @@
 (cl-defmethod flex-compiler-repl-start ((this scala-flex-compiler))
   (flex-compiler-sbt-command this "run")
   (when nil
-   (with-current-buffer (flex-compiler-config-buffer this)
-     (ensime-inf-switch))
-   (flex-compiler-rename-repl-buffer this)))
+    (with-current-buffer (flex-compiler-config-buffer this)
+      (ensime-inf-switch))
+    (flex-compiler-rename-repl-buffer this)))
 
 
 (flex-compile-manager-register the-flex-compile-manager (scala-flex-compiler))
