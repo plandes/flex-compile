@@ -38,6 +38,8 @@ The top level library `flex-compile` library provides a plugin architecture for
 - [Usage](#usage)
 - [Compilers](#compilers)
     - [Make](#make)
+    - [Command](#command)
+- [Changelog](#changelog)
 - [License](#license)
 
 <!-- markdown-toc end -->
@@ -130,6 +132,11 @@ target, `run` target, and `clean` target are invoked respectfully with
 This "compiler" is more of a convenience to invoke an Emacs Lisp function or
 form.  This is handy for functions that you end up invoking over and over with
 `M-x` (i.e. `cider-test-run-ns-tests`).
+
+
+## Changelog
+
+An extensive changelog is available [here](CHANGELOG.md).
 
 
 ## License
