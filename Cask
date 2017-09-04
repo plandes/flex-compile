@@ -2,8 +2,9 @@
 (source gnu)
 (source melpa)
 
-(depends-on "choice-program" "0.1")
-(depends-on "dash" "20170727.212")
+(depends-on "choice-program" "0.2")
+(depends-on "buffer-manage" "0.45")
+(depends-on "dash" "2.13.0")
 (depends-on "cider" "0.14.0")
 
 (package-file "flex-compile.el")
