@@ -55,30 +55,17 @@ keybindings and finger muscle memory to invoke them.
 ## Configuration
 
 Add the following to your `~/.emacs` file:
-```lisp
+```emacs-lisp
 (require 'flex-compile)
 ```
-This loads the file and creates global key bindings.
+This loads the library and creates global key bindings.
 
-For each specific *flexible* compilation method you want:
-```lisp
-(eval-after-load
-    "flex-compile"
-  '(progn
-     (require 'flex-compile-make)
-     (require 'flex-compile-script)
-     (require 'flex-compile-clojure)
-     (require 'flex-compile-scala)
-     (require 'flex-compile-command)
-     (require 'flex-compile-python)
-     (require 'flex-compile-ess)))
-```
 
 ### Key Bindings
 
 I use the following key bindings since they clobber Emacs functions I don't
 use:
-```lisp
+```emacs-lisp
 ;; switch compiler; clobbers `mark-page'
 (global-set-key "\C-x\C-p" 'flex-compiler-activate)
 (global-set-key "\C-x\C-u" 'flex-compile-compile)
@@ -103,7 +90,7 @@ bindings):
   languages like Clojure and ESS it evaluates a `.clj` or `.r` file.
 * **Run** (`C-x C-i` or `M-x flex-compile-run-or-set-config`): This starts
   invokes a `run` target for make, starts the REPL for REPL type languages.
-* **Evaluate** (`C-x C=o` or `M-x flex-compile-eval`): This invokes the
+* **Evaluate** (`C-x C-o` or `M-x flex-compile-eval`): This invokes the
   compiler's evaluation functionality.  For REPL based languages, this
   evaluates the current form and stores the result in the kill buffer.
 * **Clean** (`C-x C-y` or `M-x flex-compile-clean`): This invokes the `clean`
