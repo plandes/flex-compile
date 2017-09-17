@@ -11,38 +11,45 @@ Clojure you can evaluate a specific file and/or evaluate a specfic expression
 via a REPL.  For running a script or starting a `make` an async process is
 started.
 
-The general idea is the keybindings to compile you get use to are "switched" to
-whatever specific problem you're working on.  For example, if you're compiling
-with a makefile, use the *make* compiler to initiate an make process.  If
-you're working with a REPL based langauage (i.e. [flex-compile-clojure],
-[flex-compile-scala] etc) instead a buffer or expression is evaluated.
-
-The top level library `flex-compile` library provides a plugin architecture for
-[add-on libraries], which include:
-* [flex-compile-make]
-* [flex-compile-command]
-* flex-compile-beanshell
-* flex-compile-script
-* flex-compile-maven
-* flex-compile-clojure
-* flex-compile-scala
-* flex-compile-python
-* flex-compile-ess
-
 
 <!-- markdown-toc start - Don't edit this section. Run M-x markdown-toc-refresh-toc -->
 ## Table of Contents
 
+- [Introduction](#introduction)
+    - [Motivation](#motivation)
 - [Configuration](#configuration)
     - [Key Bindings](#key-bindings)
 - [Usage](#usage)
 - [Compilers](#compilers)
     - [Make](#make)
     - [Command](#command)
+    - [Beanshell](#beanshell)
+    - [Script](#script)
+    - [Clojure](#clojure)
+    - [Scala](#scala)
+    - [Python](#python)
+    - [Ess](#ess)
 - [Changelog](#changelog)
 - [License](#license)
 
 <!-- markdown-toc end -->
+
+## Introduction
+
+The general idea is the keybindings to compile you get use to are "switched" to
+whatever specific problem you're working on.  For example, if you're compiling
+with a makefile, use the *make* compiler to initiate an make process.  If
+you're working with a REPL based langauage (i.e. [flex-compile-clojure],
+[flex-compile-scala] etc) instead a buffer or expression is evaluated.
+
+
+### Motivation
+
+Many of the "compilers" (i.e. the [flex-compile-command] and
+[flex-compile-script]) don't do much more than invoke a function or execute a
+script.  However, when jumping between several development tasks the strength
+of the library comes from easily switching between compilers using the same
+keybindings and finger muscle memory to invoke them.
 
 
 ## Configuration
@@ -116,6 +123,17 @@ aforementioned `flex-compile-run-or-set-config`.
 
 ## Compilers
 
+The top level library `flex-compile` library provides a plugin architecture for
+add-on libraries, which include:
+* [flex-compile-make]
+* [flex-compile-command]
+* [flex-compile-beanshell]
+* [flex-compile-script]
+* [flex-compile-clojure]
+* [flex-compile-scala]
+* [flex-compile-python]
+* [flex-compile-ess]
+
 You can write your own compilers as add-on plugins.  However, there are many
 that come with this package.
 
@@ -131,7 +149,40 @@ target, `run` target, and `clean` target are invoked respectfully with
 
 This "compiler" is more of a convenience to invoke an Emacs Lisp function or
 form.  This is handy for functions that you end up invoking over and over with
-`M-x` (i.e. `cider-test-run-ns-tests`).
+`M-x` (i.e. `cider-test-run-ns-tests`).  See [motivation](#motivation).
+
+### Beanshell
+
+Compiler and environment for evaluting and running [Beanshell].
+
+
+### Script
+
+This compiler runs a script with optional arguments in an async buffer.
+See [motivation](#motivation).
+
+
+### Clojure
+
+This is a REPL based compiler that allows for evaluation Clojure buffers,
+expressions and starting the REPL using [Cider].
+
+
+### Scala
+
+This is a REPL based compiler that allows for evaluation Scala buffers,
+expressions the Scala REPL and compilation with [sbt].
+
+
+### Python
+
+This is a compiler that allows for evaluation Python buffers and expressions
+using [python mode].
+
+
+### Ess
+
+This is a compiler to evaluate R code with [Emacs Speaks Statistics].
 
 
 ## Changelog
@@ -149,7 +200,19 @@ GNU Lesser General Public License, Version 2.0
 <!-- links -->
 [flex-compile-make]: #make
 [flex-compile-command]: #command
-[add-on libraries]: #compilers
+[flex-compile-beanshell]: #beanshell
+[flex-compile-script]: #script
+[flex-compile-maven]: #maven
+[flex-compile-clojure]: #clojure
+[flex-compile-scala]: #scala
+[flex-compile-python]: #python
+[flex-compile-ess]: #ess
+
+[Beanshell]: http://www.beanshell.org
+[Cider]: https://github.com/clojure-emacs/cider
+[sbt]: http://www.scala-sbt.org
+[python mode]: https://github.com/fgallina/python.el
+[Emacs Speaks Statistics]: https://ess.r-project.org
 
 [melpa-link]: https://melpa.org/#/flex-compile
 [melpa-stable-link]: https://stable.melpa.org/#/flex-compile
