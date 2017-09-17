@@ -1,5 +1,9 @@
 language: generic
 
+branches:
+  only:
+    - master
+
 before_install:
   - sudo apt-get -yq update
   - sudo apt-get -yq install git texinfo
