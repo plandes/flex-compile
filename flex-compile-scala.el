@@ -103,9 +103,6 @@
     (display-buffer (flex-compiler-scala-repl-buffer this))))
 
 (cl-defmethod flex-compiler-eval-initial-at-point ((this scala-flex-compiler))
-  (error "Not implemented"))
-
-(cl-defmethod flex-compiler-query-read-form ((this scala-flex-compiler))
   (flex-compiler-scala-trim (thing-at-point 'paragraph)))
 
 (cl-defmethod flex-compiler-evaluate-form ((this scala-flex-compiler)

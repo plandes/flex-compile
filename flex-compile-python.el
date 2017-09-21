@@ -61,7 +61,22 @@
       (python-shell-send-buffer))))
 
 (cl-defmethod flex-compiler-eval-initial-at-point ((this python-flex-compiler))
-  (thing-at-point 'symbol))
+  (let ((forward-fn #'python-nav-forward-statement)
+	(backward-fn #'python-nav-backward-statement))
+    (save-excursion
+      (->> (buffer-substring
+	    (progn
+	      (end-of-line 1)
+	      (while (and (or (funcall backward-fn)
+			      (beginning-of-line 1))
+			  (> (current-indentation) 0)))
+	      (forward-line 1)
+	      (point-marker))
+	    (progn
+	      (or (funcall forward-fn)
+		  (end-of-line 1))
+	      (point-marker)))
+	   string-trim))))
 
 (cl-defmethod flex-compiler-repl-start ((this python-flex-compiler))
   (run-python (python-shell-parse-command)))

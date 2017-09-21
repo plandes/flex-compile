@@ -426,10 +426,13 @@ Whether or not to show the buffer after the file is evlauated or not.")))
 (cl-defmethod flex-compiler-eval-initial-at-point ((this evaluate-flex-compiler))
   nil)
 
-(cl-defmethod flex-compiler-query-read-form ((this evaluate-flex-compiler))
+(cl-defmethod flex-compiler-query-read-form ((this evaluate-flex-compiler)
+					     no-input-p)
   "Read a form, meaningful for the compiler, from the user."
   (let ((init (flex-compiler-eval-initial-at-point this)))
-    (read-string "Form: " init 'flex-compiler-query-eval-form)))
+    (if no-input-p
+	init
+      (read-string "Form: " init 'flex-compiler-query-eval-form))))
 
 (cl-defmethod flex-compiler-query-eval ((this evaluate-flex-compiler)
 					config-options)
@@ -681,24 +684,26 @@ ACTION is the interactive argument given by the read function."
 		      (flex-compile-manager-set-config this file)))
 	(t (error "Unknown action: %S" action))))))
 
-(defun flex-compile-read-form ()
+(defun flex-compile-read-form (no-input-p)
   "Read the compilation query form from the user.
+
+If NO-INPUT-P is t, use the default witout getting it from the user.
 
 This invokes the `flex-compiler-query-read-form method' on the
 currently activated compiler."
   (let* ((mgr the-flex-compile-manager)
 	 (this (flex-compile-manager-active mgr)))
     (flex-compile-manager-assert-ready mgr)
-    (flex-compiler-query-read-form this)))
+    (flex-compiler-query-read-form this no-input-p)))
 
 ;;;###autoload
 (defun flex-compile-eval (&optional form)
   "Evaluate the current form for the \(usually REPL based compiler).
-FORM is the form to evaluate \(if implemented)."
-  (interactive (list (flex-compile-read-form)))
+FORM is the form to evaluate \(if implemented).  If called with
+\\[universal-argument] then prompt the user with the from to evaluation."
+  (interactive (list (flex-compile-read-form (not current-prefix-arg))))
   (let* ((mgr the-flex-compile-manager)
-	 (this (flex-compile-manager-active mgr))
-	 (form (or form (flex-compile-read-form))))
+	 (this (flex-compile-manager-active mgr)))
     (flex-compile-manager-assert-ready mgr)
     (let ((res (flex-compiler-evaluate-form this form)))
       (when (and res (called-interactively-p 'interactive))

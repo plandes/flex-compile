@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased]
+### Changed
+- Optionally prompt for evaluate form using `flex-compile-eval`.  Before this
+  function would obligate the user to provide a confirmed for to execute.
 
 ## [0.1] - 2017-09-17
 First major release.
