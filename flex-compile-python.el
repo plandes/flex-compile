@@ -55,6 +55,20 @@
 (cl-defmethod flex-compiler-eval-form-impl ((this python-flex-compiler) form)
   (python-shell-send-string form))
 
+(cl-defmethod flex-compiler-compile ((this python-flex-compiler))
+  "Start the REPL (if not already started) and invoke the compile callback.
+
+This Python compiler runs the native setup before first executing the compile
+phase."
+  (if (flex-compiler-repl-running-p this)
+      (cl-call-next-method this)
+    (let ((do-native-p python-shell-completion-native-enable)
+	  (python-shell-completion-native-enable nil))
+      (flex-compiler-run this)
+      (if do-native-p
+	(python-shell-completion-native-setup))
+      (cl-call-next-method this))))
+
 (cl-defmethod flex-compiler-eval-config ((this python-flex-compiler) file)
   (let ((buf (find-file-noselect file)))
     (with-current-buffer buf
@@ -79,7 +93,7 @@
 	   string-trim))))
 
 (cl-defmethod flex-compiler-repl-start ((this python-flex-compiler))
-  (run-python (python-shell-parse-command)))
+  (run-python (python-shell-calculate-command)))
 
 (flex-compile-manager-register the-flex-compile-manager (python-flex-compiler))
 
