@@ -349,7 +349,7 @@ The caller raises and error if it doesn't start in time."
 	  (flex-compiler-send-input this command)))))
 
 (cl-defmethod flex-compiler-compile ((this repl-flex-compiler))
-  "Start the REPL (if not alrady started) and invoke the compile callback."
+  "Start the REPL (if not already started) and invoke the compile callback."
   (let ((file (flex-compiler-config this))
 	(runningp (flex-compiler-repl-running-p this)))
     (unless runningp
