@@ -750,8 +750,9 @@ This is used in the compiler module libraries to silence the compiler in
 			    (error "Bad declare order")))))
 	     (quote ,fns))))
 
-(defmacro flex-compile-declare-variables (&rest fns)
-  "Declare functions in list FNS for the purposes of silencing the compiler.
+;;;###autoload
+(defmacro flex-compile-declare-variables (&rest vars)
+  "Declare variables in list VARS for the purposes of silencing the compiler.
 
 This is used in the compiler module libraries to silence the compiler in
 `eval-when-compile' scopes."
@@ -759,7 +760,7 @@ This is used in the compiler module libraries to silence the compiler in
      (mapcar #'(lambda (sym)
 		 (unless (fboundp sym)
 		   (eval `(defvar ,sym nil))))
-	     (quote ,fns))))
+	     (quote ,vars))))
 
 (provide 'flex-compile-manage)
 
