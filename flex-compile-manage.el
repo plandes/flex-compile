@@ -511,15 +511,32 @@ form from a minibuffer and from the REPL directly."
 (cl-defmethod initialize-instance ((this flex-compile-manager) &optional args)
   (with-slots (entries) this
     (setq entries (list (no-op-flex-compiler nil))))
-					;list-header-fields '("C" "Name" "TMP?")
   (cl-call-next-method this args))
 
 (cl-defmethod config-persistable-load ((this flex-compile-manager))
-  (cl-call-next-method this)
   (with-slots (entries) this
-    (dolist (compiler entries)
-      (if (flex-compile-manager-settable this compiler)
-	  (oset compiler :manager this)))))
+    (let ((old-entries entries)
+	  (old-emap (mapcar '(lambda (entry)
+			       (cons (config-entry-name entry) entry))
+			    entries))
+	  new-entries)
+      (cl-call-next-method this)
+      (let ((new-emap (mapcar '(lambda (entry)
+				 (cons (config-entry-name entry) entry))
+			      entries)))
+	(setq entries
+	      (remove nil
+		      (mapcar '(lambda (entry)
+				 (let* ((name (config-entry-name entry))
+					(new-entry (cdr (assoc name new-emap))))
+				   (if new-entry
+				       (if (assoc name old-emap)
+					   new-entry)
+				     entry)))
+			      old-entries))))
+      (dolist (compiler entries)
+	(if (flex-compile-manager-settable this compiler)
+	    (oset compiler :manager this))))))
 
 (cl-defmethod config-manager-entry-default-name ((this flex-compile-manager))
   "flexible-compiler")

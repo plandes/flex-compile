@@ -47,6 +47,7 @@
 (require 'flex-compile-python)
 (require 'flex-compile-scala)
 (require 'flex-compile-xml-validate)
+(require 'flex-compile-choice-prog)
 
 ;;;###autoload
 (defun flex-compile-init ()
