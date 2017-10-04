@@ -29,6 +29,8 @@ started.
     - [Scala](#scala)
     - [Python](#python)
     - [Ess](#ess)
+    - [XML Validation](#xml-validation)
+    - [Choice Program](#choice-program)
 - [Changelog](#changelog)
 - [License](#license)
 
@@ -120,6 +122,8 @@ add-on libraries, which include:
 * [flex-compile-scala]
 * [flex-compile-python]
 * [flex-compile-ess]
+* [flex-compile-xml-validate]
+* [flex-compile-choice-program]
 
 You can write your own compilers as add-on plugins.  However, there are many
 that come with this package.
@@ -172,6 +176,18 @@ using [python mode].
 This is a compiler to evaluate R code with [Emacs Speaks Statistics].
 
 
+### XML Validation
+
+Implementation compiler for XML validation using command line [xmllint] command
+line tool.
+
+
+### Choice Program
+
+Prompt and more easily invoke choice/action based programs using the
+[Choice Program] Emacs library.
+
+
 ## Changelog
 
 An extensive changelog is available [here](CHANGELOG.md).
@@ -194,12 +210,16 @@ GNU Lesser General Public License, Version 2.0
 [flex-compile-scala]: #scala
 [flex-compile-python]: #python
 [flex-compile-ess]: #ess
+[flex-compile-xml-validate]: #xml-validation
+[flex-compile-choice-program]: #choice-program
 
 [Beanshell]: http://www.beanshell.org
 [Cider]: https://github.com/clojure-emacs/cider
 [sbt]: http://www.scala-sbt.org
 [python mode]: https://github.com/fgallina/python.el
 [Emacs Speaks Statistics]: https://ess.r-project.org
+[Choice Program]: https://github.com/plandes/choice-program
+[xmllint]: http://xmlsoft.org/xmllint.html
 
 [melpa-link]: https://melpa.org/#/flex-compile
 [melpa-stable-link]: https://stable.melpa.org/#/flex-compile

@@ -25,7 +25,7 @@
 
 ;;; Commentary:
 
-;; Implementation compiler for XML validation using command line `xmllint'
+;; Implementation compiler for XML validation using command line `xmllint'.
 
 ;;; Code:
 

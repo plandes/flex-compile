@@ -25,7 +25,8 @@
 
 ;;; Commentary:
 
-;; Implementation compiler for make(files)
+;; Implementation compiler for choice based programs.  See:
+;; https://github.com/plandes/choice-program
 
 ;;; Code:
 
