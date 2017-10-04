@@ -31,7 +31,7 @@
 
 (require 'flex-compile-manage)
 
-(flex-compile-declare
+(flex-compile-declare-functions
  cider-repl-return cider-connect
  nrepl-dict-get nrepl-sync-request:eval
  cider-current-connection cider-current-session cider-current-ns

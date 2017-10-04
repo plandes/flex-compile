@@ -516,23 +516,23 @@ form from a minibuffer and from the REPL directly."
 (cl-defmethod config-persistable-load ((this flex-compile-manager))
   (with-slots (entries) this
     (let ((old-entries entries)
-	  (old-emap (mapcar '(lambda (entry)
-			       (cons (config-entry-name entry) entry))
+	  (old-emap (mapcar #'(lambda (entry)
+				(cons (config-entry-name entry) entry))
 			    entries))
 	  new-entries)
       (cl-call-next-method this)
-      (let ((new-emap (mapcar '(lambda (entry)
-				 (cons (config-entry-name entry) entry))
+      (let ((new-emap (mapcar #'(lambda (entry)
+				  (cons (config-entry-name entry) entry))
 			      entries)))
 	(setq entries
 	      (remove nil
-		      (mapcar '(lambda (entry)
-				 (let* ((name (config-entry-name entry))
-					(new-entry (cdr (assoc name new-emap))))
-				   (if new-entry
-				       (if (assoc name old-emap)
-					   new-entry)
-				     entry)))
+		      (mapcar #'(lambda (entry)
+				  (let* ((name (config-entry-name entry))
+					 (new-entry (cdr (assoc name new-emap))))
+				    (if new-entry
+					(if (assoc name old-emap)
+					    new-entry)
+				      entry)))
 			      old-entries))))
       (dolist (compiler entries)
 	(if (flex-compile-manager-settable this compiler)
@@ -738,7 +738,7 @@ FORM is the form to evaluate \(if implemented).  If called with
     (flex-compiler-clean active)))
 
 ;;;###autoload
-(defmacro flex-compile-declare (&rest fns)
+(defmacro flex-compile-declare-functions (&rest fns)
   "Declare functions in list FNS for the purposes of silencing the compiler.
 
 This is used in the compiler module libraries to silence the compiler in
@@ -748,6 +748,17 @@ This is used in the compiler module libraries to silence the compiler in
 		 (unless (fboundp sym)
 		   (eval `(defun ,sym (&rest x)
 			    (error "Bad declare order")))))
+	     (quote ,fns))))
+
+(defmacro flex-compile-declare-variables (&rest fns)
+  "Declare functions in list FNS for the purposes of silencing the compiler.
+
+This is used in the compiler module libraries to silence the compiler in
+`eval-when-compile' scopes."
+  `(eval-when-compile
+     (mapcar #'(lambda (sym)
+		 (unless (fboundp sym)
+		   (eval `(defvar ,sym nil))))
 	     (quote ,fns))))
 
 (provide 'flex-compile-manage)

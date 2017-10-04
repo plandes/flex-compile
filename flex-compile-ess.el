@@ -31,7 +31,7 @@
 
 (require 'flex-compile-manage)
 
-(flex-compile-declare
+(flex-compile-declare-functions
  ess-eval-region R)
 
 (defclass ess-flex-compiler (config-flex-compiler repl-flex-compiler)

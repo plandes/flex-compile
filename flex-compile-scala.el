@@ -35,15 +35,15 @@
 (require 'flex-compile-manage)
 
 ;; silence the compiler
-(eval-when-compile
-  (defvar bshell-manager-singleton)
-  (defvar ensime-inf-buffer-name))
-(flex-compile-declare
+(flex-compile-declare-functions
  buffer-manager-new-entry
  buffer-entry-buffer buffer-entry-insert
  ensime-config-find sbt-command ensime-inf-eval-buffer
  ensime-inf-send-string buffer-manager-entry sbt:find-root
  ensime-shutdown ensime-inf-quit-interpreter)
+(flex-compile-declare-variables
+ bshell-manager-singleton
+ ensime-inf-buffer-name)
 
 (defvar compiler-flex-scala-query-eval-mode-history nil
   "History for interactive read for Scala/SBT/REPL evaluations.")

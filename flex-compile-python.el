@@ -29,13 +29,20 @@
 
 ;;; Code:
 
+(require 'subr-x)
 (require 'flex-compile-manage)
 
-(flex-compile-declare
- python-shell-send-string
- python-shell-send-buffer
+(flex-compile-declare-functions
+ python-nav-backward-statement
+ python-nav-forward-statement
+ python-shell-calculate-command
+ python-shell-completion-native-setup
  python-shell-parse-command
+ python-shell-send-buffer
+ python-shell-send-string
  run-python)
+(flex-compile-declare-variables
+ python-shell-completion-native-enable)
 
 (defclass python-flex-compiler (evaluate-flex-compiler) ())
 
