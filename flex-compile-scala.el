@@ -42,7 +42,6 @@
  ensime-inf-send-string buffer-manager-entry sbt:find-root
  ensime-shutdown ensime-inf-quit-interpreter)
 (flex-compile-declare-variables
- bshell-manager-singleton
  ensime-inf-buffer-name)
 
 (defvar compiler-flex-scala-query-eval-mode-history nil
@@ -86,9 +85,7 @@
 (cl-defmethod flex-compiler-send-input ((this scala-flex-compiler)
 					&optional command)
   (goto-char (point-max))
-  (insert command)
-					;(sbt-clear)
-  )
+  (insert command))
 
 (cl-defmethod flex-compiler-eval-form-impl ((this scala-flex-compiler) form)
   (error "Not implemented"))
@@ -118,17 +115,20 @@
     nil))
 
 (cl-defmethod flex-compiler-eval-spark ((this scala-flex-compiler))
-  (require 'bshell)
-  (let* ((mng bshell-manager-singleton)
-	 (bname "spark-shell")
-	 (bentry (buffer-manager-entry mng bname))
+  (condition-case nil
+      (require 'bshell)
+    (error nil))
+  (let* ((bname "spark-shell")
+	 (mng (if (boundp 'bshell-manager-singleton)
+		  (symbol-value 'bshell-manager-singleton)))
+	 (bentry (if mng
+		     (buffer-manager-entry mng bname)))
 	 (newp (not bentry))
 	 (bentry (or bentry
 		     (with-current-buffer (flex-compiler-config-buffer this)
 		       (let ((start-dir (sbt:find-root)))
 			 (buffer-manager-new-entry mng bname start-dir)))))
 	 (buf (buffer-entry-buffer bentry)))
-					;(display-buffer buf)
     (and newp (buffer-entry-insert bentry "sbt console" t)))
   (flex-compiler-evaluate-form this))
 
@@ -185,7 +185,6 @@
     (with-current-buffer (flex-compiler-config-buffer this)
       (ensime-inf-switch))
     (flex-compiler-rename-repl-buffer this)))
-
 
 (flex-compile-manager-register the-flex-compile-manager (scala-flex-compiler))
 
