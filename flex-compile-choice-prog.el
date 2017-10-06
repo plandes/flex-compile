@@ -93,13 +93,6 @@
 (flex-compile-manager-register the-flex-compile-manager
 			       (choice-prog-flex-compiler))
 
-;; (defun a ()
-;;   (interactive)
-;;   (flex-compile-manager-register the-flex-compile-manager
-;; 				 (choice-prog-flex-compiler))
-;;   (flex-compiler-config-load))
-
-
 (provide 'flex-compile-choice-prog)
 
 ;;; flex-compile-choice-prog.el ends here
