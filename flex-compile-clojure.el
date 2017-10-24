@@ -30,6 +30,7 @@
 ;;; Code:
 
 (require 'flex-compile-manage)
+(require 'dash)
 
 (flex-compile-declare-functions
  cider-repl-return cider-connect
@@ -100,6 +101,10 @@ The conection mode, which is either:
 (cl-defmethod flex-compiler-kill-repl ((this clojure-flex-compiler))
   (cider-quit t)
   (sit-for 1)
+  (->> (process-list)
+       (-filter #'(lambda (elt)
+		    (string-match "^nrepl-server" (process-name elt))))
+       (-map #'kill-process))
   (cl-call-next-method this))
 
 (cl-defmethod flex-compiler-query-eval ((this clojure-flex-compiler)
