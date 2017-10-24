@@ -744,8 +744,13 @@ FORM is the form to evaluate \(if implemented).  If called with
   (interactive)
   (let* ((this the-flex-compile-manager)
 	 (active (flex-compile-manager-active this)))
-    (flex-compile-manager-assert-ready this)
-    (flex-compiler-clean active)))
+    (condition-case nil
+	(progn
+	  (flex-compile-manager-assert-ready this)
+	  (flex-compiler-clean active))
+      (cl-no-applicable-method
+       (message "Compiler %s has no ability to clean"
+		(config-entry-name active))))))
 
 ;;;###autoload
 (defmacro flex-compile-declare-functions (&rest fns)
