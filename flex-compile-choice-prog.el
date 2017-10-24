@@ -74,9 +74,12 @@
 	  (setq program (flex-compiler-choice-prog-read-program this)))
       (if (not (equal program old-program))
 	  (setq compile-options nil))
-      (->> (flex-compiler-choice-prog-map this)
-	   (assoc program)
-	   cdr))))
+      (let ((ret (->> (flex-compiler-choice-prog-map this)
+		      (assoc program)
+		      cdr)))
+	(unless ret
+	  (error "No such program: `%S'" program))
+	ret))))
 
 (cl-defmethod flex-compiler-compile ((this choice-prog-flex-compiler))
   (unless (slot-value this 'compile-options)
