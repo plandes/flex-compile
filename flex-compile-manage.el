@@ -63,9 +63,13 @@
   :abstract true
   :documentation "Base class for compilation executors (do the work).")
 
+(define-error 'flex-compiler-un-implemented
+  "Un-implemented method flex-compiler method"
+  'cl-no-applicable-method)
+
 (cl-defmethod flex-compiler--unimplemented ((this flex-compiler) method)
-  (error "Un-implemented method: `flex-compiler-%s' for class `%S'"
-	 method (eieio-object-class this)))
+  (signal 'flex-compiler-un-implemented
+	  (list method this)))
 
 (cl-defmethod flex-compiler-load-libraries ((this flex-compiler))
   "Call back for to load and require libraries needed by the compiler.")
@@ -693,19 +697,25 @@ ACTION is the interactive argument given by the read function."
     (let* ((this the-flex-compile-manager)
 	   (active (flex-compile-manager-active this)))
       (flex-compile-manager-assert-ready this)
-      (cl-case action
-	(run (flex-compiler-run active))
-	(find (assert-settable this active)
-	      (pop-to-buffer (flex-compiler-config-buffer active)))
-	(set-config (let ((file (flex-compiler-read-config active)))
-		      (flex-compile-manager-set-config this file)))
-	(t (error "Unknown action: %S" action))))))
+      (condition-case err
+	  (cl-case action
+	    (run (flex-compiler-run active))
+	    (find (assert-settable this active)
+		  (pop-to-buffer (flex-compiler-config-buffer active)))
+	    (set-config (let ((file (flex-compiler-read-config active)))
+			  (flex-compile-manager-set-config this file)))
+	    (t (error "Unknown action: %S" action)))
+	(cl-no-applicable-method
+	 (message "Unsupported action `%S' on compiler %s: no method %S"
+		  action
+		  (config-entry-name active)
+		  (cl-second err)))))))
 
 (defun flex-compile-read-form (no-input-p)
   "Read the compilation query form from the user.
 
 If NO-INPUT-P is t, use the default witout getting it from the user.
-
+1
 This invokes the `flex-compiler-query-read-form method' on the
 currently activated compiler."
   (let* ((mgr the-flex-compile-manager)
