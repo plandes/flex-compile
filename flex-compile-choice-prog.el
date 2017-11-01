@@ -61,7 +61,7 @@
 (cl-defmethod flex-compiler-choice-prog-read-program ((this choice-prog-flex-compiler))
   (let ((choices (->> (flex-compiler-choice-prog-map this)
 		      (-map #'car))))
-    (choice-program-complete "Program" choices t nil nil
+    (choice-program-complete "Program" choices t t nil
 			     'flex-compile-choice-prog-inst-history
 			     (cl-second flex-compile-choice-prog-inst-history)
 			     nil nil t)))
@@ -91,6 +91,15 @@
 (cl-defmethod flex-compiler-read-options ((this choice-prog-flex-compiler))
   (->> (flex-compiler-choice-prog-program this)
        choice-prog-read-option))
+
+(cl-defmethod flex-compiler-clean ((this choice-prog-flex-compiler))
+  (with-slots (program compile-options) this
+    (setq compile-options nil)
+    (if program
+	(progn
+	  (setq program nil)
+	  (message "Unsetting default program: %S" program))
+      (message "No default program set"))))
 
 ;; register the compiler
 (flex-compile-manager-register the-flex-compile-manager
