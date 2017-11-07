@@ -6,11 +6,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 
 ## [Unreleased]
+
+
+## [0.2] - 2017-11-07
+### Added
+- Added [Choice Program] compiler.
+
+### Changed
+- Fixed `buffer-manage` clobbering with compile warning issues.
+
+
 ### Added
 - Choice program compiler.
 - Fixed compiler configuration merge with new registered compilers bug.
 
-### Changte
+### Changed
 - More documentation.
 
 
@@ -22,5 +32,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [0.1] - 2017-09-17
 First major release.
 
-[Unreleased]: https://github.com/plandes/flex-compile/compare/v0.1...HEAD
+
+[Unreleased]: https://github.com/plandes/flex-compile/compare/v0.2...HEAD
+[0.2]: https://github.com/plandes/flex-compile/compare/v0.1...v0.2
 [0.1]: https://github.com/plandes/flex-compile/compare/772d70f...v0.1
+
+<!-- links -->
+[Choice Program]: https://github.com/plandes/choice-program

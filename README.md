@@ -59,14 +59,14 @@ keybindings and finger muscle memory to invoke them.
 Add the following to your `~/.emacs` file:
 ```emacs-lisp
 (require 'flex-compile)
+(flex-compile-init)
 ```
 This loads the library and creates global key bindings.
 
 
 ### Key Bindings
 
-I use the following key bindings since they clobber Emacs functions I don't
-use:
+The recommmended key bindings that you can add to your `~/.emacs` file are:
 ```emacs-lisp
 ;; switch compiler; clobbers `mark-page'
 (global-set-key "\C-x\C-p" 'flex-compiler-activate)

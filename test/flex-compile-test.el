@@ -1,7 +1,7 @@
 ;;; package --- Summary
 ;;; Commentary:
 ;;
-;; Unit tests of buffer-manager-test.el
+;; Unit tests of flex-compile.el
 ;;
 ;;; Code:
 
