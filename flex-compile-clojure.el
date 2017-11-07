@@ -111,18 +111,18 @@ The conection mode, which is either:
 					config-options)
   "If invoked with interactively with from `flex-compile-compile':
 
-   \\[digital-argument] \\[universal-argument] \\[flex-compile-compile]
+   \\[execute-extended-command] 1 \\[universal-argument] \\[flex-compile-compile]
 
 with `digital-argument' of `1' the compiler prompts to switch between local
 `cider-jack-in' mode or remote `cider-connect' mode."
-  (if (and (not (consp config-options))
-	   (= config-options 1))
+  (if (equal config-options 1)
       (with-slots (connect-mode) this
-	(->> (choice-program-complete "Connection mode" '(jack-in connect) nil t nil
-				      'flex-compiler-clojure-connect-history
-				      (or (cl-second flex-compiler-clojure-connect-history)
-					  'connect)
-				      nil t t)
+	(->> (choice-program-complete
+	      "Connection mode" '(jack-in connect) nil t nil
+	      'flex-compiler-clojure-connect-history
+	      (or (cl-second flex-compiler-clojure-connect-history)
+		  'connect)
+	      nil t t)
 	     (setq connect-mode))))
   (cl-call-next-method this (list config-options)))
 

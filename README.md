@@ -158,6 +158,15 @@ See [motivation](#motivation).
 This is a REPL based compiler that allows for evaluation Clojure buffers,
 expressions and starting the REPL using [Cider].
 
+The Clojure compiler connects using two [Cider] modes: the default `jack-in`
+mode or connecting to a host and port remotely with `cider-connect`.  You can
+switch betwee these two methods with the [given keybindings](#key-bindings):
+
+  `M-x 1 C-u C-x C-u`
+  
+See documetation with  `M-h f flex-compiler-query-eval` method for more
+inforamtion (and current binding).
+
 
 ### Scala
 
