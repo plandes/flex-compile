@@ -99,7 +99,9 @@ The conection mode, which is either:
   (cider-last-sexp))
 
 (cl-defmethod flex-compiler-kill-repl ((this clojure-flex-compiler))
-  (cider-quit t)
+  (condition-case err
+      (cider-quit t)
+    (error "Warning: %S" err))
   (sit-for 1)
   (->> (process-list)
        (-filter #'(lambda (elt)
