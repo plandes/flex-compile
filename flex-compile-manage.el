@@ -56,6 +56,12 @@
 		 (const :tag "Display buffer" display))
   :group 'flex-compile)
 
+(defvar flex-compiler-query-eval-mode nil
+  "History variable for `flex-compiler-query-eval'.")
+
+(defvar flex-compiler-query-eval-form nil
+  "History variable for `flex-compiler-query-read-form'.")
+
 
 
 (defclass flex-compiler (config-entry)
@@ -393,9 +399,7 @@ The caller raises and error if it doesn't start in time."
       (message "%s killed %d buffer(s)" (capitalize name) count))))
 
 
-(defvar flex-compiler-query-eval-mode nil)
-(defvar flex-compiler-query-eval-form nil)
-
+
 (defclass evaluate-flex-compiler (config-flex-compiler repl-flex-compiler)
   ((eval-mode :initarg :eval-mode
 	      :initform eval-config
