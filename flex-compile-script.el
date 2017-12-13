@@ -68,8 +68,9 @@ A function to call (if non-nill) if the compilation is successful.")))
 	       'flex-compile-script-args-history))
 
 (cl-defmethod flex-compiler-run-with-args ((this script-flex-compiler) args)
-  (let ((config-file (flex-compiler-config this))
-	reset-target)
+  (let* ((config-file (flex-compiler-config this))
+	 (default-directory (file-name-directory config-file))
+	 reset-target)
     (with-slots (buffer-name finish-success-function) this
       (let ((cmd (concat config-file " " (mapconcat #'identity args " "))))
 	(with-current-buffer
