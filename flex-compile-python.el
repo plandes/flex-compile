@@ -51,7 +51,7 @@
   (oset this :major-mode 'python-mode)
   (oset this :mode-desc "python file")
   (oset this :config-file-desc "python file")
-  (oset this :repl-buffer-regexp "^\\*Python")
+  (oset this :repl-buffer-regexp "^\\*Python\\*$")
   (oset this :repl-buffer-start-timeout 0)
   (oset this :show-repl-after-eval-p t)
   (cl-call-next-method this args))
