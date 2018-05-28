@@ -38,7 +38,7 @@
   "A function to call (if non-nill) if the compilation is successful.")
 
 ;;; script file compiler
-(defclass script-flex-compiler (run-args-flex-compiler)
+(defclass script-flex-compiler (directory-run-flex-compiler)
   ((buffer-name :initarg :buffer-name
 		:initform "*Script Compile*"
 		:type string)

@@ -126,7 +126,9 @@ with `digital-argument' of `1' the compiler prompts to switch between local
 		  'connect)
 	      nil t t)
 	     (setq connect-mode))))
-  (cl-call-next-method this (list config-options)))
+  ;; don't pass config-options since that would lead to prompt for the starting
+  ;; direction, which would lead to a incorrectly configured REPL
+  (cl-call-next-method this 2))
 
 (cl-defmethod flex-compiler-repl-start ((this clojure-flex-compiler))
   (with-slots (connect-mode repl-host repl-port) this

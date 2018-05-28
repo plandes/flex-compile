@@ -81,6 +81,13 @@
 (cl-defmethod flex-compiler-load-libraries ((this flex-compiler))
   "Call back for to load and require libraries needed by the compiler.")
 
+(cl-defmethod flex-compiler-reset-state ((this flex-compiler))
+  "Reset all persistable slots to initial state.
+This implementation sets all slots to nil."
+  (with-slots (pslots) this
+    (dolist (elt pslots)
+      (setf (slot-value this elt) nil))))
+
 (cl-defmethod flex-compiler-run ((this flex-compiler))
   "Invoke the run functionality of the compiler."
   (flex-compiler--unimplemented this "run"))
@@ -123,7 +130,7 @@ this when the compile starts"))
     (setq pslots (append pslots '(start-directory))))
   (cl-call-next-method this args))
 
-(cl-defmethod read-start-directory ((this directory-start-flex-compiler))
+(cl-defmethod flex-compiler-read-start-directory ((this directory-start-flex-compiler))
   "Read a directory from the user and set it to slot `start-directory'."
   (with-slots (start-directory) this
     (let* ((last start-directory)
@@ -177,15 +184,15 @@ configuration file.")
       (error "No manager set in compiler: %S" (object-print this)))
     (config-persistable-save manager)))
 
-(cl-defmethod flex-compiler-set-config ((this config-flex-compiler) &optional file)
+(cl-defmethod flex-compiler-set-config ((this config-flex-compiler)
+					&optional file)
   "Set the file for the configuration compiler."
   (unless file
     (let ((errmsg (flex-compiler-validate-buffer-file this)))
       (if errmsg (error errmsg))))
   (setq file (or file (buffer-file-name)))
+  (flex-compiler-reset-state this)
   (oset this :config-file file)
-  (if (object-of-class-p this 'directory-start-flex-compiler)
-      (oset this :start-directory nil))
   (flex-compiler-save-config this)
   (message "Set %s to `%s'" (oref this mode-desc) file))
 
@@ -234,6 +241,12 @@ A list of options used to configure the run of the compiler.")
 				:documentation "\
 If non-nil force the user to set this before the compilation run.")))
 
+(cl-defmethod initialize-instance ((this optionable-flex-compiler)
+				   &optional args)
+  (with-slots (pslots) this
+    (setq pslots (append pslots '(compile-options))))
+  (cl-call-next-method this args))
+
 (cl-defmethod flex-compiler-read-set-options ((this optionable-flex-compiler)
 					      config-options)
   "Set the `:compile-options' slot of the compiler.
@@ -243,7 +256,8 @@ with \\[universal-argument]."
   (let ((args (flex-compiler-read-options this)))
     (if (stringp args)
 	(setq args (split-string args)))
-    (oset this :compile-options args)))
+    (oset this :compile-options args)
+    (flex-compiler-save-config this)))
 
 (cl-defmethod flex-compiler-options ((this optionable-flex-compiler))
   "Validate and return the compiler options."
@@ -257,6 +271,7 @@ with \\[universal-argument]."
   (flex-compiler--unimplemented this "read-options"))
 
 
+
 (defclass run-args-flex-compiler (config-flex-compiler optionable-flex-compiler)
   ()
   :documentation "A configurable and optionable compiler.")
@@ -275,6 +290,21 @@ with \\[universal-argument]."
   "Configure compiler by prompting for user given arguments."
   (flex-compiler-set-config this)
   (flex-compiler--post-config this))
+
+
+(defclass directory-run-flex-compiler (run-args-flex-compiler
+				       directory-start-flex-compiler)
+  ()
+  :documentation "Run arguments compilation starting in directory.")
+
+(cl-defmethod flex-compiler-read-set-options ((this directory-run-flex-compiler)
+					      config-options)
+  "Set the `:compile-options' slot of the compiler.
+
+CONFIG-OPTIONS is the numeric argument (if any) passed in the iteractive mode
+with \\[universal-argument]."
+  (flex-compiler-read-start-directory this)
+  (cl-call-next-method this config-options))
 
 
 
@@ -480,23 +510,27 @@ Whether or not to show the buffer after the file is evlauated or not.")))
   "Prompt the user for the evaluation mode \(see the `:eval-mode' slot).
 
 CONFIG-OPTIONS is the numeric argument (if any) passed in the iteractive mode
-with \\[universal-argument]."
+with \\[universal-argument].
+
+For this implementation, if 1 is given, then prompt for a start directory.
+This directory is used to set the `default-directory', which is inherated in
+the compilation process \(if any)."
   (if (equal config-options 1)
-      (read-start-directory this)
-    (when (or (not config-options) (equal config-options '(4)))
-      (with-slots (eval-mode form) this
-	(setq eval-mode
-	      (choice-program-complete
-	       "Evaluation mode"
-	       '(eval-config buffer minibuffer
-			     copy eval-repl both-eval-repl both-eval-minibuffer)
-	       nil t nil 'flex-compiler-query-eval-mode
-	       (or (cl-first flex-compiler-query-eval-mode) 'minibuffer) nil nil t))
-	(when (memq eval-mode '(minibuffer copy eval-repl
-					   both-eval-repl both-eval-minibuffer))
-	  (let ((init (flex-compiler-eval-initial-at-point this)))
-	    (setq form
-		  (read-string "Form: " init 'flex-compiler-query-eval-form))))))))
+      (flex-compiler-read-start-directory this))
+  (when (or (not config-options) (equal config-options '(4)))
+    (with-slots (eval-mode form) this
+      (setq eval-mode
+	    (choice-program-complete
+	     "Evaluation mode"
+	     '(eval-config buffer minibuffer
+			   copy eval-repl both-eval-repl both-eval-minibuffer)
+	     nil t nil 'flex-compiler-query-eval-mode
+	     (or (cl-first flex-compiler-query-eval-mode) 'minibuffer) nil nil t))
+      (when (memq eval-mode '(minibuffer copy eval-repl
+					 both-eval-repl both-eval-minibuffer))
+	(let ((init (flex-compiler-eval-initial-at-point this)))
+	  (setq form
+		(read-string "Form: " init 'flex-compiler-query-eval-form)))))))
 
 (cl-defmethod flex-compiler-evaluate-form ((this evaluate-flex-compiler)
 					   &optional form)
@@ -647,6 +681,7 @@ If it isn't settable, warn the user with a message and do nothing."
   (config-persistable-load the-flex-compile-manager))
 
 
+
 (defvar the-flex-compile-manager
   (flex-compile-manager)
   "The singleton manager instance.")
