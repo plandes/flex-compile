@@ -36,6 +36,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'dash)
 (require 'comint)
 (require 'eieio)
 (require 'time-stamp)
@@ -106,6 +107,32 @@
 
 
 
+(defclass directory-start-flex-compiler (flex-compiler)
+  ((start-directory :initarg :start-directory
+		    :initform nil
+		    :type (or null string)
+		    :documentation "\
+The directory for starting the compilation.  The `default-directory' is set to
+this when the compile starts"))
+  :abstract true
+  :documentation "Compiles starting in a directory")
+
+(cl-defmethod initialize-instance ((this directory-start-flex-compiler)
+				   &optional args)
+  (with-slots (pslots) this
+    (setq pslots (append pslots '(start-directory))))
+  (cl-call-next-method this args))
+
+(cl-defmethod read-start-directory ((this directory-start-flex-compiler))
+  "Read a directory from the user and set it to slot `start-directory'."
+  (with-slots (start-directory) this
+    (let* ((last start-directory)
+	   (dir (read-directory-name "Start directory: " last nil t)))
+      (setq start-directory dir)))
+  (flex-compiler-save-config this))
+
+
+
 (defclass config-flex-compiler (flex-compiler)
   ((config-file :initarg :config-file
 		:initform nil
@@ -157,6 +184,8 @@ configuration file.")
       (if errmsg (error errmsg))))
   (setq file (or file (buffer-file-name)))
   (oset this :config-file file)
+  (if (object-of-class-p this 'directory-start-flex-compiler)
+      (oset this :start-directory nil))
   (flex-compiler-save-config this)
   (message "Set %s to `%s'" (oref this mode-desc) file))
 
@@ -249,7 +278,7 @@ with \\[universal-argument]."
 
 
 
-(defclass repl-flex-compiler (flex-compiler)
+(defclass repl-flex-compiler (directory-start-flex-compiler)
   ((repl-buffer-regexp :initarg :repl-buffer-regexp
 		       :type string
 		       :documentation "\
@@ -314,11 +343,12 @@ The caller raises and error if it doesn't start in time."
 	     (config-entry-name this))))
 
 (cl-defmethod flex-compiler-repl--run-start ((this repl-flex-compiler))
-  (with-slots (repl-buffer-start-timeout) this
+  (with-slots (repl-buffer-start-timeout start-directory) this
     (let ((timeout repl-buffer-start-timeout)
 	  buf)
       (unless (flex-compiler-repl-running-p this)
-	(flex-compiler-repl-start this)
+	(let ((default-directory (or start-directory default-directory)))
+	  (flex-compiler-repl-start this))
 	(when (> timeout 0)
 	  (setq buf (flex-compiler-wait-for-buffer this))
 	  (unless buf
@@ -400,6 +430,9 @@ The caller raises and error if it doesn't start in time."
 
 
 
+(defvar flex-compiler-query-eval-mode nil)
+(defvar flex-compiler-query-eval-form nil)
+
 (defclass evaluate-flex-compiler (config-flex-compiler repl-flex-compiler)
   ((eval-mode :initarg :eval-mode
 	      :initform eval-config
@@ -448,20 +481,22 @@ Whether or not to show the buffer after the file is evlauated or not.")))
 
 CONFIG-OPTIONS is the numeric argument (if any) passed in the iteractive mode
 with \\[universal-argument]."
-  (when (or (not config-options) (equal config-options '(4)))
-    (with-slots (eval-mode form) this
-      (setq eval-mode
-	    (choice-program-complete
-	     "Evaluation mode"
-	     '(eval-config buffer minibuffer
-			   copy eval-repl both-eval-repl both-eval-minibuffer)
-	     nil t nil 'flex-compiler-query-eval-mode
-	     (or (cl-first flex-compiler-query-eval-mode) 'minibuffer) nil nil t))
-      (when (memq eval-mode '(minibuffer copy eval-repl
-					 both-eval-repl both-eval-minibuffer))
-	(let ((init (flex-compiler-eval-initial-at-point this)))
-	  (setq form
-		(read-string "Form: " init 'flex-compiler-query-eval-form)))))))
+  (if (equal config-options 1)
+      (read-start-directory this)
+    (when (or (not config-options) (equal config-options '(4)))
+      (with-slots (eval-mode form) this
+	(setq eval-mode
+	      (choice-program-complete
+	       "Evaluation mode"
+	       '(eval-config buffer minibuffer
+			     copy eval-repl both-eval-repl both-eval-minibuffer)
+	       nil t nil 'flex-compiler-query-eval-mode
+	       (or (cl-first flex-compiler-query-eval-mode) 'minibuffer) nil nil t))
+	(when (memq eval-mode '(minibuffer copy eval-repl
+					   both-eval-repl both-eval-minibuffer))
+	  (let ((init (flex-compiler-eval-initial-at-point this)))
+	    (setq form
+		  (read-string "Form: " init 'flex-compiler-query-eval-form))))))))
 
 (cl-defmethod flex-compiler-evaluate-form ((this evaluate-flex-compiler)
 					   &optional form)
