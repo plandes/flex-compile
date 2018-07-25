@@ -57,6 +57,18 @@
 		 (const :tag "Display buffer" display))
   :group 'flex-compile)
 
+(defcustom flex-compile-save-window-configuration 'multi-frame
+  "This determines if each compile preserves the window configuration.
+This is done with `save-window-excursion' so only the current
+frame's configuration is saved, which is usually what you want in
+cases where the compilation buffer is displayed on a separate
+frame.  If `Multiple Frames' is used then turn this on only if there are
+currently more than one Emacs frames created."
+  :type '(choice (const :tag "Never" never)
+		 (const :tag "Always" always)
+		 (const :tag "Multiple Frames" multi-frame))
+  :group 'flex-compile)
+
 (defvar flex-compiler-query-eval-mode nil
   "History variable for `flex-compiler-query-eval'.")
 
@@ -666,6 +678,16 @@ If it isn't settable, warn the user with a message and do nothing."
   (let ((active (flex-compile-manager-active this)))
     (flex-compiler-load-libraries active)))
 
+
+
+;; functions
+(defun flex-compile-save-window-configuration-p ()
+  "Return non-nil if we save the window configuration on a compile.
+See `flex-compile-save-window-configuration-p'."
+  (or (and (eq flex-compile-save-window-configuration 'multi-frame)
+	   (> (length (frame-list)) 0))
+      (= flex-compile-save-window-configuration 'always)))
+
 (defun flex-compiler-by-name (name)
   "Convenience function to get a compiler by it's NAME."
   (config-manager-entry the-flex-compile-manager name))
@@ -750,7 +772,10 @@ to invoke this command with full configuration support."
 	    ((child-of-class-p (eieio-object-class active)
 			       'evaluate-flex-compiler)
 	     (flex-compiler-query-eval active config-options))))
-    (flex-compiler-compile active)))
+    (if (flex-compile-save-window-configuration-p)
+	(save-window-excursion
+	  (flex-compiler-compile active))
+      (flex-compiler-compile active))))
 
 ;;;###autoload
 (defun flex-compile-run-or-set-config (action)
@@ -821,7 +846,10 @@ FORM is the form to evaluate \(if implemented).  If called with
     (condition-case nil
 	(progn
 	  (flex-compile-manager-assert-ready this)
-	  (flex-compiler-clean active))
+	  (if (flex-compile-save-window-configuration-p)
+	      (save-window-excursion
+		(flex-compiler-clean active))
+	    (flex-compiler-clean active)))
       (cl-no-applicable-method
        (message "Compiler %s has no ability to clean"
 		(config-entry-name active))))))
