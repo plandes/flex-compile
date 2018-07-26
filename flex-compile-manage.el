@@ -683,10 +683,10 @@ If it isn't settable, warn the user with a message and do nothing."
 ;; functions
 (defun flex-compile-save-window-configuration-p ()
   "Return non-nil if we save the window configuration on a compile.
-See `flex-compile-save-window-configuration-p'."
+See `flex-compile-save-window-configuration'."
   (or (and (eq flex-compile-save-window-configuration 'multi-frame)
 	   (> (length (frame-list)) 0))
-      (= flex-compile-save-window-configuration 'always)))
+      (eq flex-compile-save-window-configuration 'always)))
 
 (defun flex-compiler-by-name (name)
   "Convenience function to get a compiler by it's NAME."
