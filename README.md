@@ -101,6 +101,11 @@ bindings):
   the `Makefile`, `.clj`, `.r`, `.sh` file etc. *compile*, run or interpret.
   Note that the prefix `C-u` isn't needed for some compilers like the `script`
   compiler.
+* **Set Starting Directory** (`C-u 1 C-x C-u`): This sets the starting
+  directory for most compilers that take arguments (one exception is
+  the [Make](#make) compiler).  This is useful for [Script](#script) and the
+  REPL compilers (i.e. [Python](#python)) where relative paths won't work if
+  the compilation isn't started in a project directory.
 * **Go to Config File** (`C-u C-x C-i` or `C-u M-x
   flex-compile-run-or-set-config`): This pops the *config* file/buffer to the
   current buffer.
@@ -176,13 +181,14 @@ expressions the Scala REPL and compilation with [sbt].
 
 ### Python
 
-This is a compiler that allows for evaluation Python buffers and expressions
-using [python mode].
+This is a REPL based compiler that allows for evaluation Python buffers and
+expressions using [python mode].
 
 
 ### Ess
 
-This is a compiler to evaluate R code with [Emacs Speaks Statistics].
+This is a REPL based compiler to evaluate R code with [Emacs Speaks
+Statistics].
 
 
 ### XML Validation
@@ -204,7 +210,7 @@ An extensive changelog is available [here](CHANGELOG.md).
 
 ## License
 
-Copyright © 2017 Paul Landes
+Copyright © 2017-2018 Paul Landes
 
 GNU Lesser General Public License, Version 2.0
 

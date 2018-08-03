@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Option to start REPLs and script/argument based compilers in a configured
+  directory.
+
+### Changed
+- Refactoring of persistent framework to be more inline with `config-manage`
+  dependency.
+
 
 ## [0.2] - 2017-11-07
 ### Added

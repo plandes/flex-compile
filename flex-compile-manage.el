@@ -36,7 +36,6 @@
 ;;; Code:
 
 (require 'cl-lib)
-(require 'dash)
 (require 'comint)
 (require 'eieio)
 (require 'time-stamp)
@@ -91,7 +90,9 @@ the first instance of a new session (i.e. REPL)."
 (defclass flex-compiler (config-entry)
   ()
   :abstract true
-  :documentation "Base class for compilation executors (do the work).")
+  :documentation "Base class for compilation executors (do the work).
+Instances of this class are also persistable and their state is stored in a
+configuration file.")
 
 (define-error 'flex-compiler-un-implemented
   "Un-implemented method flex-compiler method"
@@ -104,12 +105,17 @@ the first instance of a new session (i.e. REPL)."
 (cl-defmethod flex-compiler-load-libraries ((this flex-compiler))
   "Call back for to load and require libraries needed by the compiler.")
 
+(cl-defmethod flex-compiler-save-config ((this flex-compiler))
+  "Tell the compiler manager to persist the configuration of all compilers."
+  (with-slots (manager) this
+    (unless manager
+      (error "No manager set in compiler: %S" (object-print this)))
+    (config-persistable-save manager)))
+
 (cl-defmethod flex-compiler-reset-state ((this flex-compiler))
   "Reset all persistable slots to initial state.
 This implementation sets all slots to nil."
-  (with-slots (pslots) this
-    (dolist (elt pslots)
-      (setf (slot-value this elt) nil))))
+  (config-persistent-reset this))
 
 (cl-defmethod flex-compiler-run ((this flex-compiler))
   "Invoke the run functionality of the compiler."
@@ -187,9 +193,7 @@ Description of the configuration file and used in user input prompts.")
 The major mode to use to validate/select `config-file` buffers.")
    (mode-desc :initarg :mode-desc
 	      :type string))
-  :documentation "A configurable compiler with a configuration file.
-Instances of this class are also persistable and their state is stored in a
-configuration file.")
+  :documentation "A configurable compiler with a configuration file.")
 
 (cl-defmethod initialize-instance ((this config-flex-compiler) &optional args)
   (with-slots (pslots) this
@@ -206,13 +210,6 @@ configuration file.")
 (cl-defmethod flex-compiler--config-variable ((this config-flex-compiler))
   (intern (format "flex-compiler-config-file-%s"
 		  (config-entry-name this))))
-
-(cl-defmethod flex-compiler-save-config ((this config-flex-compiler))
-  "Tell the compiler manager to persist the configuration of all compilers."
-  (with-slots (manager) this
-    (unless manager
-      (error "No manager set in compiler: %S" (object-print this)))
-    (config-persistable-save manager)))
 
 (cl-defmethod flex-compiler-set-config ((this config-flex-compiler)
 					&optional file)
