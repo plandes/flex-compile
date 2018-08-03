@@ -49,12 +49,15 @@
   :group 'compilation
   :prefix '"flex-compile")
 
-(defcustom flex-compile-show-repl-mode 'display
+(defcustom flex-compile-show-repl-mode 'next-frame
   "How to show/switch to the REPL buffer.
-`Switch to buffer' means to first pop then switch to the buffer.
-`Display buffer' means to show the buffer in a different window."
-  :type '(choice (const :tag "Switch to buffer" switch)
-		 (const :tag "Display buffer" display))
+`Switch to Buffer' means to first pop then switch to the buffer.
+`Display Buffer' means to show the buffer in a different window.
+`Next Frame' means to use the next frame if there are multiple frames,
+otherwise use `Display Buffer'."
+  :type '(choice (const :tag "Switch to Buffer" switch)
+		 (const :tag "Display Buffer" display)
+		 (const :tag "Next Frame" next-frame))
   :group 'flex-compile)
 
 (defcustom flex-compile-save-window-configuration 'multi-frame
@@ -62,11 +65,19 @@
 This is done with `save-window-excursion' so only the current
 frame's configuration is saved, which is usually what you want in
 cases where the compilation buffer is displayed on a separate
-frame.  If `Multiple Frames' is used then turn this on only if there are
-currently more than one Emacs frames created."
+frame.
+If `Multiple Frames' is used then turn this on only if there are
+currently more than one Emacs frames created.
+If `Multiple Frames When New' then use when there are multiple frames except on
+the first instance of a new session (i.e. REPL)."
   :type '(choice (const :tag "Never" never)
 		 (const :tag "Always" always)
 		 (const :tag "Multiple Frames" multi-frame))
+  :group 'flex-compile)
+
+(defcustom show-repl-after-eval-p t
+  "Whether or not to show the buffer after the file is evlauated or not."
+  :type 'boolean
   :group 'flex-compile)
 
 (defvar flex-compiler-query-eval-mode nil
@@ -111,6 +122,13 @@ This implementation sets all slots to nil."
 (cl-defmethod flex-compiler-clean ((this flex-compiler))
   "Invoke the clean functionality of the compiler."
   (flex-compiler--unimplemented this "clean"))
+
+(cl-defmethod flex-compiler-save-window-configuration-p ((this flex-compiler))
+  "Return non-nil if we save the window configuration on a compile.
+See `flex-compile-save-window-configuration'."
+  (or (and (eq flex-compile-save-window-configuration 'multi-frame)
+	   (> (length (visible-frame-list)) 1))
+      (eq flex-compile-save-window-configuration 'always)))
 
 
 (defclass no-op-flex-compiler (flex-compiler)
@@ -409,7 +427,14 @@ The caller raises and error if it doesn't start in time."
     (when buf
       (setq fn (cl-case flex-compile-show-repl-mode
 		 (switch 'pop-to-buffer)
-		 (display 'display-buffer)))
+		 (display 'display-buffer)
+		 (next-frame
+		  '(lambda (buf)
+		     (if (> (length (visible-frame-list)) 1)
+			 (-> (window-list (next-frame))
+			     car
+			     (set-window-buffer buf))
+		       (display-buffer buf))))))
       (funcall fn buf)
       buf)))
 
@@ -440,7 +465,9 @@ The caller raises and error if it doesn't start in time."
 	(flex-compiler-repl-compile this)
       (if runningp
 	  (error "REPL hasn't started")
-	(message "REPL still starting, please wait")))))
+	(message "REPL still starting, please wait")))
+    `((newp . ,(not runningp))
+      (buffer . ,(flex-compiler-repl-buffer this)))))
 
 (cl-defmethod flex-compiler-clean ((this repl-flex-compiler))
   "`Clean' by killing the REPL."
@@ -493,12 +520,7 @@ One of:
 	 :type string
 	 :documentation "The form to send to the REPL to evaluate.")
    (last-eval :initarg :last-eval
-	      :documentation "The value of the last evaluation.")
-   (show-repl-after-eval-p :initarg :show-repl-after-eval-p
-			   :initform nil
-			   :type boolean
-			   :documentation "\
-Whether or not to show the buffer after the file is evlauated or not.")))
+	      :documentation "The value of the last evaluation.")))
 
 (cl-defmethod flex-compiler-eval-form-impl ((this evaluate-flex-compiler) form)
   (flex-compiler--unimplemented this "eval-form-impl"))
@@ -560,7 +582,8 @@ See the `:eval-form' slot."
 (cl-defmethod flex-compiler-repl--eval-config-and-show ((this evaluate-flex-compiler))
   (flex-compiler-repl--run-start this)
   (flex-compiler-eval-config this (flex-compiler-config this))
-  (when (slot-value this 'show-repl-after-eval-p)
+  (when (and show-repl-after-eval-p
+	     (not (flex-compiler-save-window-configuration-p this)))
     (flex-compiler-repl-display this)))
 
 (cl-defmethod flex-compiler-repl--invoke-mode ((this evaluate-flex-compiler) mode)
@@ -681,13 +704,6 @@ If it isn't settable, warn the user with a message and do nothing."
 
 
 ;; functions
-(defun flex-compile-save-window-configuration-p ()
-  "Return non-nil if we save the window configuration on a compile.
-See `flex-compile-save-window-configuration'."
-  (or (and (eq flex-compile-save-window-configuration 'multi-frame)
-	   (> (length (frame-list)) 0))
-      (eq flex-compile-save-window-configuration 'always)))
-
 (defun flex-compiler-by-name (name)
   "Convenience function to get a compiler by it's NAME."
   (config-manager-entry the-flex-compile-manager name))
@@ -772,7 +788,7 @@ to invoke this command with full configuration support."
 	    ((child-of-class-p (eieio-object-class active)
 			       'evaluate-flex-compiler)
 	     (flex-compiler-query-eval active config-options))))
-    (if (flex-compile-save-window-configuration-p)
+    (if (flex-compiler-save-window-configuration-p active)
 	(save-window-excursion
 	  (flex-compiler-compile active))
       (flex-compiler-compile active))))
@@ -846,7 +862,7 @@ FORM is the form to evaluate \(if implemented).  If called with
     (condition-case nil
 	(progn
 	  (flex-compile-manager-assert-ready this)
-	  (if (flex-compile-save-window-configuration-p)
+	  (if (flex-compiler-save-window-configuration-p active)
 	      (save-window-excursion
 		(flex-compiler-clean active))
 	    (flex-compiler-clean active)))

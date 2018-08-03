@@ -53,7 +53,6 @@
   (oset this :config-file-desc "python file")
   (oset this :repl-buffer-regexp "^\\*Python\\*$")
   (oset this :repl-buffer-start-timeout 0)
-  (oset this :show-repl-after-eval-p t)
   (cl-call-next-method this args))
 
 (cl-defmethod flex-compiler-load-libraries ((this python-flex-compiler))
@@ -100,7 +99,7 @@ phase."
 	   string-trim))))
 
 (cl-defmethod flex-compiler-repl-start ((this python-flex-compiler))
-  (run-python (python-shell-calculate-command)))
+  (run-python (python-shell-calculate-command) nil 4))
 
 (flex-compile-manager-register the-flex-compile-manager (python-flex-compiler))
 
