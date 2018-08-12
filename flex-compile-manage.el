@@ -644,8 +644,9 @@ form from a minibuffer and from the REPL directly."
 				      entry)))
 			      old-entries))))
       (dolist (compiler entries)
-	(if (flex-compile-manager-settable this compiler)
-	    (oset compiler :manager this))))))
+	;; since all compilers are persistable (via `config-entry inhertiance)
+	;; set the manager so we can save the state
+	(oset compiler :manager this)))))
 
 (cl-defmethod config-manager-entry-default-name ((this flex-compile-manager))
   "flexible-compiler")
@@ -660,7 +661,8 @@ form from a minibuffer and from the REPL directly."
 			       (equal (config-entry-name a)
 				      (config-entry-name b)))))
     (setq entries (append entries (cons compiler nil)))
-    (oset compiler :manager this)))
+    (oset compiler :manager this)
+    (message "Registered %s compiler" (oref compiler :name))))
 
 (cl-defmethod config-manager-entry-names ((this flex-compile-manager))
   "Return the names of all registered compilers."
