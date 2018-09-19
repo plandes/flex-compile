@@ -79,8 +79,9 @@ This is done by creating a command with `make' found in the executable path."
     ;; in latex
     (ignore-errors
       (kill-compilation)
-      (let ((kill-buffer-query-functions nil))
-	(kill-buffer (get-buffer "*compilation*"))))
+      (let ((kill-buffer-query-functions nil)
+	    (buf (get-buffer "*compilation*")))
+	(and buf (kill-buffer buf))))
     (message "Compile command: %s" command)
     (if flex-compile-make-display-compile-buffer
 	(compile command)
