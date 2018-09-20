@@ -373,8 +373,6 @@ MODE is either `flex-compile-display-buffer-new-mode' or
        (next-frame-skip-display (display-nf display-fn void-fn))
        (t (error "No mode: %S" mode))))))
 
-;(display-buffer a '(display-buffer-reuse-window (inhibit-same-window . t)))
-
 (cl-defmethod flex-compiler-display-buffer ((this single-buffer-flex-compiler)
 					    &optional compile-def)
   "Display buffer based on values returned from `flex-compiler-display-modes'."
@@ -681,7 +679,7 @@ MODE is the compilation mnemonic, which can range from evaluating a buffer,
 form from a minibuffer and from the REPL directly."
   (cl-case mode
     (eval-config (flex-compiler-repl--eval-config-and-show this))
-    ;(buffer (flex-compiler-repl-display this))
+    (buffer (error "No longer implemented--no flex-compiler-repl-display"))
     (minibuffer (let ((res (flex-compiler-evaluate-form this)))
 		  (message res)
 		  res))
@@ -689,9 +687,7 @@ form from a minibuffer and from the REPL directly."
 	    (kill-new res)
 	    (message res)
 	    res))
-    ;; (eval-repl (progn
-    ;; 		 (flex-compiler-run-command this (slot-value this 'form))
-    ;; 		 (flex-compiler-repl-display this)))
+    (eval-repl (flex-compiler-run-command this (slot-value this 'form)))
     (both-eval-repl (flex-compiler-repl--invoke-mode this 'eval-config)
 		    (flex-compiler-repl--invoke-mode this 'eval-repl))
     (both-eval-minibuffer (flex-compiler-repl--invoke-mode this 'eval-config)

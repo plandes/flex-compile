@@ -34,7 +34,8 @@
 (flex-compile-declare-functions
  ess-eval-region R)
 
-(defclass ess-flex-compiler (config-flex-compiler repl-flex-compiler)
+(defclass ess-flex-compiler
+  (config-flex-compiler repl-flex-compiler single-buffer-flex-compiler)
   ())
 
 (cl-defmethod initialize-instance ((this ess-flex-compiler) &optional args)
@@ -55,14 +56,17 @@
 
 (cl-defmethod flex-compiler-repl-compile-source ((this ess-flex-compiler))
   (let ((file (flex-compiler-config this)))
-    (flex-compiler-run-command this (format "source('%s')" file))
-    (flex-compiler-repl-display this)))
+    (flex-compiler-run-command this (format "source('%s')" file))))
+
+(cl-defmethod flex-compiler-display-buffer-alist ((this ess-flex-compiler))
+  "Return default nil, otherwise prompt reading doesn't play well
+with `display-buffer'."
+  nil)
 
 (cl-defmethod flex-compiler-repl-compile ((this ess-flex-compiler))
   (let ((buf (flex-compiler-config-buffer this)))
     (with-current-buffer buf
-      (ess-eval-region (point-min) (point-max) nil)
-      (flex-compiler-repl-display this))))
+      (ess-eval-region (point-min) (point-max) nil))))
 
 (flex-compile-manager-register the-flex-compile-manager (ess-flex-compiler))
 
