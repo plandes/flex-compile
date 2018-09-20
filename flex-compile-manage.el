@@ -79,11 +79,6 @@ frames, otherwise display the buffer.
   :type flex-compile-display-mode-options
   :group 'flex-compile)
 
-;; (defcustom show-repl-after-eval-p t
-;;   "Whether or not to show the buffer after the file is evlauated or not."
-;;   :type 'boolean
-;;   :group 'flex-compile)
-
 (defvar flex-compiler-query-eval-mode nil
   "History variable for `flex-compiler-query-eval'.")
 
@@ -153,8 +148,7 @@ value is nil.  The value (when non-nil) is dependent on the flex-compiler.")
 to Emacs libraries to not display buffers (via `display-buffer').  This is so
 a `flex-compiler' can explictly control buffer display with
 `flex-compiler-display-buffer' \(if it chooses).."
-  ;; `list' takes any number of arguments and has no side effects, which is the
-  ;; point
+  ;; `list' takes any number of arguments and has no side effects
   '((list . (list))))
 
 
@@ -514,30 +508,6 @@ The caller raises and error if it doesn't start in time."
 	    (error "Couldn't create REPL for compiler %s"
 		   (config-entry-name this))))))))
 
-;; (cl-defmethod flex-compiler-run ((this repl-flex-compiler))
-;;   "Start the REPL and display it."
-;;   (flex-compiler-repl--run-start this)
-;;   ;(flex-compiler-repl-display this)
-;;   )
-
-;; (cl-defmethod flex-compiler-repl-display ((this repl-flex-compiler))
-;;   "Show the REPL in an adjacent buffer or the current buffer."
-;;   (let ((buf (flex-compiler-buffer this))
-;; 	fn)
-;;     (when buf
-;;       (setq fn (cl-case flex-compile-show-repl-mode
-;; 		 (switch 'pop-to-buffer)
-;; 		 (display 'display-buffer)
-;; 		 (next-frame
-;; 		  '(lambda (buf)
-;; 		     (if (> (length (visible-frame-list)) 1)
-;; 			 (-> (window-list (next-frame))
-;; 			     car
-;; 			     (set-window-buffer buf))
-;; 		       (display-buffer buf))))))
-;;       (funcall fn buf)
-;;       buf)))
-
 (cl-defmethod flex-compiler-send-input ((this repl-flex-compiler)
 					&optional command)
   "Send input/commands to the REPL."
@@ -554,24 +524,6 @@ The caller raises and error if it doesn't start in time."
     (with-current-buffer buf
       (if command
 	  (flex-compiler-send-input this command)))))
-
-;; (cl-defmethod flex-compiler-compile ((this repl-flex-compiler))
-;;   "Start the REPL (if not already started) and invoke the compile callback."
-;;   (let ((file (flex-compiler-config this))
-;; 	(runningp (flex-compiler-repl-running-p this)))
-;;     (unless runningp
-;;       (flex-compiler-run this))
-;;     (if (flex-compiler-repl-running-p this)
-;; 	(flex-compiler-repl-compile this)
-;;       (if runningp
-;; 	  (error "REPL hasn't started")
-;; 	(message "REPL still starting, please wait")))
-;;     `((newp . ,(not runningp))
-;;       (buffer . ,(flex-compiler-buffer this)))))
-
-;; (cl-defmethod flex-compiler-clean ((this repl-flex-compiler))
-;;   "`Clean' by killing the REPL."
-;;   (flex-compiler-kill-repl this))
 
 (cl-defmethod flex-compiler-buffer ((this repl-flex-compiler))
   "Find the first REPL buffer found in the buffer list."
@@ -596,22 +548,6 @@ The caller raises and error if it doesn't start in time."
 	    (kill-buffer buf))
 	  (cl-incf count)))
       (message "%s killed %d buffer(s)" (capitalize name) count))))
-
-;; (cl-defmethod flex-compiler-start-buffer ((this repl-flex-compiler) start-type)
-;;   (case start-type
-;;     (compile (let ((file (flex-compiler-config this))
-;; 		   (runningp (flex-compiler-repl-running-p this)))
-;; 	       (unless runningp
-;; 		 (flex-compiler-run this))
-;; 	       (if (flex-compiler-repl-running-p this)
-;; 		   (flex-compiler-repl-compile this)
-;; 		 (if runningp
-;; 		     (error "REPL hasn't started")
-;; 		   (message "REPL still starting, please wait")))
-;; 	       `((newp . ,(not runningp))
-;; 		 (buffer . ,(flex-compiler-buffer this)))))
-;;     (run (flex-compiler-repl--run-start this))
-;;     (clean (flex-compiler-kill-repl this))))
 
 (cl-defmethod flex-compiler-start-buffer ((this repl-flex-compiler) start-type)
   (let ((file (flex-compiler-config this))
@@ -932,11 +868,6 @@ to invoke this command with full configuration support."
 	    ((child-of-class-p (eieio-object-class active)
 			       'evaluate-flex-compiler)
 	     (flex-compiler-query-eval active config-options))))
-    ;; (let ((buf (if (flex-compiler-save-window-configuration-p active)
-    ;; 		   (save-window-excursion
-    ;; 		     (flex-compiler-compile active))
-    ;; 		 (flex-compiler-compile active))))
-    ;;   (flex-compiler-display-buffer active buf))
     (let (buf)
       (let ((display-buffer-alist
 	     (flex-compiler-display-buffer-alist active)))

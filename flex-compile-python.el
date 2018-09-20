@@ -61,33 +61,18 @@
 (cl-defmethod flex-compiler-eval-form-impl ((this python-flex-compiler) form)
   (python-shell-send-string form))
 
-;; (cl-defmethod flex-compiler-compile ((this python-flex-compiler))
-;;   "Start the REPL (if not already started) and invoke the compile callback.
-
-;; This Python compiler runs the native setup before first executing the compile
-;; phase."
-;;   (if (flex-compiler-repl-running-p this)
-;;       (cl-call-next-method this)
-;;     (let ((do-native-p python-shell-completion-native-enable)
-;; 	  (python-shell-completion-native-enable nil))
-;;       (flex-compiler-run this)
-;;       (if do-native-p
-;; 	(python-shell-completion-native-setup))
-;;       (cl-call-next-method this))))
-
 (cl-defmethod flex-compiler-start-buffer ((this python-flex-compiler)
 					  start-type)
   (let (ret)
     (if (eq start-type 'compile)
 	(if (flex-compiler-repl-running-p this)
-	    (setq ret (cdr (assq 'buffer (cl-call-next-method this start-type))))
+	    (setq ret (cdr (assq 'buffer
+				 (cl-call-next-method this start-type))))
 	  (let ((do-native-p python-shell-completion-native-enable)
 		(python-shell-completion-native-enable nil))
 	    (flex-compiler-run this)
 	    (if do-native-p
-		(python-shell-completion-native-setup))
-					;(cl-call-next-method this start-type)
-	    )))
+		(python-shell-completion-native-setup)))))
     (or ret (cdr (assq 'buffer (cl-call-next-method this start-type))))))
 
 (cl-defmethod flex-compiler-eval-config ((this python-flex-compiler) file)
