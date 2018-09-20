@@ -70,7 +70,9 @@ The conection mode, which is either:
   (cl-call-next-method this args))
 
 (cl-defmethod flex-compiler-load-libraries ((this clojure-flex-compiler))
-  (require 'cider))
+  (require 'cider)
+  ;; allow flex-compile to manage windows and frame
+  (setq cider-repl-display-in-current-window nil))
 
 (cl-defmethod flex-compiler-send-input ((this clojure-flex-compiler)
 					&optional command)

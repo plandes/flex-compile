@@ -351,27 +351,45 @@ MODE is either `flex-compile-display-buffer-new-mode' or
 		       car
 		       (set-window-buffer buf))))
 	    single-frame-fn)))
-    (let ((void-fn 'list))
+    (let ((void-fn 'list)
+	  (display-fn
+	   '(lambda (buf)
+	      (let ((display-buffer-fallback-action nil)
+		    (action ))
+		(if (= 1 (length (window-list)))
+		    (split-window))
+		(or (display-buffer buf '(display-buffer-reuse-window
+					  ((inhibit-switch-frame . t)
+					   (allow-no-window . t))))
+		    (display-buffer buf '(display-buffer-use-some-window
+					  ((inhibit-switch-frame . t)))))))))
      (case mode
        (never void-fn)
        (switch 'pop-to-buffer)
-       (display 'display-buffer)
+       (display display-fn)
        (next-frame-switch (display-nf 'pop-to-buffer nil))
-       (next-frame-display (display-nf 'display-buffer nil))
+       (next-frame-display (display-nf display-fn nil))
        (next-frame-skip-switch (display-nf 'pop-to-buffer void-fn))
-       (next-frame-skip-display (display-nf 'display-buffer void-fn))
+       (next-frame-skip-display (display-nf display-fn void-fn))
        (t (error "No mode: %S" mode))))))
+
+;(display-buffer a '(display-buffer-reuse-window (inhibit-same-window . t)))
 
 (cl-defmethod flex-compiler-display-buffer ((this single-buffer-flex-compiler)
 					    &optional compile-def)
   "Display buffer based on values returned from `flex-compiler-display-modes'."
+  (if (not (consp compile-def))
+      (error "Unknown compile-def: %S" compile-def))
   (let* ((modes (flex-compiler-display-modes this))
 	 (fn (flex-compiler-display-function
 	      (if (cdr (assq 'newp compile-def))
 		  (cdr (assq 'new modes))
 		(cdr (assq 'exists modes)))))
 	 (buf (cdr (assq 'buffer compile-def))))
-    (and fn (buffer-live-p buf) (funcall fn buf))))
+    (unless (eq buf 'killed-buffer)
+      (if (and buf (not (bufferp buf)))
+	  (error "Unknown buffer object: %S" buf))
+      (and fn (buffer-live-p buf) (funcall fn buf)))))
 
 (cl-defmethod flex-compiler-single-buffer--flex-start
     ((this single-buffer-flex-compiler) start-type)
@@ -561,16 +579,13 @@ The caller raises and error if it doesn't start in time."
 		   (if runningp
 		       (error "REPL hasn't started")
 		     (message "REPL still starting, please wait")))
-		 `((newp . ,(not runningp))
-		   (buffer . ,(flex-compiler-buffer this)))))
+		 (flex-compiler-buffer this)))
       (run (progn
 	     (flex-compiler-repl--run-start this)
-	     `((newp . ,(not runningp))
-	       (buffer . ,(flex-compiler-buffer this)))))
+	     (flex-compiler-buffer this)))
       (clean (progn
 	       (flex-compiler-kill-repl this)
-	       '((newp . nil)
-		 (buffer . nil)))))))
+	       'killed-buffer)))))
 
 
 
@@ -657,12 +672,7 @@ See the `:eval-form' slot."
 
 (cl-defmethod flex-compiler-repl--eval-config-and-show ((this evaluate-flex-compiler))
   (flex-compiler-repl--run-start this)
-  (flex-compiler-eval-config this (flex-compiler-config this))
-  ;; (when (and show-repl-after-eval-p
-  ;; 	     (not (flex-compiler-save-window-configuration-p this)))
-  ;;   (flex-compiler-repl-display this))
-  ;(flex-compiler-buffer this)
-  )
+  (flex-compiler-eval-config this (flex-compiler-config this)))
 
 (cl-defmethod flex-compiler-repl--invoke-mode ((this evaluate-flex-compiler) mode)
   "Invoke a flex compilation by mnemonic.
@@ -868,12 +878,11 @@ to invoke this command with full configuration support."
 	    ((child-of-class-p (eieio-object-class active)
 			       'evaluate-flex-compiler)
 	     (flex-compiler-query-eval active config-options))))
-    (let (buf)
+    (let (compile-def)
       (let ((display-buffer-alist
 	     (flex-compiler-display-buffer-alist active)))
-	(setq buf (flex-compiler-compile active)))
-      (flex-compiler-display-buffer active buf)
-      buf)))
+	(setq compile-def (flex-compiler-compile active)))
+      (flex-compiler-display-buffer active compile-def))))
 
 ;;;###autoload
 (defun flex-compile-run-or-set-config (action)
@@ -948,10 +957,11 @@ FORM is the form to evaluate \(if implemented).  If called with
     (condition-case nil
 	(progn
 	  (flex-compile-manager-assert-ready this)
-	  (let ((display-buffer-alist
-		 (flex-compiler-display-buffer-alist active)))
-	    (flex-compiler-clean active))
-	  (flex-compiler-display-buffer active nil))
+	  (let (compile-def)
+	   (let ((display-buffer-alist
+		  (flex-compiler-display-buffer-alist active)))
+	     (setq compile-def (flex-compiler-clean active)))
+	   (flex-compiler-display-buffer active compile-def)))
       (cl-no-applicable-method
        (message "Compiler %s has no ability to clean"
 		(config-entry-name active))))))

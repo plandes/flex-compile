@@ -66,14 +66,13 @@
   (let (ret)
     (if (eq start-type 'compile)
 	(if (flex-compiler-repl-running-p this)
-	    (setq ret (cdr (assq 'buffer
-				 (cl-call-next-method this start-type))))
+	    (setq ret (cl-call-next-method this start-type))
 	  (let ((do-native-p python-shell-completion-native-enable)
 		(python-shell-completion-native-enable nil))
 	    (flex-compiler-run this)
 	    (if do-native-p
 		(python-shell-completion-native-setup)))))
-    (or ret (cdr (assq 'buffer (cl-call-next-method this start-type))))))
+    (or ret (cl-call-next-method this start-type))))
 
 (cl-defmethod flex-compiler-eval-config ((this python-flex-compiler) file)
   (let ((buf (find-file-noselect file)))
