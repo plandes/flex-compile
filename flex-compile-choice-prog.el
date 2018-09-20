@@ -81,6 +81,11 @@
 	  (error "No such program: `%S'" program))
 	ret))))
 
+(cl-defmethod flex-compiler-display-buffer-alist ((this choice-prog-flex-compiler))
+  "Return default nil, otherwise prompt reading doesn't play well
+with `display-buffer'."
+  nil)
+
 (cl-defmethod flex-compiler-compile ((this choice-prog-flex-compiler))
   (unless (slot-value this 'compile-options)
     (flex-compiler-read-set-options this nil))
