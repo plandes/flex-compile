@@ -39,10 +39,7 @@
 
 ;;; script file compiler
 (defclass script-flex-compiler (directory-run-flex-compiler)
-  ((buffer-name :initarg :buffer-name
-		:initform "*Script Compile*"
-		:type string)
-   (finish-success-function :initarg :finish-success-function
+  ((finish-success-function :initarg :finish-success-function
 			    :initform nil
 			    :documentation "\
 A function to call (if non-nill) if the compilation is successful.")))
@@ -67,19 +64,25 @@ A function to call (if non-nill) if the compilation is successful.")))
 	       (car flex-compile-script-args-history)
 	       'flex-compile-script-args-history))
 
-(cl-defmethod flex-compiler-run-with-args ((this script-flex-compiler) args)
+(cl-defmethod flex-compiler-buffer ((this script-flex-compiler))
+  (get-buffer "*Script Compile*"))
+
+(cl-defmethod flex-compiler-run-with-args ((this script-flex-compiler)
+					   args start-type)
   (let* ((config-file (flex-compiler-config this))
 	 (default-directory (file-name-directory config-file))
 	 reset-target)
     (with-slots (buffer-name finish-success-function) this
-      (let ((cmd (concat config-file " " (mapconcat #'identity args " "))))
+      (let ((cmd (concat config-file " " (mapconcat #'identity args " ")))
+	    buf)
 	(with-current-buffer
-	    (compilation-start cmd nil
-			       #'(lambda (mode-name)
-				   buffer-name))
+	    (setq buf (compilation-start cmd nil
+					 #'(lambda (mode-name)
+					     buffer-name)))
 	  (if finish-success-function
 	      (add-to-list 'flex-compile-script-finish-success-function
-			   finish-success-function)))))))
+			   finish-success-function)))
+	buf))))
 
 (flex-compile-manager-register the-flex-compile-manager (script-flex-compiler))
 

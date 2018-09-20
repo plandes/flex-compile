@@ -48,36 +48,41 @@
   :group 'compilation
   :prefix '"flex-compile")
 
-(defcustom flex-compile-show-repl-mode 'next-frame
-  "How to show/switch to the REPL buffer.
+(defconst flex-compile-display-mode-options
+  '(choice (const :tag "This Window" switch)
+	   (const :tag "Other Window" display)
+	   (const :tag "Next Frame Otherwise Switch" next-frame-switch)
+	   (const :tag "Next Frame Otherwise Display" next-frame-display)
+	   (const :tag "Next Frame Skip Switch" next-frame-skip-switch)
+	   (const :tag "Next Frame Skip Display" next-frame-skip-display)
+	   (const :tag "Never" never)))
+
+(defcustom flex-compile-display-buffer-new-mode 'next-frame-display
+  "How to show/switch a new \(not yet created) compilation buffer.
 `Switch to Buffer' means to first pop then switch to the buffer.
-`Display Buffer' means to show the buffer in a different window.
-`Next Frame' means to use the next frame if there are multiple frames,
-otherwise use `Display Buffer'."
-  :type '(choice (const :tag "Switch to Buffer" switch)
-		 (const :tag "Display Buffer" display)
-		 (const :tag "Next Frame" next-frame))
+`Display Buffer' means to show the buffer in a different
+window (see `display-buffer').
+`Next Frame Otherwise Switch' means to use the next frame if
+there are multiple frames, otherwise pop and switch to the buffer.
+`Next Frame Otherwise Display' means to use the next frame if
+there are multiple frames, otherwise show buffer.
+`Next Frame Skip Switch' means to do nothing there are
+multiple frames, otherwise pop and switch to the buffer.
+`Next Frame Skip Display' means to do nothing there are multiple
+frames, otherwise display the buffer.
+`Never' means to never show the buffer."
+  :type flex-compile-display-mode-options
   :group 'flex-compile)
 
-(defcustom flex-compile-save-window-configuration 'multi-frame
-  "This determines if each compile preserves the window configuration.
-This is done with `save-window-excursion' so only the current
-frame's configuration is saved, which is usually what you want in
-cases where the compilation buffer is displayed on a separate
-frame.
-If `Multiple Frames' is used then turn this on only if there are
-currently more than one Emacs frames created.
-If `Multiple Frames When New' then use when there are multiple frames except on
-the first instance of a new session (i.e. REPL)."
-  :type '(choice (const :tag "Never" never)
-		 (const :tag "Always" always)
-		 (const :tag "Multiple Frames" multi-frame))
+(defcustom flex-compile-display-buffer-exists-mode 'next-frame-skip-display
+  "Like `flex-compile-display-buffer-new-mode', but use when buffer exists."
+  :type flex-compile-display-mode-options
   :group 'flex-compile)
 
-(defcustom show-repl-after-eval-p t
-  "Whether or not to show the buffer after the file is evlauated or not."
-  :type 'boolean
-  :group 'flex-compile)
+;; (defcustom show-repl-after-eval-p t
+;;   "Whether or not to show the buffer after the file is evlauated or not."
+;;   :type 'boolean
+;;   :group 'flex-compile)
 
 (defvar flex-compiler-query-eval-mode nil
   "History variable for `flex-compiler-query-eval'.")
@@ -99,6 +104,11 @@ configuration file.")
   'cl-no-applicable-method)
 
 (cl-defmethod flex-compiler--unimplemented ((this flex-compiler) method)
+  (with-temp-buffer
+    (set-buffer (get-buffer-create "*flex-compiler-backtrace*"))
+    (erase-buffer)
+    (let ((standard-output (current-buffer)))
+      (backtrace)))
   (signal 'flex-compiler-un-implemented
 	  (list method this)))
 
@@ -129,14 +139,26 @@ This implementation sets all slots to nil."
   "Invoke the clean functionality of the compiler."
   (flex-compiler--unimplemented this "clean"))
 
-(cl-defmethod flex-compiler-save-window-configuration-p ((this flex-compiler))
-  "Return non-nil if we save the window configuration on a compile.
-See `flex-compile-save-window-configuration'."
-  (or (and (eq flex-compile-save-window-configuration 'multi-frame)
-	   (> (length (visible-frame-list)) 1))
-      (eq flex-compile-save-window-configuration 'always)))
+(cl-defmethod flex-compiler-display-buffer ((this flex-compiler)
+					    &optional compile-def)
+  "Called to display the compilation buffer \(if any).
+
+COMPILE-DEF is the compilation defition, which is usually an alist of having
+an alist with `newp' indicating if the buffer is new and `buffer' of the buffer
+just created.  This is also called for clean invocations, in which case the
+value is nil.  The value (when non-nil) is dependent on the flex-compiler.")
+
+(cl-defmethod flex-compiler-display-buffer-alist ((this flex-compiler))
+  "Return a value that will be bound to `display-buffer-alist', which suggests
+to Emacs libraries to not display buffers (via `display-buffer').  This is so
+a `flex-compiler' can explictly control buffer display with
+`flex-compiler-display-buffer' \(if it chooses).."
+  ;; `list' takes any number of arguments and has no side effects, which is the
+  ;; point
+  '((list . (list))))
 
 
+
 (defclass no-op-flex-compiler (flex-compiler)
   ()
   :documentation "A no-op compiler For disabled state.")
@@ -299,24 +321,103 @@ with \\[universal-argument]."
 
 
 
-(defclass run-args-flex-compiler (config-flex-compiler optionable-flex-compiler)
+(defclass single-buffer-flex-compiler (flex-compiler)
+  ()
+  :documentation "A flex compiler that has a single buffer.")
+
+(cl-defmethod flex-compiler-buffer ((this single-buffer-flex-compiler))
+  "Return non-nil if there exists buffer for this compiler and is live."
+  (flex-compiler--unimplemented this "buffer"))
+
+(cl-defmethod flex-compiler-start-buffer ((this single-buffer-flex-compiler)
+					  start-type)
+  "Return a new buffer with a processing compilation.
+START-TYPE is either symbols `compile', `run', `clean' depending
+if invoked by `flex-compiler-compile' or `flex-compiler-run'."
+  (flex-compiler--unimplemented this "start-buffer"))
+
+(cl-defmethod flex-compiler-display-modes ((this single-buffer-flex-compiler))
+  "Return an alist with keys `new' and `exists'.
+This implementation returns `flex-compile-display-buffer-new-mode' and
+`flex-compile-display-buffer-exists-mode' respectfully."
+  `((new . ,flex-compile-display-buffer-new-mode)
+    (exists . ,flex-compile-display-buffer-exists-mode)))
+
+(defun flex-compiler-display-function (mode)
+  "Return a function used for displaying a buffer using MODE.
+MODE is either `flex-compile-display-buffer-new-mode' or
+`flex-compile-display-buffer-exists-mode'."
+  (flet ((display-nf
+	  (single-frame-fn multi-frame-fn)
+	  (if (> (length (visible-frame-list)) 1)
+	      (if multi-frame-fn
+		  multi-frame-fn
+		'(lambda (buf)
+		   (-> (window-list (next-frame))
+		       car
+		       (set-window-buffer buf))))
+	    single-frame-fn)))
+    (let ((void-fn 'list))
+     (case mode
+       (never void-fn)
+       (switch 'pop-to-buffer)
+       (display 'display-buffer)
+       (next-frame-switch (display-nf 'pop-to-buffer nil))
+       (next-frame-display (display-nf 'display-buffer nil))
+       (next-frame-skip-switch (display-nf 'pop-to-buffer void-fn))
+       (next-frame-skip-display (display-nf 'display-buffer void-fn))
+       (t (error "No mode: %S" mode))))))
+
+(cl-defmethod flex-compiler-display-buffer ((this single-buffer-flex-compiler)
+					    &optional compile-def)
+  "Display buffer based on values returned from `flex-compiler-display-modes'."
+  (let* ((modes (flex-compiler-display-modes this))
+	 (fn (flex-compiler-display-function
+	      (if (cdr (assq 'newp compile-def))
+		  (cdr (assq 'new modes))
+		(cdr (assq 'exists modes)))))
+	 (buf (cdr (assq 'buffer compile-def))))
+    (and fn (buffer-live-p buf) (funcall fn buf))))
+
+(cl-defmethod flex-compiler-single-buffer--flex-start
+    ((this single-buffer-flex-compiler) start-type)
+  (let ((has-buffer-p (flex-compiler-buffer this))
+	(buf (flex-compiler-start-buffer this start-type)))
+    `((newp . ,(not has-buffer-p))
+      (buffer . ,buf))))
+
+(cl-defmethod flex-compiler-compile ((this single-buffer-flex-compiler))
+  (flex-compiler-single-buffer--flex-start this 'compile))
+
+(cl-defmethod flex-compiler-run ((this single-buffer-flex-compiler))
+  (flex-compiler-single-buffer--flex-start this 'run))
+
+(cl-defmethod flex-compiler-clean ((this single-buffer-flex-compiler))
+  (flex-compiler-single-buffer--flex-start this 'clean))
+
+
+
+(defclass run-args-flex-compiler
+  (config-flex-compiler optionable-flex-compiler single-buffer-flex-compiler)
   ()
   :documentation "A configurable and optionable compiler.")
 
-(cl-defmethod flex-compiler-run-with-args ((this run-args-flex-compiler) args)
+(cl-defmethod flex-compiler-run-with-args ((this run-args-flex-compiler)
+					   args start-type)
   "Run the compilation with given arguments."
   (flex-compiler--unimplemented this "run-with-args"))
 
 (cl-defmethod flex-compiler--post-config ((this run-args-flex-compiler)))
 
-(cl-defmethod flex-compiler-compile ((this run-args-flex-compiler))
-  "Run the compiler with user provided arguments."
-  (flex-compiler-run-with-args this (flex-compiler-options this)))
-
-(cl-defmethod flex-compiler-run ((this run-args-flex-compiler))
-  "Configure compiler by prompting for user given arguments."
-  (flex-compiler-set-config this)
-  (flex-compiler--post-config this))
+(cl-defmethod flex-compiler-start-buffer ((this run-args-flex-compiler)
+					  start-type)
+  (let* ((args (flex-compiler-options this))
+	 (buf (flex-compiler-run-with-args this args start-type)))
+    ;; find a better way to do this: PL 9/19/2018
+    ;; (when (eq start-type 'run)
+    ;;   (flex-compiler-set-config this)
+    ;;   (flex-compiler--post-config this))
+    buf))
 
 
 (defclass directory-run-flex-compiler (run-args-flex-compiler
@@ -335,7 +436,8 @@ with \\[universal-argument]."
 
 
 
-(defclass repl-flex-compiler (directory-start-flex-compiler)
+(defclass repl-flex-compiler
+  (directory-start-flex-compiler single-buffer-flex-compiler)
   ((repl-buffer-regexp :initarg :repl-buffer-regexp
 		       :type string
 		       :documentation "\
@@ -377,7 +479,7 @@ The caller raises and error if it doesn't start in time."
     (let ((count-down repl-buffer-start-timeout)
 	  buf)
       (dotimes (i count-down)
-	(setq buf (flex-compiler-repl-buffer this))
+	(setq buf (flex-compiler-buffer this))
 	(if buf
 	    (cl-return buf)
 	  (message "Waiting for buffer to start... (%d)"
@@ -386,7 +488,7 @@ The caller raises and error if it doesn't start in time."
 
 (cl-defmethod flex-compiler-repl-running-p ((this repl-flex-compiler))
   "Return whether or not the REPL is currently running."
-  (not (null (flex-compiler-repl-buffer this))))
+  (not (null (flex-compiler-buffer this))))
 
 (cl-defmethod flex-compiler-repl-assert-running ((this repl-flex-compiler))
   "Raise an error if the REPL IS running."
@@ -412,28 +514,29 @@ The caller raises and error if it doesn't start in time."
 	    (error "Couldn't create REPL for compiler %s"
 		   (config-entry-name this))))))))
 
-(cl-defmethod flex-compiler-run ((this repl-flex-compiler))
-  "Start the REPL and display it."
-  (flex-compiler-repl--run-start this)
-  (flex-compiler-repl-display this))
+;; (cl-defmethod flex-compiler-run ((this repl-flex-compiler))
+;;   "Start the REPL and display it."
+;;   (flex-compiler-repl--run-start this)
+;;   ;(flex-compiler-repl-display this)
+;;   )
 
-(cl-defmethod flex-compiler-repl-display ((this repl-flex-compiler))
-  "Show the REPL in an adjacent buffer or the current buffer."
-  (let ((buf (flex-compiler-repl-buffer this))
-	fn)
-    (when buf
-      (setq fn (cl-case flex-compile-show-repl-mode
-		 (switch 'pop-to-buffer)
-		 (display 'display-buffer)
-		 (next-frame
-		  '(lambda (buf)
-		     (if (> (length (visible-frame-list)) 1)
-			 (-> (window-list (next-frame))
-			     car
-			     (set-window-buffer buf))
-		       (display-buffer buf))))))
-      (funcall fn buf)
-      buf)))
+;; (cl-defmethod flex-compiler-repl-display ((this repl-flex-compiler))
+;;   "Show the REPL in an adjacent buffer or the current buffer."
+;;   (let ((buf (flex-compiler-buffer this))
+;; 	fn)
+;;     (when buf
+;;       (setq fn (cl-case flex-compile-show-repl-mode
+;; 		 (switch 'pop-to-buffer)
+;; 		 (display 'display-buffer)
+;; 		 (next-frame
+;; 		  '(lambda (buf)
+;; 		     (if (> (length (visible-frame-list)) 1)
+;; 			 (-> (window-list (next-frame))
+;; 			     car
+;; 			     (set-window-buffer buf))
+;; 		       (display-buffer buf))))))
+;;       (funcall fn buf)
+;;       buf)))
 
 (cl-defmethod flex-compiler-send-input ((this repl-flex-compiler)
 					&optional command)
@@ -446,31 +549,31 @@ The caller raises and error if it doesn't start in time."
 					 &optional command)
   "Send commands to the REPL to evaluate an expression or start a process."
   (flex-compiler-repl-assert-running this)
-  (let ((buf (flex-compiler-repl-buffer this))
+  (let ((buf (flex-compiler-buffer this))
 	pos win)
     (with-current-buffer buf
       (if command
 	  (flex-compiler-send-input this command)))))
 
-(cl-defmethod flex-compiler-compile ((this repl-flex-compiler))
-  "Start the REPL (if not already started) and invoke the compile callback."
-  (let ((file (flex-compiler-config this))
-	(runningp (flex-compiler-repl-running-p this)))
-    (unless runningp
-      (flex-compiler-run this))
-    (if (flex-compiler-repl-running-p this)
-	(flex-compiler-repl-compile this)
-      (if runningp
-	  (error "REPL hasn't started")
-	(message "REPL still starting, please wait")))
-    `((newp . ,(not runningp))
-      (buffer . ,(flex-compiler-repl-buffer this)))))
+;; (cl-defmethod flex-compiler-compile ((this repl-flex-compiler))
+;;   "Start the REPL (if not already started) and invoke the compile callback."
+;;   (let ((file (flex-compiler-config this))
+;; 	(runningp (flex-compiler-repl-running-p this)))
+;;     (unless runningp
+;;       (flex-compiler-run this))
+;;     (if (flex-compiler-repl-running-p this)
+;; 	(flex-compiler-repl-compile this)
+;;       (if runningp
+;; 	  (error "REPL hasn't started")
+;; 	(message "REPL still starting, please wait")))
+;;     `((newp . ,(not runningp))
+;;       (buffer . ,(flex-compiler-buffer this)))))
 
-(cl-defmethod flex-compiler-clean ((this repl-flex-compiler))
-  "`Clean' by killing the REPL."
-  (flex-compiler-kill-repl this))
+;; (cl-defmethod flex-compiler-clean ((this repl-flex-compiler))
+;;   "`Clean' by killing the REPL."
+;;   (flex-compiler-kill-repl this))
 
-(cl-defmethod flex-compiler-repl-buffer ((this repl-flex-compiler))
+(cl-defmethod flex-compiler-buffer ((this repl-flex-compiler))
   "Find the first REPL buffer found in the buffer list."
   (with-slots (repl-buffer-regexp) this
     (dolist (buf (buffer-list))
@@ -482,7 +585,7 @@ The caller raises and error if it doesn't start in time."
   "Kill the compiler's REPL."
   (with-slots (name derived-buffer-names no-prompt-kill-repl-buffer) this
     (let ((bufs (append (mapcar 'get-buffer derived-buffer-names)
-			(cons (flex-compiler-repl-buffer this) nil)))
+			(cons (flex-compiler-buffer this) nil)))
 	  (count 0))
       (dolist (buf bufs)
 	(when (buffer-live-p buf)
@@ -494,12 +597,52 @@ The caller raises and error if it doesn't start in time."
 	  (cl-incf count)))
       (message "%s killed %d buffer(s)" (capitalize name) count))))
 
+;; (cl-defmethod flex-compiler-start-buffer ((this repl-flex-compiler) start-type)
+;;   (case start-type
+;;     (compile (let ((file (flex-compiler-config this))
+;; 		   (runningp (flex-compiler-repl-running-p this)))
+;; 	       (unless runningp
+;; 		 (flex-compiler-run this))
+;; 	       (if (flex-compiler-repl-running-p this)
+;; 		   (flex-compiler-repl-compile this)
+;; 		 (if runningp
+;; 		     (error "REPL hasn't started")
+;; 		   (message "REPL still starting, please wait")))
+;; 	       `((newp . ,(not runningp))
+;; 		 (buffer . ,(flex-compiler-buffer this)))))
+;;     (run (flex-compiler-repl--run-start this))
+;;     (clean (flex-compiler-kill-repl this))))
+
+(cl-defmethod flex-compiler-start-buffer ((this repl-flex-compiler) start-type)
+  (let ((file (flex-compiler-config this))
+	(runningp (flex-compiler-repl-running-p this)))
+    (case start-type
+      (compile (progn
+		 (unless runningp
+		   (flex-compiler-run this))
+		 (if (flex-compiler-repl-running-p this)
+		     (flex-compiler-repl-compile this)
+		   (if runningp
+		       (error "REPL hasn't started")
+		     (message "REPL still starting, please wait")))
+		 `((newp . ,(not runningp))
+		   (buffer . ,(flex-compiler-buffer this)))))
+      (run (progn
+	     (flex-compiler-repl--run-start this)
+	     `((newp . ,(not runningp))
+	       (buffer . ,(flex-compiler-buffer this)))))
+      (clean (progn
+	       (flex-compiler-kill-repl this)
+	       '((newp . nil)
+		 (buffer . nil)))))))
+
 
 
 (defvar flex-compiler-query-eval-mode nil)
 (defvar flex-compiler-query-eval-form nil)
 
-(defclass evaluate-flex-compiler (config-flex-compiler repl-flex-compiler)
+(defclass evaluate-flex-compiler
+  (config-flex-compiler repl-flex-compiler single-buffer-flex-compiler)
   ((eval-mode :initarg :eval-mode
 	      :initform eval-config
 	      :type symbol
@@ -579,9 +722,11 @@ See the `:eval-form' slot."
 (cl-defmethod flex-compiler-repl--eval-config-and-show ((this evaluate-flex-compiler))
   (flex-compiler-repl--run-start this)
   (flex-compiler-eval-config this (flex-compiler-config this))
-  (when (and show-repl-after-eval-p
-	     (not (flex-compiler-save-window-configuration-p this)))
-    (flex-compiler-repl-display this)))
+  ;; (when (and show-repl-after-eval-p
+  ;; 	     (not (flex-compiler-save-window-configuration-p this)))
+  ;;   (flex-compiler-repl-display this))
+  ;(flex-compiler-buffer this)
+  )
 
 (cl-defmethod flex-compiler-repl--invoke-mode ((this evaluate-flex-compiler) mode)
   "Invoke a flex compilation by mnemonic.
@@ -590,7 +735,7 @@ MODE is the compilation mnemonic, which can range from evaluating a buffer,
 form from a minibuffer and from the REPL directly."
   (cl-case mode
     (eval-config (flex-compiler-repl--eval-config-and-show this))
-    (buffer (flex-compiler-repl-display this))
+    ;(buffer (flex-compiler-repl-display this))
     (minibuffer (let ((res (flex-compiler-evaluate-form this)))
 		  (message res)
 		  res))
@@ -598,9 +743,9 @@ form from a minibuffer and from the REPL directly."
 	    (kill-new res)
 	    (message res)
 	    res))
-    (eval-repl (progn
-		 (flex-compiler-run-command this (slot-value this 'form))
-		 (flex-compiler-repl-display this)))
+    ;; (eval-repl (progn
+    ;; 		 (flex-compiler-run-command this (slot-value this 'form))
+    ;; 		 (flex-compiler-repl-display this)))
     (both-eval-repl (flex-compiler-repl--invoke-mode this 'eval-config)
 		    (flex-compiler-repl--invoke-mode this 'eval-repl))
     (both-eval-minibuffer (flex-compiler-repl--invoke-mode this 'eval-config)
@@ -787,10 +932,17 @@ to invoke this command with full configuration support."
 	    ((child-of-class-p (eieio-object-class active)
 			       'evaluate-flex-compiler)
 	     (flex-compiler-query-eval active config-options))))
-    (if (flex-compiler-save-window-configuration-p active)
-	(save-window-excursion
-	  (flex-compiler-compile active))
-      (flex-compiler-compile active))))
+    ;; (let ((buf (if (flex-compiler-save-window-configuration-p active)
+    ;; 		   (save-window-excursion
+    ;; 		     (flex-compiler-compile active))
+    ;; 		 (flex-compiler-compile active))))
+    ;;   (flex-compiler-display-buffer active buf))
+    (let (buf)
+      (let ((display-buffer-alist
+	     (flex-compiler-display-buffer-alist active)))
+	(setq buf (flex-compiler-compile active)))
+      (flex-compiler-display-buffer active buf)
+      buf)))
 
 ;;;###autoload
 (defun flex-compile-run-or-set-config (action)
@@ -813,7 +965,11 @@ ACTION is the interactive argument given by the read function."
       (flex-compile-manager-assert-ready this)
       (condition-case err
 	  (cl-case action
-	    (run (flex-compiler-run active))
+	    (run (let (buf)
+		   (let ((display-buffer-alist
+			  (flex-compiler-display-buffer-alist active)))
+		     (setq buf (flex-compiler-run active)))
+		   (flex-compiler-display-buffer active buf)))
 	    (find (assert-settable this active)
 		  (pop-to-buffer (flex-compiler-config-buffer active)))
 	    (set-config (let ((file (flex-compiler-read-config active)))
@@ -861,10 +1017,10 @@ FORM is the form to evaluate \(if implemented).  If called with
     (condition-case nil
 	(progn
 	  (flex-compile-manager-assert-ready this)
-	  (if (flex-compiler-save-window-configuration-p active)
-	      (save-window-excursion
-		(flex-compiler-clean active))
-	    (flex-compiler-clean active)))
+	  (let ((display-buffer-alist
+		 (flex-compiler-display-buffer-alist active)))
+	    (flex-compiler-clean active))
+	  (flex-compiler-display-buffer active nil))
       (cl-no-applicable-method
        (message "Compiler %s has no ability to clean"
 		(config-entry-name active))))))

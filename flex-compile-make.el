@@ -83,9 +83,7 @@ This is done by creating a command with `make' found in the executable path."
 	    (buf (get-buffer "*compilation*")))
 	(and buf (kill-buffer buf))))
     (message "Compile command: %s" command)
-    (if flex-compile-make-display-compile-buffer
-	(compile command)
-      (save-window-excursion (compile command)))))
+    (compile command)))
 
 (cl-defmethod flex-compiler-makefile-targets ((this make-flex-compiler))
   (let* ((this (flex-compiler-by-name "make"))
@@ -105,9 +103,6 @@ This is done by creating a command with `make' found in the executable path."
 	 (cl-remove-if #'(lambda (elt)
 			   (member elt '("run" "clean")))))))
 
-(cl-defmethod flex-compiler-run-with-args ((this make-flex-compiler) args)
-  (flex-compiler-run-make this (car args)))
-
 (cl-defmethod flex-compiler-read-options ((this make-flex-compiler))
   (let ((targets (flex-compiler-makefile-targets this))
 	(none "<none>"))
@@ -123,11 +118,15 @@ This is done by creating a command with `make' found in the executable path."
     (setq compile-options nil))
   (cl-call-next-method this file))
 
-(cl-defmethod flex-compiler-run ((this make-flex-compiler))
-  (flex-compiler-run-make this "run"))
+(cl-defmethod flex-compiler-buffer ((this make-flex-compiler))
+  (get-buffer "*compilation*"))
 
-(cl-defmethod flex-compiler-clean ((this make-flex-compiler))
-  (flex-compiler-run-make this "clean"))
+(cl-defmethod flex-compiler-run-with-args ((this make-flex-compiler)
+					   args start-type)
+  (case start-type
+    (compile (flex-compiler-run-make this (car args)))
+    (run (flex-compiler-run-make this "run"))
+    (clean (flex-compiler-run-make this "clean"))))
 
 ;; register the compiler
 (flex-compile-manager-register the-flex-compile-manager (make-flex-compiler))
