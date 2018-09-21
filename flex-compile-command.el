@@ -64,6 +64,11 @@ NO-READ-P, if non-nil, read the expression with `read'."
   (oset this :name "command")
   (cl-call-next-method this args))
 
+(cl-defmethod flex-compiler-display-buffer-alist ((this command-flex-compiler))
+  "Return default nil, otherwise prompt reading doesn't play well
+with `display-buffer'."
+  nil)
+
 (defvar flex-compiler-read-options-command-history nil)
 
 (cl-defmethod flex-compiler-read-options ((this command-flex-compiler))

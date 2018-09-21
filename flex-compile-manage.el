@@ -85,6 +85,10 @@ frames, otherwise display the buffer.
 (defvar flex-compiler-query-eval-form nil
   "History variable for `flex-compiler-query-read-form'.")
 
+(defvar flex-compiler-set-buffer-exists
+  (delete-dups (list flex-compile-display-buffer-exists-mode 'never))
+  "History variable for `flex-compiler-set-buffer-exists-mode'.")
+
 
 
 (defclass flex-compiler (config-entry)
@@ -841,6 +845,27 @@ LAST-COMPILER-P, if non-nil, use the last chosen compiler."
 				 'flex-compiler-read-history
 				 (cl-second flex-compiler-read-history)
 				 nil t t))))
+
+;;;###autoload
+(defun flex-compiler-set-buffer-exists-mode ()
+  "Query and set the value for the display mode for existing buffers.
+This sets but doesn't configure
+`flex-compile-display-buffer-exists-mode'."
+  (interactive)
+  (let ((choices (->> (cdr flex-compile-display-mode-options)
+		      (-map 'last)
+		      (-map 'first)))
+	(def (or (second flex-compiler-set-buffer-exists)
+		 (car flex-compiler-set-buffer-exists))))
+    (setq flex-compile-display-buffer-exists-mode
+	  (choice-program-complete "Buffer Exists Mode"
+				   choices
+				   nil t ; return string, require match
+				   nil	 ; initial
+				   'flex-compiler-set-buffer-exists ; history
+				   def				    ; def
+				   nil	; allow-empty
+				   t t))))
 
 ;;;###autoload
 (defun flex-compiler-activate (compiler-name)
