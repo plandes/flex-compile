@@ -64,15 +64,19 @@ A function to call (if non-nill) if the compilation is successful.")))
 	       (car flex-compile-script-args-history)
 	       'flex-compile-script-args-history))
 
+(cl-defmethod flex-compiler-buffer-name ((this script-flex-compiler))
+  "*Script Compile*")
+
 (cl-defmethod flex-compiler-buffer ((this script-flex-compiler))
-  (get-buffer "*Script Compile*"))
+  (get-buffer (flex-compiler-buffer-name this)))
 
 (cl-defmethod flex-compiler-run-with-args ((this script-flex-compiler)
 					   args start-type)
   (let* ((config-file (flex-compiler-config this))
 	 (default-directory (file-name-directory config-file))
+	 (buffer-name (flex-compiler-buffer-name this))
 	 reset-target)
-    (with-slots (buffer-name finish-success-function) this
+    (with-slots (finish-success-function) this
       (let ((cmd (concat config-file " " (mapconcat #'identity args " ")))
 	    buf)
 	(with-current-buffer
