@@ -34,17 +34,6 @@
 (require 'flex-compile-manage)
 (require 'choice-program-complete)
 
-(defcustom flex-compile-make-display-compile-buffer t
-  "Whether or not to display the compile buffer when activated."
-  :group 'flex-compile
-  :type 'boolean)
-
-(defun flex-compile-make-display-compile-buffer-toggle ()
-  "Toggle variable `flex-compile-make-display-compile-buffer'."
-  (interactive)
-  (setq flex-compile-make-display-compile-buffer
-	(not flex-compile-make-display-compile-buffer)))
-
 (defvar flex-compile-make-target-history nil
   "History for makefile targets on compile.")
 
