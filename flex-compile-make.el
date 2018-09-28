@@ -25,7 +25,9 @@
 
 ;;; Commentary:
 
-;; Implementation compiler for make(files)
+;; Implementation compiler for make(files).
+;; Not customizing `compilation-always-kill' to t will result in windows
+;; disappearing on a compilation interruption.
 
 ;;; Code:
 
@@ -61,16 +63,10 @@ This is done by creating a command with `make' found in the executable path."
 	 (dir-switch (if dir (format "-C %s" dir)))
 	 (command (concat "make -k " dir-switch " -f "
 			  (file-name-nondirectory makefile)
-			  (if target " ") target))
-	 (process-environment (copy-tree process-environment)))
+			  (if target " ") target)))
     (setenv "EMACS" "emacs")
     ;; ignore annoying 'A compilation process is running; kill it? (yes or no)'
-    ;; in latex
-    (ignore-errors
-      (kill-compilation)
-      (let ((kill-buffer-query-functions nil)
-	    (buf (get-buffer "*compilation*")))
-	(and buf (kill-buffer buf))))
+    ;; in latex override code eliminated in favor of `compilation-always-kill'
     (message "Compile command: %s" command)
     (compile command)))
 
