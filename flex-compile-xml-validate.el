@@ -34,10 +34,7 @@
 (eval-when-compile (require 'xml))
 
 (defclass xml-validate-flex-compiler (run-args-flex-compiler)
-  ((buffer-name :initarg :buffer-name
-		:initform "*XML Validation*"
-		:type string)
-   (xmllint-program :initarg :xmllint-program
+  ((xmllint-program :initarg :xmllint-program
 		    :initform "xmllint")
    (schema-file :initarg :schema-file
 		:initform nil
@@ -79,6 +76,12 @@ Location of the schema file to validate against.")))
     (and schema (oset this :schema-file schema))
     nil))
 
+(cl-defmethod flex-compiler-buffer-name ((this xml-validate-flex-compiler))
+  "*XML Validation*")
+
+(cl-defmethod flex-compiler-buffer ((this xml-validate-flex-compiler))
+  (get-buffer (flex-compiler-buffer-name this)))
+
 (cl-defmethod flex-compiler-xml-validate-schema ((this xml-validate-flex-compiler))
   (with-slots (schema-file) this
     (if (not schema-file)
@@ -93,19 +96,22 @@ Location of the schema file to validate against.")))
   (oset this :schema-file (cdr (assq 'schema-file config)))
   (cl-call-next-method this config))
 
-(cl-defmethod flex-compiler-run-with-args ((this xml-validate-flex-compiler) args)
+(cl-defmethod flex-compiler-run-with-args ((this xml-validate-flex-compiler)
+					   args start-type)
   (with-slots (buffer-name xmllint-program) this
     (let* ((config-file (flex-compiler-config this))
 	   (schema (flex-compiler-xml-validate-schema this))
 	   (cmd (mapconcat #'identity
 			   `(,xmllint-program "--noout" "--schema"
 					      ,schema ,config-file)
-			   " ")))
+			   " "))
+	   buf)
       (with-current-buffer
-	  (compilation-start cmd nil
-			     #'(lambda (mode-name)
-				 buffer-name))
-	(pop-to-buffer (current-buffer))))))
+	  (setq buf (compilation-start cmd nil
+				       #'(lambda (mode-name)
+					   buffer-name)))
+	(pop-to-buffer (current-buffer)))
+      buf)))
 
 (flex-compile-manager-register the-flex-compile-manager (xml-validate-flex-compiler))
 
