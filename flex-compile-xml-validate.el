@@ -98,20 +98,16 @@ Location of the schema file to validate against.")))
 
 (cl-defmethod flex-compiler-run-with-args ((this xml-validate-flex-compiler)
 					   args start-type)
-  (with-slots (buffer-name xmllint-program) this
+  (with-slots (xmllint-program) this
     (let* ((config-file (flex-compiler-config this))
 	   (schema (flex-compiler-xml-validate-schema this))
 	   (cmd (mapconcat #'identity
 			   `(,xmllint-program "--noout" "--schema"
 					      ,schema ,config-file)
 			   " "))
-	   buf)
-      (with-current-buffer
-	  (setq buf (compilation-start cmd nil
-				       #'(lambda (mode-name)
-					   buffer-name)))
-	(pop-to-buffer (current-buffer)))
-      buf)))
+	   (buffer-name (flex-compiler-buffer-name this)))
+      (compilation-start cmd nil #'(lambda (mode-name)
+				     buffer-name)))))
 
 (flex-compile-manager-register the-flex-compile-manager (xml-validate-flex-compiler))
 
