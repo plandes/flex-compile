@@ -44,6 +44,10 @@
 (flex-compile-declare-variables
  python-shell-completion-native-enable)
 
+(defun flex-compile-python-path ()
+  "Return the PYTHONPATH environment to be used when creating the REPL."
+  (getenv "PYTHONPATH"))
+
 (defclass python-flex-compiler (evaluate-flex-compiler) ())
 
 (cl-defmethod initialize-instance ((this python-flex-compiler) &optional args)
@@ -98,7 +102,12 @@
 	   string-trim))))
 
 (cl-defmethod flex-compiler-repl-start ((this python-flex-compiler))
-  (run-python (python-shell-calculate-command) nil 4))
+  (let ((old-path (getenv "PYTHONPATH")))
+    (unwind-protect
+	(let ((new-path (flex-compile-python-path)))
+	  (setenv "PYTHONPATH" new-path)
+	  (run-python (python-shell-calculate-command) nil 4))
+      (setenv "PYTHONPATH" old-path))))
 
 (flex-compile-manager-register the-flex-compile-manager (python-flex-compiler))
 
