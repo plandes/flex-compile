@@ -48,6 +48,7 @@
 (require 'flex-compile-scala)
 (require 'flex-compile-xml-validate)
 (require 'flex-compile-choice-prog)
+(require 'flex-compile-org-export)
 
 ;;;###autoload
 (defun flex-compile-init ()
