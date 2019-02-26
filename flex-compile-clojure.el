@@ -137,7 +137,7 @@ with `digital-argument' of `1' the compiler prompts to switch between local
     (with-current-buffer (flex-compiler-config-buffer this)
       (cl-case connect-mode
 	(connect (cider-connect repl-host repl-port))
-	(jack-in (cider-jack-in))
+	(jack-in (cider-jack-in nil))
 	(t (error "No such connection mode supported: %S" connect-mode))))))
 
 (flex-compile-manager-register the-flex-compile-manager
