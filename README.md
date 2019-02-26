@@ -28,6 +28,7 @@ started.
     - [Clojure](#clojure)
     - [Scala](#scala)
     - [Python](#python)
+    - [Org Mode Export](#org-mode-export)
     - [Ess](#ess)
     - [XML Validation](#xml-validation)
     - [Choice Program](#choice-program)
@@ -126,6 +127,7 @@ add-on libraries, which include:
 * [flex-compile-clojure]
 * [flex-compile-scala]
 * [flex-compile-python]
+* [flex-compile-org-export]
 * [flex-compile-ess]
 * [flex-compile-xml-validate]
 * [flex-compile-choice-program]
@@ -183,6 +185,12 @@ expressions the Scala REPL and compilation with [sbt].
 
 This is a REPL based compiler that allows for evaluation Python buffers and
 expressions using [python mode].
+
+
+### Org Mode Export
+
+This compiler exports [Org mode](https://orgmode.org) to external formats and
+then shows the output in the browser.  Only HTML is currently supported.
 
 
 ### Ess
