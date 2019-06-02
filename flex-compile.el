@@ -50,11 +50,12 @@
 (require 'flex-compile-choice-prog)
 (require 'flex-compile-org-export)
 
-;;;###autoload
 (defun flex-compile-init ()
   "Initialize the flex-compile system."
   (flex-compiler-config-load)
   (flex-compiler-activate "disable"))
+
+(flex-compile-init)
 
 (provide 'flex-compile)
 
