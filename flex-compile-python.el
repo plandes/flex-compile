@@ -80,6 +80,8 @@
 
 (cl-defmethod flex-compiler-eval-config ((this python-flex-compiler) file)
   (let ((buf (find-file-noselect file)))
+    ;; (with-current-buffer (flex-compiler-buffer this)
+    ;;   (comint-clear-buffer))
     (with-current-buffer buf
       (python-shell-send-buffer))))
 
