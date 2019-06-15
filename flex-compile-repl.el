@@ -39,12 +39,6 @@
 (require 'eieio)
 (require 'flex-compile-config)
 
-(defvar flex-compiler-query-eval-mode nil
-  "History variable for `flex-compiler-query-eval'.")
-
-(defvar flex-compiler-query-eval-form-history nil
-  "History variable for `flex-compiler-query-read-form'.")
-
 (defclass repl-flex-compiler
   (conf-file-flex-compiler single-buffer-flex-compiler)
   ((repl-buffer-regexp :initarg :repl-buffer-regexp
@@ -71,7 +65,12 @@ If non-`nil' then don't prompt to kill a REPL buffer on clean.")
 		 :initform 'no
 		 :type symbol
 		 :documentation "\
-Whether or not to clear comint buffer after a compilation."))
+Whether or not to clear comint buffer after a compilation.")
+   (form-history :initarg :form-history
+		 :initform (gensym "flex-conf-repl-form-history")
+		 :type symbol
+		 :documentation "\
+The history variable for the eval form history."))
   :documentation "Compiles by evaluating expressions in the REPL.")
 
 (cl-defmethod initialize-instance ((this repl-flex-compiler) &optional args)
@@ -210,25 +209,28 @@ The caller raises and error if it doesn't start in time."
 		 'killed-buffer))))))
 
 (cl-defmethod flex-compiler-eval-initial-at-point ((this repl-flex-compiler))
+  "Return the expression at or right behind the current point."
   nil)
+
+(cl-defmethod flex-compiler-eval-form-impl ((this repl-flex-compiler) form)
+  "Evaluate the FORM and return the response of the REPL."
+  (flex-compiler--unimplemented this "eval-form-impl"))
 
 (cl-defmethod flex-compiler-query-read-form ((this repl-flex-compiler)
 					     no-input-p)
   "Read a form, meaningful for the compiler, from the user."
-  (let ((init (flex-compiler-eval-initial-at-point this)))
-    (if no-input-p
-	init
-      (read-string "Form: " init 'flex-compiler-query-eval-form-history))))
+  (with-slots (form-history) this
+    (let ((init (flex-compiler-eval-initial-at-point this)))
+      (if no-input-p
+	  init
+	(read-string "Form: " init form-history)))))
 
 (cl-defmethod flex-compiler-evaluate-form ((this repl-flex-compiler)
 					   &optional form)
   "Return the evaluation form.
 
 See the `:eval-form' slot."
-  (if (and (null form) (not (slot-boundp this :form)))
-      (flex-compiler-query-eval this nil))
-  (let ((res (flex-compiler-eval-form-impl
-	      this (or form (slot-value this 'form)))))
+  (let ((res (flex-compiler-eval-form-impl this form)))
     (if (stringp res)
 	res
       (prin1-to-string res))))

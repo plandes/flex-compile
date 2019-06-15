@@ -19,7 +19,7 @@
 (ert-deftest test-compiler-registration ()
   "Test registration of compilers."
   (should (equal '("choice-program" "clojure" "command" "disable" "ess" "make"
-		   "python" "scala" "script" "xml-validate")
+		   "org-export" "python" "script" "xml-validate")
 		 (->> (slot-value the-flex-compile-manager 'entries)
 		      (-map 'config-entry-name)
 		      (funcall #'(lambda (elt) (sort elt 'string<)))))))

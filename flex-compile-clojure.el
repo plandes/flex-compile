@@ -84,11 +84,12 @@ The conection mode, which is either:
   (cider-repl-return))
 
 (cl-defmethod flex-compiler-eval-form-impl ((this clojure-flex-compiler) form)
-  (nrepl-dict-get (nrepl-sync-request:eval
+  (let* ((res (nrepl-sync-request:eval
 		   form
 		   (cider-current-connection)
-		   (cider-current-ns))
-		  "value"))
+		   (cider-current-ns))))
+    (or (nrepl-dict-get res "err")
+	(nrepl-dict-get res "value"))))
 
 (cl-defmethod flex-compiler-repl-compile ((this repl-flex-compiler) file)
   (save-excursion
