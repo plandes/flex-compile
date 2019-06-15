@@ -71,7 +71,8 @@ This is a container class that provides the meta data for the compiler.")
     (unless (plist-get args elt)
       (error "Missing initarg: %S in %s" elt this)))
   (setq args (plist-put args :object-name (plist-get args :name)))
-  (cl-call-next-method this args))
+  (cl-call-next-method this args)
+  (set (slot-value this 'history) nil))
 
 (cl-defmethod object-print ((this flex-conf-prop) &rest strings)
   (with-slots (name order) this
@@ -171,7 +172,10 @@ The major mode to use to validate/select `config-file` buffers.")))
     (let* ((prompt (flex-compiler-conf-prompt this))
 	   (fname (buffer-file-name))
 	   (initial (and fname (file-name-nondirectory fname))))
-      (read-file-name prompt nil nil t initial))))
+      (let* ((file-name-history (symbol-value history)))
+	(prog1
+	    (read-file-name prompt nil nil t initial)
+	  (set history file-name-history))))))
 
 (cl-defmethod flex-compiler-conf-validate ((this flex-conf-file-prop) val)
   (with-slots (validate-modes compiler) this
