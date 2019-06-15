@@ -78,8 +78,10 @@ frames, otherwise display the buffer.
 		:documentation "The default name of the single buffer.")
    (kill-buffer-clean :initarg :kill-buffer-clean
 		      :initform nil
-		      :type boolean
-		      :documentation "If non-nil kill the buffer on clean."))
+		      :type (or integer boolean)
+		      :documentation "\
+If non-nil kill the buffer on clean.
+If this is an integer, wait the value in seconds and then kill."))
   :abstract t
   :documentation "A flex compiler that has a single buffer.")
 
@@ -177,12 +179,20 @@ MODE is either `flex-compile-display-buffer-new-mode' or
   (flex-compiler-single-buffer--flex-comp-def this 'run t))
 
 (cl-defmethod flex-compiler-clean ((this single-buffer-flex-compiler))
-  (with-slots (kill-buffer-clean) this
-    (when kill-buffer-clean
-      (let ((buf (flex-compiler-buffer this)))
-	(if (buffer-live-p buf)
-	    (kill-buffer buf)))))
-  (flex-compiler-single-buffer--flex-comp-def this 'clean t))
+  (let ((compile-def
+	 (flex-compiler-single-buffer--flex-comp-def this 'clean t)))
+    (with-slots (kill-buffer-clean) this
+      (when kill-buffer-clean
+	(let ((killfn `(lambda
+			 ()
+			 (let ((buf (flex-compiler-buffer ,this)))
+			   (message "Killing buffer %s" buf)
+			   (if (buffer-live-p buf)
+			       (kill-buffer buf))))))
+	  (if (numberp kill-buffer-clean)
+	      (run-at-time kill-buffer-clean nil killfn)
+	    (funcall killfn)))))
+    compile-def))
 
 
 
