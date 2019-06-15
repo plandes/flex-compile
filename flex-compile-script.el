@@ -1,6 +1,6 @@
 ;;; flex-compile-script.el --- script compile functions
 
-;; Copyright (C) 2015 - 2017 Paul Landes
+;; Copyright (C) 2015 - 2019 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
@@ -31,62 +31,53 @@
 
 (require 'flex-compile-manage)
 
-(defvar flex-compile-script-args-history nil
-  "History variable for `flex-compile-script' arg.")
-
-(defvar flex-compile-script-finish-success-function nil
-  "A function to call (if non-nill) if the compilation is successful.")
-
 ;;; script file compiler
-(defclass script-flex-compiler (directory-run-flex-compiler)
-  ((finish-success-function :initarg :finish-success-function
-			    :initform nil
-			    :documentation "\
-A function to call (if non-nill) if the compilation is successful.")))
+(defclass script-flex-compiler (conf-file-flex-compiler
+				single-buffer-flex-compiler)
+  ((arguments :initarg :arguments
+	      :initform nil
+	      :documentation "The arguments to give to the script.")))
 
 (cl-defmethod initialize-instance ((this script-flex-compiler) &optional args)
-  (oset this :name "script")
-  (oset this :mode-desc "script")
-  (oset this :config-file-desc "script file")
-  (oset this :major-mode 'non-existing-mode-symbol)
+  (let* ((fn '(lambda (this compiler default prompt history)
+		(split-string (read-string prompt nil history default))))
+	 (props (list (flex-conf-eval-prop :name 'arguments
+					   :prompt "Arguments"
+					   :func fn
+					   :compiler this
+					   :input-type 'last))))
+    (setq args (plist-put args :name "script")
+	  args (plist-put args :description "Script")
+	  args (plist-put args :validate-modes
+			  '(sh-mode cperl-mode python-mode))
+	  args (plist-put args :buffer-name "Script Compile")
+	  args (plist-put args :props
+			  (append (plist-get args :props) props))))
   (cl-call-next-method this args))
 
 (cl-defmethod flex-compiler-load-libraries ((this script-flex-compiler))
   (require 'compile)
   (require 'choice-program))
 
-(cl-defmethod flex-compiler-validate-buffer-file ((this script-flex-compiler))
-  (unless (memq major-mode '(sh-mode cperl-mode python-mode))
-    (cl-call-next-method this)))
+(cl-defmethod flex-compiler-conf-set-prop ((this script-flex-compiler)
+					   prop val)
+  (setf (slot-value this 'arguments) nil)
+  (cl-call-next-method this prop val))
 
-(cl-defmethod flex-compiler-read-options ((this script-flex-compiler))
-  (read-string "Script arguments: "
-	       (car flex-compile-script-args-history)
-	       'flex-compile-script-args-history))
-
-(cl-defmethod flex-compiler-buffer-name ((this script-flex-compiler))
-  "*Script Compile*")
-
-(cl-defmethod flex-compiler-buffer ((this script-flex-compiler))
-  (get-buffer (flex-compiler-buffer-name this)))
-
-(cl-defmethod flex-compiler-run-with-args ((this script-flex-compiler)
-					   args start-type)
-  (let* ((config-file (flex-compiler-config this))
-	 (default-directory (file-name-directory config-file))
-	 (buffer-name (flex-compiler-buffer-name this))
-	 reset-target)
-    (with-slots (finish-success-function) this
-      (let ((cmd (concat config-file " " (mapconcat #'identity args " ")))
-	    buf)
-	(with-current-buffer
-	    (setq buf (compilation-start cmd nil
-					 #'(lambda (mode-name)
-					     buffer-name)))
-	  (if finish-success-function
-	      (add-to-list 'flex-compile-script-finish-success-function
-			   finish-success-function)))
-	buf))))
+(cl-defmethod flex-compiler-start-buffer ((this script-flex-compiler)
+					  start-type)
+  (with-slots (config-file start-directory arguments) this
+    (let ((default-directory start-directory)
+	  (buffer-name (flex-compiler-buffer-name this))
+	  (cmd (concat config-file " "
+		       (mapconcat #'identity arguments " ")))
+	  reset-target
+	  buf)
+      (with-current-buffer
+	  (setq buf (compilation-start cmd nil
+				       #'(lambda (mode-name)
+					   buffer-name))))
+      buf)))
 
 (flex-compile-manager-register the-flex-compile-manager (script-flex-compiler))
 

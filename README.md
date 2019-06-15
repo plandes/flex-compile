@@ -26,7 +26,6 @@ started.
     - [Beanshell](#beanshell)
     - [Script](#script)
     - [Clojure](#clojure)
-    - [Scala](#scala)
     - [Python](#python)
     - [Org Mode Export](#org-mode-export)
     - [Ess](#ess)
@@ -42,8 +41,8 @@ started.
 The general idea is the keybindings to compile you get use to are "switched" to
 whatever specific problem you're working on.  For example, if you're compiling
 with a makefile, use the *make* compiler to initiate an make process.  If
-you're working with a REPL based langauage (i.e. [flex-compile-clojure],
-[flex-compile-scala] etc) instead a buffer or expression is evaluated.
+you're working with a REPL based langauage (i.e. [flex-compile-python],
+[flex-compile-clojure] etc) instead a buffer or expression is evaluated.
 
 
 ### Motivation
@@ -125,7 +124,6 @@ add-on libraries, which include:
 * [flex-compile-beanshell]
 * [flex-compile-script]
 * [flex-compile-clojure]
-* [flex-compile-scala]
 * [flex-compile-python]
 * [flex-compile-org-export]
 * [flex-compile-ess]
@@ -173,12 +171,6 @@ switch betwee these two methods with the [given keybindings](#key-bindings):
   
 See documetation with  `M-h f flex-compiler-query-eval` method for more
 inforamtion (and current binding).
-
-
-### Scala
-
-This is a REPL based compiler that allows for evaluation Scala buffers,
-expressions the Scala REPL and compilation with [sbt].
 
 
 ### Python
@@ -230,7 +222,6 @@ GNU Lesser General Public License, Version 2.0
 [flex-compile-script]: #script
 [flex-compile-maven]: #maven
 [flex-compile-clojure]: #clojure
-[flex-compile-scala]: #scala
 [flex-compile-python]: #python
 [flex-compile-ess]: #ess
 [flex-compile-xml-validate]: #xml-validation
@@ -238,7 +229,6 @@ GNU Lesser General Public License, Version 2.0
 
 [Beanshell]: http://www.beanshell.org
 [Cider]: https://github.com/clojure-emacs/cider
-[sbt]: http://www.scala-sbt.org
 [python mode]: https://github.com/fgallina/python.el
 [Emacs Speaks Statistics]: https://ess.r-project.org
 [Choice Program]: https://github.com/plandes/choice-program

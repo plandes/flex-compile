@@ -1,6 +1,6 @@
 ;;; flex-compile-org-export.el --- convenience compiler that evaluates Emacs Lisp
 
-;; Copyright (C) 2015 - 2018 Paul Landes
+;; Copyright (C) 2015 - 2019 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
@@ -33,42 +33,54 @@
 (require 'flex-compile-manage)
 
 ;;; func file compiler
-(defclass org-export-flex-compiler (optionable-flex-compiler)
-  ()
+(defclass org-export-flex-compiler (conf-file-flex-compiler)
+  ((method :initarg :methods
+	   :initform org-twbs-export-to-html
+	   :type function
+	   :documentation "The Org mode export function."))
   :documentation "Convenience compiler that exports an Org buffer to a file.")
 
-(cl-defmethod initialize-instance ((this org-export-flex-compiler) &optional args)
-  (oset this :name "org-export")
+(cl-defmethod initialize-instance ((this org-export-flex-compiler)
+				   &optional args)
+  (let* ((fn '(lambda (this compiler default prompt history)
+		(split-string (read-string prompt nil history default))))
+	 (methods '(("Plain HTML" . org-html-export-to-html)
+		    ("Bootstrap HTML" . org-twbs-export-to-html)))
+	 (props (list (flex-conf-choice-description-prop
+		       :name 'method
+		       :prompt "Method"
+		       :compiler this
+		       :methods methods
+		       :required t
+		       :input-type 'toggle))))
+    (setq args (plist-put args :name "org-export")
+	  args (plist-put args :description "Org mode")
+	  args (plist-put args :validate-modes '(org-mode))
+	  args (plist-put args :props
+			  (append (plist-get args :props) props))))
   (cl-call-next-method this args))
 
 (cl-defmethod flex-compiler-load-libraries ((this org-export-flex-compiler))
   (require 'ox-twbs)
   (require 'choice-program-complete))
 
-(defvar flex-compiler-org-export-function-history nil)
-
-(cl-defmethod flex-compiler-org-export-read-method ((this org-export-flex-compiler))
-  "Read the export method function from the user"
-  (let* ((methods '(("Plain HTML" . org-html-export-to-html)
-		    ("Bootstrap HTML" . org-twbs-export-to-html)))
-	 (method (choice-program-complete
-		  "Export method"
-		  (mapcar 'first methods)
-		  t t nil
-		  'flex-compiler-org-export-function-history
-		  (or (second flex-compiler-org-export-function-history)
-		      "Bootstrap HTML")
-		  nil nil t)))
-    (cdr (assoc method methods))))
-
-(cl-defmethod flex-compiler-read-options ((this org-export-flex-compiler))
-  (list (flex-compiler-org-export-read-method this)))
-
 (cl-defmethod flex-compiler-compile ((this org-export-flex-compiler))
-  (unless (flex-compiler-options this)
-    (flex-compiler-read-set-options this nil))
-  ;; (shell-command "osascript -e 'tell application \"Emacs\" to activate'")
-  (org-open-file (eval (flex-compiler-options this))))
+  (flex-compiler-set-required this)
+  (if nil
+      (shell-command "osascript -e 'tell application \"Emacs\" to activate'"))
+  (with-slots (method config-file) this
+    (save-excursion
+      (set-buffer (flex-compiler-conf-file-buffer this))
+      (org-open-file (funcall method)))))
+
+(cl-defmethod flex-compiler-clean ((this org-export-flex-compiler))
+  (flex-compiler-set-required this)
+  (with-slots (config-file) this
+    (let ((html-file (replace-regexp-in-string "\.org$" ".html" config-file)))
+      (if (not (file-exists-p html-file))
+	  (message "File %s doesn't exist" html-file)
+	(delete-file html-file t)
+	(message "Deleted %s" html-file)))))
 
 (flex-compile-manager-register the-flex-compile-manager
 			       (org-export-flex-compiler))

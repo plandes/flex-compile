@@ -1,6 +1,6 @@
 ;;; flex-compile-command.el --- convenience compiler that evaluates Emacs Lisp
 
-;; Copyright (C) 2015 - 2017 Paul Landes
+;; Copyright (C) 2015 - 2019 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
@@ -32,36 +32,46 @@
 
 (require 'flex-compile-manage)
 
-(defvar flex-compile-read-sexp-history nil
-  "History variable for `read-sexp'.")
+(defclass flex-conf-sexp-prop (flex-conf-prop) ()
+  :documentation "Property that prompts for a selection of a list of choices.")
 
-(defun flex-compile-read-sexp (&optional prompt history no-read-p)
-  "Read a symobl expression from user input.
-PROMPT is used to prompt the user interactively.
-HISTORY is a symbol with a variable bounded to the listing of the history.
-This defaults to `read-sexp-history'.
-NO-READ-P, if non-nil, read the expression with `read'."
-  (setq prompt (or prompt "Lisp Expression: "))
-  (setq history (or history 'read-sexp-history))
-  (let (sexp ret)
-    (condition-case err
-	(progn
-	  (setq sexp (thing-at-point 'sexp))
-	  ;; read as sexp and then back to string to make
-	  ;; into one line
-	  (if sexp (setq sexp (prin1-to-string (read sexp)))))
-      (t))
-    (setq ret (read-string prompt sexp history))
-    (if (not no-read-p) (setq ret (read ret)))
-    ret))
+(cl-defmethod flex-compiler-conf-read ((this flex-conf-sexp-prop))
+  (list
+   (cl-flet ((read-sexp
+	      (prompt history no-read-p)
+	      (let (sexp ret)
+		(condition-case err
+		    (progn
+		      (setq sexp (thing-at-point 'sexp))
+		      ;; read as sexp and then back to string to make
+		      ;; into one line
+		      (if sexp (setq sexp (prin1-to-string (read sexp)))))
+		  (t))
+		(read (read-string prompt sexp history)))))
+     (with-slots (history choices prompt) this
+       (let ((cmd (read-command (format "%s (or RET for sexp): " prompt)))
+	     (sexp-prompt (format "%s: " prompt)))
+	 (if (eq '## cmd)
+	     (let ((func (read-sexp sexp-prompt history nil)))
+	       (eval `(defun flex-compiler-function-invoke-command ()
+			(interactive)
+			,func)))
+	   cmd))))))
+
 
 ;;; func file compiler
-(defclass command-flex-compiler (optionable-flex-compiler)
-  ()
+(defclass command-flex-compiler (conf-flex-compiler)
+  ((sexp :initarg :sexp
+	 :initform nil))
   :documentation "Convenience compiler that evaluates Emacs Lisp.")
 
 (cl-defmethod initialize-instance ((this command-flex-compiler) &optional args)
-  (oset this :name "command")
+  (let ((props (list (flex-conf-sexp-prop :name 'sexp
+					  :compiler this
+					  :prompt "Expression"
+					  :input-type 'last))))
+    (setq args (plist-put args :name "command")
+	  args (plist-put args :props (append (plist-get args :props) props))))
   (cl-call-next-method this args))
 
 (cl-defmethod flex-compiler-display-buffer-alist ((this command-flex-compiler))
@@ -69,25 +79,13 @@ NO-READ-P, if non-nil, read the expression with `read'."
 with `display-buffer'."
   nil)
 
-(defvar flex-compiler-read-options-command-history nil)
-
-(cl-defmethod flex-compiler-read-options ((this command-flex-compiler))
-  (list
-   (let ((cmd (read-command "Function to invoke (or RET for sexp): ")))
-     (if (eq '## cmd)
-	 (let ((func (flex-compile-read-sexp
-		      nil 'flex-compiler-read-options-command-history)))
-	   (eval `(defun flex-compiler-function-invoke-command ()
-		    (interactive)
-		    ,func)))
-       cmd))))
-
 (cl-defmethod flex-compiler-compile ((this command-flex-compiler))
-  (unless (flex-compiler-options this)
-    (flex-compiler-read-set-options this nil))
-  (let ((res (apply (flex-compiler-options this))))
-    (message "%S "res)
-    res))
+  (unless (oref this :sexp)
+    (flex-compiler-configure this nil))
+  (with-slots (sexp) this
+    (let ((res (apply sexp)))
+      (message "%S "res)
+      res)))
 
 (flex-compile-manager-register the-flex-compile-manager
 			       (command-flex-compiler))

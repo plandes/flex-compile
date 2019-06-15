@@ -1,13 +1,13 @@
 ;;; flex-compile.el --- Run, evaluate and compile for a many languages and modes.
 
-;; Copyright (C) 2015 - 2017 Paul Landes
+;; Copyright (C) 2015 - 2019 Paul Landes
 
-;; Version: 0.3
+;; Version: 0.4
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
 ;; Keywords: compilation integration
 ;; URL: https://github.com/plandes/flex-compile
-;; Package-Requires: ((emacs "25") (buffer-manage "0.7") (dash "2.13.0"))
+;; Package-Requires: ((emacs "26") (dash "2.13.0") (buffer-manage "0.8"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -43,12 +43,11 @@
 (require 'flex-compile-command)
 (require 'flex-compile-clojure)
 (require 'flex-compile-script)
-(require 'flex-compile-ess)
 (require 'flex-compile-python)
-(require 'flex-compile-scala)
 (require 'flex-compile-xml-validate)
-(require 'flex-compile-choice-prog)
 (require 'flex-compile-org-export)
+(require 'flex-compile-choice-prog)
+(require 'flex-compile-ess)
 
 (defun flex-compile-init ()
   "Initialize the flex-compile system."

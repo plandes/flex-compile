@@ -1,6 +1,6 @@
 ;;; flex-compile-make.el --- compile functions
 
-;; Copyright (C) 2015 - 2017 Paul Landes
+;; Copyright (C) 2015 - 2019 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
@@ -32,6 +32,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'dash)
 (require 'compile)
 (require 'flex-compile-manage)
 (require 'choice-program-complete)
@@ -40,15 +41,27 @@
   "History for makefile targets on compile.")
 
 ;;; make file compiler
-(defclass make-flex-compiler (run-args-flex-compiler)
-  ()
+(defclass make-flex-compiler (conf-file-flex-compiler
+			      single-buffer-flex-compiler)
+  ((target :initarg :target
+	   :initform nil
+	   :type (or null string)))
   :documentation "Invoke make on a configured makefile.")
 
 (cl-defmethod initialize-instance ((this make-flex-compiler) &optional args)
-  (oset this :name "make")
-  (oset this :major-mode 'makefile-gmake-mode)
-  (oset this :mode-desc "make")
-  (oset this :config-file-desc "makefile")
+  (let* ((fn #'(lambda (this compiler &rest args)
+		 (flex-compiler-makefile-read compiler)))
+	 (props (list (flex-conf-eval-prop :name 'target
+					   :prompt "Target"
+					   :func fn
+					   :compiler this
+					   :input-type 'last
+					   :order 1))))
+    (setq args (plist-put args :name "make")
+	  args (plist-put args :description "Makefile")
+	  args (plist-put args :validate-modes '(makefile-gmake-mode))
+	  args (plist-put args :buffer-name "*compilation*")
+	  args (plist-put args :props (append (plist-get args :props) props))))
   (cl-call-next-method this args))
 
 (cl-defmethod flex-compiler-load-libraries ((this make-flex-compiler))
@@ -58,7 +71,7 @@
   "Invoke a make compilation in an async inferior buffer.
 
 This is done by creating a command with `make' found in the executable path."
-  (let* ((makefile (flex-compiler-config this))
+  (let* ((makefile (slot-value this 'config-file))
 	 (dir (file-name-directory makefile))
 	 (dir-switch (if dir (format "-C %s" dir)))
 	 (command (concat "make -k " dir-switch " -f "
@@ -71,10 +84,9 @@ This is done by creating a command with `make' found in the executable path."
     (compile command)))
 
 (cl-defmethod flex-compiler-makefile-targets ((this make-flex-compiler))
-  (let* ((this (flex-compiler-by-name "make"))
-	 (makefile (flex-compiler-config this))
+  (let* ((makefile (slot-value this 'config-file))
 	 (dir (file-name-directory makefile))
-	 (targets))
+	 targets)
     (with-temp-buffer
       (insert (shell-command-to-string (format "make -prRn -C %s" dir)))
       (goto-char (point-min))
@@ -88,7 +100,7 @@ This is done by creating a command with `make' found in the executable path."
 	 (cl-remove-if #'(lambda (elt)
 			   (member elt '("run" "clean")))))))
 
-(cl-defmethod flex-compiler-read-options ((this make-flex-compiler))
+(cl-defmethod flex-compiler-makefile-read ((this make-flex-compiler))
   (let ((targets (flex-compiler-makefile-targets this))
 	(none "<none>"))
     (->> (choice-program-complete "Target" targets t nil nil
@@ -98,20 +110,19 @@ This is done by creating a command with `make' found in the executable path."
 	 (funcall #'(lambda (elt)
 		      (if (equal none elt) nil elt))))))
 
-(cl-defmethod flex-compiler-set-config ((this make-flex-compiler) &optional file)
-  (with-slots (compile-options) this
-    (setq compile-options nil))
-  (cl-call-next-method this file))
+(cl-defmethod flex-compiler-configure ((this make-flex-compiler)
+				       config-options)
+  (unless (eq config-options 'immediate)
+    (setq config-options '(prop-name target)))
+  (cl-call-next-method this config-options))
 
-(cl-defmethod flex-compiler-buffer ((this make-flex-compiler))
-  (get-buffer "*compilation*"))
-
-(cl-defmethod flex-compiler-run-with-args ((this make-flex-compiler)
-					   args start-type)
-  (case start-type
-    (compile (flex-compiler-run-make this (car args)))
-    (run (flex-compiler-run-make this "run"))
-    (clean (flex-compiler-run-make this "clean"))))
+(cl-defmethod flex-compiler-start-buffer ((this make-flex-compiler)
+					  start-type)
+  (with-slots (target) this
+    (case start-type
+      (compile (flex-compiler-run-make this target))
+      (run (flex-compiler-run-make this "run"))
+      (clean (flex-compiler-run-make this "clean")))))
 
 ;; register the compiler
 (flex-compile-manager-register the-flex-compile-manager (make-flex-compiler))

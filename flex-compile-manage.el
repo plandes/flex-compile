@@ -1,6 +1,6 @@
 ;;; flex-compile-manage.el --- manager for flexible compilers
 
-;; Copyright (C) 2015 - 2017 Paul Landes
+;; Copyright (C) 2015 - 2019 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
@@ -38,6 +38,8 @@
 (require 'cl-lib)
 (require 'comint)
 (require 'eieio)
+(require 'eieio-base)
+(require 'dash)
 (require 'time-stamp)
 (require 'config-manage)
 (require 'choice-program-complete)
@@ -82,13 +84,12 @@ frames, otherwise display the buffer.
 (defvar flex-compiler-query-eval-mode nil
   "History variable for `flex-compiler-query-eval'.")
 
-(defvar flex-compiler-query-eval-form nil
+(defvar flex-compiler-query-eval-form-history nil
   "History variable for `flex-compiler-query-read-form'.")
 
 (defvar flex-compiler-set-buffer-exists
   (delete-dups (list flex-compile-display-buffer-exists-mode 'never))
   "History variable for `flex-compiler-set-buffer-exists-mode'.")
-
 
 
 (defclass flex-compiler (config-entry)
@@ -102,6 +103,12 @@ configuration file.")
   "Un-implemented method flex-compiler method"
   'cl-no-applicable-method)
 
+(cl-defmethod initialize-instance ((this flex-compiler) &optional args)
+  (if (null (plist-get args :description))
+      (setq args (plist-put args :description
+			    (capitalize (plist-get args :name)))))
+  (cl-call-next-method this args))
+
 (cl-defmethod flex-compiler--unimplemented ((this flex-compiler) method)
   (with-temp-buffer
     (set-buffer (get-buffer-create "*flex-compiler-backtrace*"))
@@ -109,7 +116,7 @@ configuration file.")
     (let ((standard-output (current-buffer)))
       (backtrace)))
   (signal 'flex-compiler-un-implemented
-	  (list method this)))
+	  (list method (object-print this))))
 
 (cl-defmethod flex-compiler-load-libraries ((this flex-compiler))
   "Call back for to load and require libraries needed by the compiler.")
@@ -162,7 +169,7 @@ a `flex-compiler' can explictly control buffer display with
   :documentation "A no-op compiler For disabled state.")
 
 (cl-defmethod initialize-instance ((this no-op-flex-compiler) &optional args)
-  (oset this :name "disable")
+  (setq args (plist-put args :name "disable"))
   (cl-call-next-method this args))
 
 (cl-defmethod flex-compiler--unimplemented ((this no-op-flex-compiler) method)
@@ -170,162 +177,375 @@ a `flex-compiler' can explictly control buffer display with
 
 
 
-(defclass directory-start-flex-compiler (flex-compiler)
-  ((start-directory :initarg :start-directory
+(defclass flex-conf-prop (eieio-named)
+  ((name :initarg :name
+	 :type symbol
+	 :documentation "Name of the property")
+   (compiler :initarg :compiler
+	     :type flex-compiler
+	     :documentation "The compiler that `owns' this property")
+   (prompt :initarg :prompt
+	   :type string
+	   :documentation "Used to prompt the user for input.")
+   (history :initarg :history
+	    :initform (gensym "flex-conf-prop-history")
+	    :type symbol
+	    :documentation "The history variable for the input.")
+   (required :initarg :required
+	     :initform nil
+	     :type boolean
+	     :documentation "\
+Whether or not the property is needed for compilation, run, or clean")
+   (input-type :initarg :input-type
+	       :initform 'last
+	       :type symbol
+	       :documentation "One of last toggle.")
+   (order :initarg :order
+	  :initform 100
+	  :type integer
+	  :documentation "The order of importance of setting the property."))
+  :documentation "A property of the `conf-flex-compiler' meant to be saved.")
+
+(cl-defmethod initialize-instance ((this flex-conf-prop) &optional args)
+  (dolist (elt (list :compiler :name :prompt))
+    (unless (plist-get args elt)
+      (error "Missing initarg: %S in %s" elt this)))
+  (setq args (plist-put args :object-name (plist-get args :name)))
+  (cl-call-next-method this args))
+
+(cl-defmethod object-print ((this flex-conf-prop) &rest strings)
+  (with-slots (name order) this
+    (apply #'cl-call-next-method this
+	   (format ": %s (%d)" name order)
+	   strings)))
+
+(cl-defmethod flex-compiler-conf-default-input ((this flex-conf-prop))
+  "Return the default string value for the default when prompting user input."
+  (with-slots (history input-type) this
+    (if (boundp history)
+	(let ((val (symbol-value history)))
+	  (case input-type
+	    (toggle (or (second val) (first val)))
+	    (last (first val)))))))
+
+(cl-defmethod flex-compiler-conf-prompt ((this flex-conf-prop))
+  "Return the prompt to use for user input."
+  (with-slots (prompt) this
+    (let ((default (flex-compiler-conf-default-input this)))
+      (format "%s%s: " prompt (if default (format " (%s)" default) "")))))
+
+(cl-defmethod flex-compiler-conf-read ((this flex-conf-prop))
+  "Read the user input for the property.
+The default reads a string using `flex-compiler-conf-default' and
+`flex-compiler-conf-prompt' with the history slot."
+  (with-slots (history) this
+    (let* ((default (flex-compiler-conf-default-input this))
+	   (prompt (flex-compiler-conf-prompt this)))
+      (read-string prompt nil history default))))
+
+(cl-defmethod flex-compiler-conf-validate ((this flex-conf-prop) val)
+  "Raise an error if user input VAL is not not valid data."
+  nil)
+
+(cl-defmethod flex-compile-clear ((this flex-conf-prop))
+  "Clear any state \(i.e. history) from the property."
+  (with-slots (history) this
+    (setq (symbol-value history) nil)))
+
+
+(defclass flex-conf-choice-prop (flex-conf-prop)
+  ((choices :initarg :choices
+	    :type list
+	    :documentation "A list of symbols or strings for the choices \
+to prompt the user"))
+  :documentation "Property that prompts for a selection of a list of choices.")
+
+(cl-defmethod flex-compiler-conf-read ((this flex-conf-choice-prop))
+  (with-slots (history choices) this
+    (if (= 1 (length choices))
+	(car choices)
+      (let* ((default (flex-compiler-conf-default-input this))
+	     (prompt (flex-compiler-conf-prompt this)))
+	(choice-program-complete prompt choices nil t nil history default)))))
+
+
+(defclass flex-conf-choice-description-prop (flex-conf-prop)
+  ((methods :initarg :methods
+	   :type list
+	   :documentation "A list of symbols or strings for the choices \
+to prompt the user"))
+  :documentation "Property that prompts for a selection of a list of choices.")
+
+(cl-defmethod flex-compiler-conf-read ((this flex-conf-choice-description-prop))
+  (with-slots (history methods) this
+    (if (= 1 (length methods))
+	(cadr methods)
+      (let* ((default (flex-compiler-conf-default-input this))
+	     (prompt (flex-compiler-conf-prompt this))
+	     (choices (mapcar 'first methods))
+	     (method (choice-program-complete
+		      prompt choices t t nil history default)))
+	(cdr (assoc method methods))))))
+
+
+(defclass flex-conf-file-prop (flex-conf-prop)
+  ((validate-modes :initarg :validate-modes
+		   :initform nil
+		   :type list
+		   :documentation "\
+The major mode to use to validate/select `config-file` buffers.")))
+
+(cl-defmethod initialize-instance ((this flex-conf-file-prop) &optional args)
+  (dolist (elt (list :validate-modes))
+    (unless (plist-get args elt)
+      (error "Missing initarg: %S" elt)))
+  (cl-call-next-method this args))
+
+(cl-defmethod flex-compiler-conf-default-input ((this flex-conf-file-prop))
+  nil)
+
+(cl-defmethod flex-compiler-conf-read ((this flex-conf-file-prop))
+  (with-slots (history description) this
+    (let* ((prompt (flex-compiler-conf-prompt this))
+	   (fname (buffer-file-name))
+	   (initial (and fname (file-name-nondirectory fname))))
+      (read-file-name prompt nil nil t initial))))
+
+(cl-defmethod flex-compiler-conf-validate ((this flex-conf-file-prop) val)
+  (with-slots (validate-modes compiler) this
+    (let ((description (slot-value compiler 'description)))
+      (save-excursion
+	(set-buffer (find-file-noselect val))
+	(if (and validate-modes (not (memq major-mode validate-modes)))
+	    (error (format "This doesn't look like a %s file, got mode: %S"
+			   description major-mode)))))))
+
+
+(defclass flex-conf-directory-prop (flex-conf-prop)
+  ()
+  :documentation "Directory property")
+
+(cl-defmethod flex-compiler-conf-read ((this flex-conf-directory-prop))
+  "Read a directory from the user and set it to slot `start-directory'."
+  (with-slots (history choices) this
+    (let ((default (flex-compiler-conf-default-input this))
+	  (prompt (flex-compiler-conf-prompt this)))
+      (read-directory-name prompt default nil t))))
+
+
+(defclass flex-conf-eval-prop (flex-conf-prop)
+  ((func :initarg :func
+	 :initform '(lambda (&rest) "Unimplemented")
+	 :type function
+	 :documentation "The function to invoke when reading the config.")))
+
+(cl-defmethod flex-compiler-conf-read ((this flex-conf-eval-prop))
+  (with-slots (func history compiler) this
+    (let ((default (flex-compiler-conf-default-input this))
+	  (prompt (flex-compiler-conf-prompt this)))
+      (funcall func this compiler default prompt history))))
+
+
+
+(defclass conf-flex-compiler (flex-compiler)
+  ((props :initarg :props
+	  :initform nil
+	  :documentation "The list of metadata configurations")
+   (last-selection :initarg :last-selection))
+  :abstract true
+  :documentation "A property based configurable compiler.")
+
+(cl-defmethod initialize-instance ((this conf-flex-compiler) &optional args)
+  (let* ((props (plist-get args :props))
+	 (choices (mapcar #'(lambda (prop)
+			      (slot-value prop 'name))
+			  props)))
+    (setq args (plist-put args :last-selection
+			  (flex-conf-choice-prop :name 'last-selection
+						 :prompt "Property"
+						 :compiler this
+						 :choices choices
+						 :input-type 'last))
+	  args (plist-put args :pslots
+			  (append (plist-get args :pslots) choices))
+	  args (plist-put args :props props)))
+  (cl-call-next-method this args))
+
+(cl-defmethod object-print ((this conf-flex-compiler) &rest strings)
+  (apply #'cl-call-next-method this
+	 (concat ", props: ("
+	 	 (mapconcat #'object-print (slot-value this 'props) ", ")
+	 	 ")")
+	 strings))
+
+(cl-defmethod flex-compiler-conf-set-prop ((this conf-flex-compiler) prop val)
+  "Set a property with name \(symbol) PROP to VAL."
+  (flex-compiler-conf-validate prop val)
+  (setf (slot-value this (slot-value prop 'name)) val)
+  (flex-compiler-save-config this)
+  (message "Set %S to %s" (slot-value prop 'name)
+	   (if (stringp val)
+	       val
+	     (prin1-to-string val))))
+
+(cl-defmethod flex-compiler-conf-prop-by-order ((this conf-flex-compiler))
+  "Get all properties sorted by their order values."
+  (with-slots (props) this
+    (setq props (sort props #'(lambda (a b)
+				(< (slot-value a 'order)
+				   (slot-value b 'order)))))
+    props))
+
+(cl-defmethod flex-compiler-conf-prop-by-name ((this conf-flex-compiler) name)
+  "Get a property by \(symbol) NAME."
+  (with-slots (props) this
+    (let ((prop-map (mapcar #'(lambda (prop)
+				`(,(slot-value prop 'name) . ,prop))
+			    props)))
+      (cdr (assq name prop-map)))))
+
+(cl-defmethod flex-compiler-configure ((this conf-flex-compiler)
+				       config-options)
+  "Configure the compiler.
+
+CONFIG-OPTIONS is the numeric argument (if any) passed in the iteractive mode
+with \\[universal-argument]."
+  (let (prop val)
+    (cond ((null config-options)
+	   (with-slots (props last-selection) this
+	     (let ((prop-name (flex-compiler-conf-read last-selection)))
+	       (setq prop (flex-compiler-conf-prop-by-name this prop-name)))))
+	  ((consp config-options)
+	   (case (car config-options)
+	     (prop-name
+	      (setq prop (flex-compiler-conf-prop-by-name
+			  this (second config-options))))
+	     (t (error "Unknown type: %S" (car config-options))))
+	   (if (> (length config-options) 2)
+	       (setq val (nth 2 config-options))))
+	  (t (let ((props (flex-compiler-conf-prop-by-order this)))
+	       (setq prop (nth (min config-options (length props)) props)))))
+    (setq val (or val (flex-compiler-conf-read prop)))
+    (flex-compiler-conf-set-prop this prop val)))
+
+(cl-defmethod flex-compiler-set-required ((this conf-flex-compiler))
+  "Set all required properties for the compiler."
+  (dolist (prop (flex-compiler-conf-prop-by-order this))
+    (let* ((name (slot-value prop 'name))
+	   (val (slot-value this name))
+	   ;; protect completing-read
+	   (display-buffer-alist nil))
+      (when (and (null val) (slot-value prop 'required))
+	(setq val (flex-compiler-conf-read prop))
+	(flex-compiler-conf-set-prop this prop val)))))
+
+(cl-defmethod flex-compile-clear ((this conf-flex-compiler))
+  "Wipe all values for the compiler."
+  (dolist (prop (flex-compiler-conf-prop-by-order this))
+    (flex-compiler-conf-set-prop this prop nil))
+  (dolist (prop (flex-compiler-conf-prop-by-order this))
+    (flex-compile-clear prop))
+  (message "Cleared %s configuration" (slot-value this 'name)))
+
+(cl-defmethod flex-compiler-show-configuration ((this conf-flex-compiler))
+  "Create a buffer with the configuration of the compiler."
+  (with-slots (description) this
+    (save-excursion
+      (-> (format "*%s Compiler Configuration*" description)
+	  get-buffer-create
+	  set-buffer)
+      (read-only-mode 0)
+      (erase-buffer)
+      (insert (format "%s configuration:\n" description))
+      (dolist (prop (flex-compiler-conf-prop-by-order this))
+	(let* ((name (slot-value prop 'name))
+	       (val (or (slot-value this name) "<not set>")))
+	  (insert (format "%S: %s\n" name val))))
+      (read-only-mode 1)
+      (display-buffer (current-buffer)))))
+
+
+
+(defclass conf-file-flex-compiler (conf-flex-compiler)
+  ((config-file :initarg :config-file
+		:initform nil
+		:type (or null string)
+		:documentation "\
+The file to use for `configuring' the compiler.")
+   (start-directory :initarg :start-directory
 		    :initform nil
 		    :type (or null string)
 		    :documentation "\
 The directory for starting the compilation.  The `default-directory' is set to
 this when the compile starts"))
   :abstract true
-  :documentation "Compiles starting in a directory")
-
-(cl-defmethod initialize-instance ((this directory-start-flex-compiler)
-				   &optional args)
-  (with-slots (pslots) this
-    (setq pslots (append pslots '(start-directory))))
-  (cl-call-next-method this args))
-
-(cl-defmethod flex-compiler-read-start-directory ((this directory-start-flex-compiler))
-  "Read a directory from the user and set it to slot `start-directory'."
-  (with-slots (start-directory) this
-    (let* ((last start-directory)
-	   (dir (read-directory-name "Start directory: " last nil t)))
-      (setq start-directory dir)))
-  (flex-compiler-save-config this))
-
-
-
-(defclass config-flex-compiler (flex-compiler)
-  ((config-file :initarg :config-file
-		:initform nil
-		:type (or null string)
-		:documentation "\
-The file to use for `configuring' the compiler.")
-   (config-file-desc :initarg :config-file-desc
-		     :initform "config file"
-		     :type string
-		     :documentation "\
-Description of the configuration file and used in user input prompts.")
-   (major-mode :initarg :major-mode
-	       :type (or null symbol)
-	       :documentation "\
-The major mode to use to validate/select `config-file` buffers.")
-   (mode-desc :initarg :mode-desc
-	      :type string))
   :documentation "A configurable compiler with a configuration file.")
 
-(cl-defmethod initialize-instance ((this config-flex-compiler) &optional args)
-  (with-slots (pslots) this
-    (setq pslots (append pslots '(config-file))))
-  (cl-call-next-method this args))
-
-(cl-defmethod flex-compiler-validate-buffer-file ((this config-flex-compiler))
-  "Return an error string if the current buffer isn't the right type of config."
-  (let ((buffer-major-mode major-mode))
-    (with-slots (mode-desc major-mode) this
-      (if (not (eq buffer-major-mode major-mode))
-	  (format "This doesn't seem like a %s file" mode-desc)))))
-
-(cl-defmethod flex-compiler--config-variable ((this config-flex-compiler))
-  (intern (format "flex-compiler-config-file-%s"
-		  (config-entry-name this))))
-
-(cl-defmethod flex-compiler-set-config ((this config-flex-compiler)
-					&optional file)
-  "Set the file for the configuration compiler."
-  (unless file
-    (let ((errmsg (flex-compiler-validate-buffer-file this)))
-      (if errmsg (error errmsg))))
-  (setq file (or file (buffer-file-name)))
-  (flex-compiler-reset-state this)
-  (oset this :config-file file)
-  (flex-compiler-save-config this)
-  (message "Set %s to `%s'" (oref this mode-desc) file))
-
-(cl-defmethod flex-compiler-read-config ((this config-flex-compiler))
-  "Read the configuration file from the user."
-  (let (file)
-    (with-slots (config-file-desc) this
-      (if (flex-compiler-validate-buffer-file this)
-	  (let ((conf-desc config-file-desc))
-	    (setq file (read-file-name
-			(format "%s: " (capitalize conf-desc))
-			nil (buffer-file-name))))
-	file))))
-
-(cl-defmethod flex-compiler-config ((this config-flex-compiler))
-  "Validate and return the configuration file."
-  (with-slots (config-file config-file-desc) this
-    (if (not config-file)
-	(let ((conf-var (flex-compiler--config-variable this)))
-	  (if (boundp conf-var)
-	      (setq config-file (symbol-value conf-var))
-	    (error "The %s for compiler %s has not yet been set"
-		   config-file-desc
-		   (config-entry-name this))))))
-  (with-slots (config-file config-file-desc) this
-    (unless (file-exists-p config-file)
-      (error "No such %s: %s" config-file-desc config-file))
-    config-file))
-
-(cl-defmethod flex-compiler-config-buffer ((this config-flex-compiler))
-  "Return a (new) buffer of the configuration file."
-  (let ((file (flex-compiler-config this)))
-    (find-file-noselect file)))
-
-
-
-(defclass optionable-flex-compiler (flex-compiler)
-  ((compile-options :initarg :compile-options
-		    :initform nil
-		    :type list
-		    :documentation "\
-A list of options used to configure the run of the compiler.")
-   (force-set-compile-options-p :initarg :force-set-compile-options-p
-				:initform nil
-				:type boolean
-				:documentation "\
-If non-nil force the user to set this before the compilation run.")))
-
-(cl-defmethod initialize-instance ((this optionable-flex-compiler)
+(cl-defmethod initialize-instance ((this conf-file-flex-compiler)
 				   &optional args)
-  (with-slots (pslots) this
-    (setq pslots (append pslots '(compile-options))))
+  (let* ((modes (plist-get args :validate-modes))
+	 (desc (plist-get args :description))
+	 (name (plist-get args :name))
+	 (prompt (format "%s file" (or desc (capitalize name))))
+	 (props (list (flex-conf-directory-prop :name 'start-directory
+						:compiler this
+						:prompt "Start directory"
+						:input-type 'last)
+		      (flex-conf-file-prop :name 'config-file
+					   :prompt prompt
+					   :compiler this
+					   :validate-modes modes
+					   :input-type 'last
+					   :required t
+					   :order 0))))
+    (setq args (plist-put args :props
+			  (append (plist-get args :props) props))))
+  (cl-remf args :validate-modes)
   (cl-call-next-method this args))
 
-(cl-defmethod flex-compiler-read-set-options ((this optionable-flex-compiler)
-					      config-options)
-  "Set the `:compile-options' slot of the compiler.
+(cl-defmethod object-print ((this conf-file-flex-compiler) &rest strings)
+  (apply #'cl-call-next-method this
+	 (format " config-file: %s" (slot-value this 'config-file))
+	 strings))
 
-CONFIG-OPTIONS is the numeric argument (if any) passed in the iteractive mode
-with \\[universal-argument]."
-  (let ((args (flex-compiler-read-options this)))
-    (if (stringp args)
-	(setq args (split-string args)))
-    (oset this :compile-options args)
-    (flex-compiler-save-config this)))
+(cl-defmethod flex-compiler-configure ((this conf-file-flex-compiler)
+				       config-options)
+  (if (eq config-options 'immediate)
+      (setq config-options (list 'prop-name 'config-file (buffer-file-name))))
+  (cl-call-next-method this config-options))
 
-(cl-defmethod flex-compiler-options ((this optionable-flex-compiler))
-  "Validate and return the compiler options."
-  (with-slots (compile-options force-set-compile-options-p) this
-    (if (and force-set-compile-options-p (null compile-options))
-	(error "No options set, use `flex-compile-compile' with argument (C-u)"))
-    compile-options))
+(cl-defmethod flex-compiler-conf-set-prop ((this conf-file-flex-compiler)
+					   prop val)
+  (if (eq (slot-value prop 'name) 'config-file)
+      (with-slots (start-directory) this
+	(flex-compiler-conf-validate prop val)
+	(setq start-directory (file-name-directory val))))
+  (cl-call-next-method this prop val))
 
-(cl-defmethod flex-compiler-read-options ((this optionable-flex-compiler))
-  "Read the options of the compiler."
-  (flex-compiler--unimplemented this "read-options"))
+(cl-defmethod flex-compiler-conf-file-buffer ((this conf-file-flex-compiler))
+  "Return a (new) buffer of the configuration file."
+  (flex-compiler-set-required this)
+  (find-file-noselect (slot-value this 'config-file)))
+
+(cl-defmethod flex-compiler-conf-file-display ((this conf-file-flex-compiler))
+  "Pop the configuration file buffer to the current buffer/window."
+  (pop-to-buffer (flex-compiler-conf-file-buffer this)))
 
 
 
 (defclass single-buffer-flex-compiler (flex-compiler)
-  ()
+  ((buffer-name :initarg :buffer-name
+		:type string
+		:documentation "The default name of the single buffer."))
   :documentation "A flex compiler that has a single buffer.")
+
+(cl-defmethod flex-compiler-buffer-name ((this single-buffer-flex-compiler))
+  "Return the name of the single buffer."
+  (format "*%s*" (slot-value this 'buffer-name)))
 
 (cl-defmethod flex-compiler-buffer ((this single-buffer-flex-compiler))
   "Return non-nil if there exists buffer for this compiler and is live."
-  (flex-compiler--unimplemented this "buffer"))
+  (get-buffer (flex-compiler-buffer-name this)))
 
 (cl-defmethod flex-compiler-start-buffer ((this single-buffer-flex-compiler)
 					  start-type)
@@ -345,21 +565,20 @@ This implementation returns `flex-compile-display-buffer-new-mode' and
   "Return a function used for displaying a buffer using MODE.
 MODE is either `flex-compile-display-buffer-new-mode' or
 `flex-compile-display-buffer-exists-mode'."
-  (flet ((display-nf
-	  (single-frame-fn multi-frame-fn)
-	  (if (> (length (visible-frame-list)) 1)
-	      (if multi-frame-fn
-		  multi-frame-fn
-		'(lambda (buf)
-		   (-> (window-list (next-frame))
-		       car
-		       (set-window-buffer buf))))
-	    single-frame-fn)))
+  (cl-flet ((display-nf
+	     (single-frame-fn multi-frame-fn)
+	     (if (> (length (visible-frame-list)) 1)
+		 (if multi-frame-fn
+		     multi-frame-fn
+		   '(lambda (buf)
+		      (-> (window-list (next-frame))
+			  car
+			  (set-window-buffer buf))))
+	       single-frame-fn)))
     (let ((void-fn 'list)
 	  (display-fn
 	   '(lambda (buf)
-	      (let ((display-buffer-fallback-action nil)
-		    (action ))
+	      (let ((display-buffer-fallback-action nil))
 		(if (= 1 (length (window-list)))
 		    (split-window))
 		(or (display-buffer buf '(display-buffer-reuse-window
@@ -367,19 +586,22 @@ MODE is either `flex-compile-display-buffer-new-mode' or
 					   (allow-no-window . t))))
 		    (display-buffer buf '(display-buffer-use-some-window
 					  ((inhibit-switch-frame . t)))))))))
-     (case mode
-       (never void-fn)
-       (switch 'pop-to-buffer)
-       (display display-fn)
-       (next-frame-switch (display-nf 'pop-to-buffer nil))
-       (next-frame-display (display-nf display-fn nil))
-       (next-frame-skip-switch (display-nf 'pop-to-buffer void-fn))
-       (next-frame-skip-display (display-nf display-fn void-fn))
-       (t (error "No mode: %S" mode))))))
+      (case mode
+	(never void-fn)
+	(switch 'pop-to-buffer)
+	(display display-fn)
+	(next-frame-switch (display-nf 'pop-to-buffer nil))
+	(next-frame-display (display-nf display-fn nil))
+	(next-frame-skip-switch (display-nf 'pop-to-buffer void-fn))
+	(next-frame-skip-display (display-nf display-fn void-fn))
+	(t (error "No mode: %S" mode))))))
 
 (cl-defmethod flex-compiler-display-buffer ((this single-buffer-flex-compiler)
 					    &optional compile-def)
   "Display buffer based on values returned from `flex-compiler-display-modes'."
+  (if (null compile-def)
+      (setq compile-def
+	    (flex-compiler-single-buffer--flex-comp-def this 'compile nil)))
   (if (not (consp compile-def))
       (error "Unknown compile-def: %S" compile-def))
   (let* ((modes (flex-compiler-display-modes this))
@@ -393,65 +615,30 @@ MODE is either `flex-compile-display-buffer-new-mode' or
 	  (error "Unknown buffer object: %S" buf))
       (and fn (buffer-live-p buf) (funcall fn buf)))))
 
-(cl-defmethod flex-compiler-single-buffer--flex-start
-    ((this single-buffer-flex-compiler) start-type)
-  (let ((has-buffer-p (flex-compiler-buffer this))
-	(buf (flex-compiler-start-buffer this start-type)))
+(cl-defmethod flex-compiler-single-buffer--flex-comp-def
+  ((this single-buffer-flex-compiler) start-type startp)
+  (let* ((has-buffer-p (flex-compiler-buffer this))
+	 (buf (flex-compiler-buffer this)))
+    (when (or startp (null buf))
+	(if (child-of-class-p (eieio-object-class this) 'conf-flex-compiler)
+	    (flex-compiler-set-required this))
+	(setq buf (flex-compiler-start-buffer this start-type)))
     `((newp . ,(not has-buffer-p))
       (buffer . ,buf))))
 
 (cl-defmethod flex-compiler-compile ((this single-buffer-flex-compiler))
-  (flex-compiler-single-buffer--flex-start this 'compile))
+  (flex-compiler-single-buffer--flex-comp-def this 'compile t))
 
 (cl-defmethod flex-compiler-run ((this single-buffer-flex-compiler))
-  (flex-compiler-single-buffer--flex-start this 'run))
+  (flex-compiler-single-buffer--flex-comp-def this 'run t))
 
 (cl-defmethod flex-compiler-clean ((this single-buffer-flex-compiler))
-  (flex-compiler-single-buffer--flex-start this 'clean))
-
-
-
-(defclass run-args-flex-compiler
-  (config-flex-compiler optionable-flex-compiler single-buffer-flex-compiler)
-  ()
-  :documentation "A configurable and optionable compiler.")
-
-(cl-defmethod flex-compiler-run-with-args ((this run-args-flex-compiler)
-					   args start-type)
-  "Run the compilation with given arguments."
-  (flex-compiler--unimplemented this "run-with-args"))
-
-(cl-defmethod flex-compiler--post-config ((this run-args-flex-compiler)))
-
-(cl-defmethod flex-compiler-start-buffer ((this run-args-flex-compiler)
-					  start-type)
-  (let* ((args (flex-compiler-options this))
-	 (buf (flex-compiler-run-with-args this args start-type)))
-    ;; find a better way to do this: PL 9/19/2018
-    ;; (when (eq start-type 'run)
-    ;;   (flex-compiler-set-config this)
-    ;;   (flex-compiler--post-config this))
-    buf))
-
-
-(defclass directory-run-flex-compiler (run-args-flex-compiler
-				       directory-start-flex-compiler)
-  ()
-  :documentation "Run arguments compilation starting in directory.")
-
-(cl-defmethod flex-compiler-read-set-options ((this directory-run-flex-compiler)
-					      config-options)
-  "Set the `:compile-options' slot of the compiler.
-
-CONFIG-OPTIONS is the numeric argument (if any) passed in the iteractive mode
-with \\[universal-argument]."
-  (flex-compiler-read-start-directory this)
-  (cl-call-next-method this config-options))
+  (flex-compiler-single-buffer--flex-comp-def this 'clean t))
 
 
 
 (defclass repl-flex-compiler
-  (directory-start-flex-compiler single-buffer-flex-compiler)
+  (conf-file-flex-compiler single-buffer-flex-compiler)
   ((repl-buffer-regexp :initarg :repl-buffer-regexp
 		       :type string
 		       :documentation "\
@@ -471,15 +658,34 @@ If this is 0, don't wait or display the buffer when it comes up.")
 			       :initform nil
 			       :type boolean
 			       :documentation "\
-If non-`nil' then don't prompt to kill a REPL buffer on clean."))
+If non-`nil' then don't prompt to kill a REPL buffer on clean.")
+   (output-clear :initarg :output-clear
+		 :initform 'no
+		 :type symbol
+		 :documentation "\
+Whether or not to clear comint buffer after a compilation."))
   :documentation "Compiles by evaluating expressions in the REPL.")
+
+(cl-defmethod initialize-instance ((this repl-flex-compiler) &optional args)
+  (let* ((fn '(lambda (this default prmopt history)
+		(split-string (read-string prompt nil history default))))
+	 (props (list (flex-conf-choice-prop :name 'output-clear
+					     :compiler this
+					     :prompt "Clear output on compile"
+					     :choices '(yes no)
+					     :input-type 'toggle))))
+    (setq args (plist-put args :props (append (plist-get args :props) props))))
+  (cl-call-next-method this args))
 
 (cl-defmethod flex-compiler-repl-start ((this repl-flex-compiler))
   "Start the REPL."
   (flex-compiler--unimplemented this "start-repl"))
 
-(cl-defmethod flex-compiler-repl-compile ((this repl-flex-compiler))
+(cl-defmethod flex-compiler-repl-compile ((this repl-flex-compiler) file)
   "Invoked by `compile' type messages from the compiler manager.
+
+FILE gets evaluated by the compiler either as a IPC communication or by direct
+insertion in the REPL buffer.
 
 This method is meant to allow for REPL compiles \(really some kind of
 evaluation), while allowing base class compilation features.."
@@ -520,7 +726,8 @@ The caller raises and error if it doesn't start in time."
     (let ((timeout repl-buffer-start-timeout)
 	  buf)
       (unless (flex-compiler-repl-running-p this)
-	(let ((default-directory (or start-directory default-directory)))
+	(flex-compiler-set-required this)
+  	(let ((default-directory (or start-directory default-directory)))
 	  (flex-compiler-repl-start this))
 	(when (> timeout 0)
 	  (setq buf (flex-compiler-wait-for-buffer this))
@@ -570,136 +777,53 @@ The caller raises and error if it doesn't start in time."
       (message "%s killed %d buffer(s)" (capitalize name) count))))
 
 (cl-defmethod flex-compiler-start-buffer ((this repl-flex-compiler) start-type)
-  (let ((file (flex-compiler-config this))
-	(runningp (flex-compiler-repl-running-p this)))
-    (case start-type
-      (compile (progn
-		 (unless runningp
-		   (flex-compiler-run this))
-		 (if (flex-compiler-repl-running-p this)
-		     (flex-compiler-repl-compile this)
-		   (if runningp
-		       (error "REPL hasn't started")
-		     (message "REPL still starting, please wait")))
-		 (flex-compiler-buffer this)))
-      (run (progn
-	     (flex-compiler-repl--run-start this)
-	     (flex-compiler-buffer this)))
-      (clean (progn
-	       (flex-compiler-kill-repl this)
-	       'killed-buffer)))))
+  (flex-compiler-set-required this)
+  (with-slots (config-file output-clear) this
+    (let ((runningp (flex-compiler-repl-running-p this)))
+      (case start-type
+	(compile (progn
+		   (unless runningp
+		     (flex-compiler-run this))
+		   (if (flex-compiler-repl-running-p this)
+		       (progn
+			 (when (eq output-clear 'yes)
+			   (with-current-buffer (flex-compiler-buffer this)
+			     (comint-clear-buffer)))
+			 (flex-compiler-repl-compile this config-file))
+		     (if runningp
+			 (error "REPL hasn't started")
+		       (message "REPL still starting, please wait")))
+		   (flex-compiler-buffer this)))
+	(run (progn
+	       (flex-compiler-repl--run-start this)
+	       (flex-compiler-buffer this)))
+	(clean (progn
+		 (flex-compiler-kill-repl this)
+		 'killed-buffer))))))
 
-
-
-(defvar flex-compiler-query-eval-mode nil)
-(defvar flex-compiler-query-eval-form nil)
-
-(defclass evaluate-flex-compiler
-  (config-flex-compiler repl-flex-compiler single-buffer-flex-compiler)
-  ((eval-mode :initarg :eval-mode
-	      :initform eval-config
-	      :type symbol
-	      :documentation "
-Mode of evaluating expressions with the REPL.
-One of:
-- `eval-config': evaluate the configuration file
-- `buffer': evaluate in the REPL buffer
-- `minibuffer': evaluate form with results to minibuffer
-- `copy': like `minibuffer' but the results also go to the kill ring
-- `eval-repl': evaluate a form in the repl
-- `both-eval-minibuffer': invokes both `eval-config' and `minibuffer' in that order
-- `both-eval-repl': invokes both `eval-config' and `eval-repl' in that order")
-   (form :initarg :form
-	 :type string
-	 :documentation "The form to send to the REPL to evaluate.")
-   (last-eval :initarg :last-eval
-	      :documentation "The value of the last evaluation.")))
-
-(cl-defmethod flex-compiler-eval-form-impl ((this evaluate-flex-compiler) form)
-  (flex-compiler--unimplemented this "eval-form-impl"))
-
-(cl-defmethod flex-compiler-eval-config ((this evaluate-flex-compiler) file)
-  (flex-compiler--unimplemented this "eval-config"))
-
-(cl-defmethod flex-compiler-eval-initial-at-point ((this evaluate-flex-compiler))
+(cl-defmethod flex-compiler-eval-initial-at-point ((this repl-flex-compiler))
   nil)
 
-(cl-defmethod flex-compiler-query-read-form ((this evaluate-flex-compiler)
+(cl-defmethod flex-compiler-query-read-form ((this repl-flex-compiler)
 					     no-input-p)
   "Read a form, meaningful for the compiler, from the user."
   (let ((init (flex-compiler-eval-initial-at-point this)))
     (if no-input-p
 	init
-      (read-string "Form: " init 'flex-compiler-query-eval-form))))
+      (read-string "Form: " init 'flex-compiler-query-eval-form-history))))
 
-(cl-defmethod flex-compiler-query-eval ((this evaluate-flex-compiler)
-					config-options)
-  "Prompt the user for the evaluation mode \(see the `:eval-mode' slot).
-
-CONFIG-OPTIONS is the numeric argument (if any) passed in the iteractive mode
-with \\[universal-argument].
-
-For this implementation, if 1 is given, then prompt for a start directory.
-This directory is used to set the `default-directory', which is inherated in
-the compilation process \(if any)."
-  (if (equal config-options 1)
-      (flex-compiler-read-start-directory this))
-  (when (or (not config-options) (equal config-options '(4)))
-    (with-slots (eval-mode form) this
-      (setq eval-mode
-	    (choice-program-complete
-	     "Evaluation mode"
-	     '(eval-config buffer minibuffer
-			   copy eval-repl both-eval-repl both-eval-minibuffer)
-	     nil t nil 'flex-compiler-query-eval-mode
-	     (or (cl-first flex-compiler-query-eval-mode) 'minibuffer) nil nil t))
-      (when (memq eval-mode '(minibuffer copy eval-repl
-					 both-eval-repl both-eval-minibuffer))
-	(let ((init (flex-compiler-eval-initial-at-point this)))
-	  (setq form
-		(read-string "Form: " init 'flex-compiler-query-eval-form)))))))
-
-(cl-defmethod flex-compiler-evaluate-form ((this evaluate-flex-compiler)
+(cl-defmethod flex-compiler-evaluate-form ((this repl-flex-compiler)
 					   &optional form)
   "Return the evaluation form.
 
 See the `:eval-form' slot."
   (if (and (null form) (not (slot-boundp this :form)))
       (flex-compiler-query-eval this nil))
-  (let ((res (flex-compiler-eval-form-impl this (or form (slot-value this 'form)))))
-    (oset this :last-eval res)
+  (let ((res (flex-compiler-eval-form-impl
+	      this (or form (slot-value this 'form)))))
     (if (stringp res)
 	res
       (prin1-to-string res))))
-
-(cl-defmethod flex-compiler-repl--eval-config-and-show ((this evaluate-flex-compiler))
-  (flex-compiler-repl--run-start this)
-  (flex-compiler-eval-config this (flex-compiler-config this)))
-
-(cl-defmethod flex-compiler-repl--invoke-mode ((this evaluate-flex-compiler) mode)
-  "Invoke a flex compilation by mnemonic.
-
-MODE is the compilation mnemonic, which can range from evaluating a buffer,
-form from a minibuffer and from the REPL directly."
-  (cl-case mode
-    (eval-config (flex-compiler-repl--eval-config-and-show this))
-    (buffer (error "No longer implemented--no flex-compiler-repl-display"))
-    (minibuffer (let ((res (flex-compiler-evaluate-form this)))
-		  (message res)
-		  res))
-    (copy (let ((res (flex-compiler-evaluate-form this)))
-	    (kill-new res)
-	    (message res)
-	    res))
-    (eval-repl (flex-compiler-run-command this (slot-value this 'form)))
-    (both-eval-repl (flex-compiler-repl--invoke-mode this 'eval-config)
-		    (flex-compiler-repl--invoke-mode this 'eval-repl))
-    (both-eval-minibuffer (flex-compiler-repl--invoke-mode this 'eval-config)
-			  (flex-compiler-repl--invoke-mode this 'minibuffer))))
-
-(cl-defmethod flex-compiler-repl-compile ((this evaluate-flex-compiler))
-  "Invoke the compilation based on the `eval-mode' slot."
-  (flex-compiler-repl--invoke-mode this (slot-value this 'eval-mode)))
 
 
 ;;; compiler manager/orchestration
@@ -737,7 +861,7 @@ form from a minibuffer and from the REPL directly."
       (dolist (compiler entries)
 	;; since all compilers are persistable (via `config-entry inhertiance)
 	;; set the manager so we can save the state
-	(oset compiler :manager this)))))
+	(setf (slot-value compiler 'manager) this)))))
 
 (cl-defmethod config-manager-entry-default-name ((this flex-compile-manager))
   "flexible-compiler")
@@ -752,8 +876,8 @@ form from a minibuffer and from the REPL directly."
 			       (equal (config-entry-name a)
 				      (config-entry-name b)))))
     (setq entries (append entries (cons compiler nil)))
-    (oset compiler :manager this)
-    (message "Registered %s compiler" (oref compiler :name))))
+    (setf (slot-value compiler 'manager) this)
+    (message "Registered %s compiler" (slot-value compiler 'name))))
 
 (cl-defmethod config-manager-entry-names ((this flex-compile-manager))
   "Return the names of all registered compilers."
@@ -769,47 +893,24 @@ form from a minibuffer and from the REPL directly."
     (message "Active compiler is now %s" (config-entry-name compiler))
     compiler))
 
-(cl-defmethod flex-compile-manager-settable ((this flex-compile-manager)
-					     &optional compiler)
-  "Return whether the currently active/selected compiler is configurable.
-In other words, if it extends `config-flex-compiler'."
-  (let ((compiler (or compiler (flex-compile-manager-active this))))
-    (child-of-class-p (eieio-object-class compiler) 'config-flex-compiler)))
-
-(cl-defmethod flex-compile-manager-set-config ((this flex-compile-manager)
-					       &optional file)
-  "Set the configuration file of the currently active/selected compiler.
-
-If it isn't settable, warn the user with a message and do nothing."
-  (let ((active (flex-compile-manager-active this)))
-    (if (flex-compile-manager-settable this)
-	(flex-compiler-set-config active file)
-      (message "Compiler `%s' not settable" (config-entry-name active)))))
-
 (cl-defmethod flex-compile-manager-assert-ready ((this flex-compile-manager))
   "Make sure the active/selected compiler is ready and libraries loaded."
   (let ((active (flex-compile-manager-active this)))
     (flex-compiler-load-libraries active)))
 
-
-
-;; functions
-(defun flex-compiler-by-name (name)
-  "Convenience function to get a compiler by it's NAME."
-  (config-manager-entry the-flex-compile-manager name))
-
-(defun flex-compiler-config-save ()
-  "Save all compiler and manager configuration."
-  (interactive)
-  (config-persistable-save the-flex-compile-manager))
-
-(defun flex-compiler-config-load ()
-  "Load all compiler and manager configuration."
-  (interactive)
-  (config-persistable-load the-flex-compile-manager))
+(cl-defmethod flex-compile-clear ((this flex-compile-manager))
+  "Clear all compiler's state.
+This is done by simply re-instantiating all current registered compilers."
+  (let ((entries (slot-value this 'entries)))
+    (setf (slot-value this 'entries) nil)
+    (dolist (compiler entries)
+      (-> (eieio-object-class compiler)
+	  funcall
+	  (flex-compile-manager-register this)))))
 
 
 
+;; library configuration
 (defvar the-flex-compile-manager
   (flex-compile-manager)
   "The singleton manager instance.")
@@ -823,7 +924,41 @@ If it isn't settable, warn the user with a message and do nothing."
 	 (set-default sym val)
 	 (if (and (boundp 'the-flex-compile-manager)
 		  the-flex-compile-manager)
-	     (oset the-flex-compile-manager :file val))))
+	     (setf (slot-value the-flex-compile-manager 'file) val))))
+
+
+;; functions
+(defun flex-compiler-by-name (name)
+  "Convenience function to get a compiler by it's NAME."
+  (config-manager-entry the-flex-compile-manager name))
+
+;;;###autoload
+(defun flex-compiler-config-save ()
+  "Save all compiler and manager configuration."
+  (interactive)
+  (config-persistable-save the-flex-compile-manager))
+
+;;;###autoload
+(defun flex-compiler-config-load ()
+  "Load all compiler and manager configuration."
+  (interactive)
+  (config-persistable-load the-flex-compile-manager))
+
+;;;###autoload
+(defun flex-compiler-list ()
+  "Display the flex compiler list."
+  (interactive)
+  (config-manager-list-entries-buffer the-flex-compile-manager))
+
+(defun flex-compiler-reset-configuration ()
+  "Reset every compiler's configuration."
+  (interactive)
+  (when (y-or-n-p "This will wipe all compiler configuration.  Are you sure? ")
+    (if (file-exists-p flex-compile-persistency-file-name)
+	(delete-file flex-compile-persistency-file-name))
+    (flex-compile-clear the-flex-compile-manager)
+    (flex-compiler-config-save)
+    (message "Configuration reset")))
 
 
 
@@ -888,22 +1023,21 @@ argument as well.  This creates the need for an awkward key combination of:
   \\[digital-argument] \\[universal-argument] \\[flex-compile-compile]
 
 to invoke this command with full configuration support."
-  (interactive "P")
+  (interactive
+   (list (cond ((null current-prefix-arg) 'compile)
+	       ;; universal arg
+	       ((equal '(4) current-prefix-arg) nil)
+	       (t (1- current-prefix-arg)))))
   (let* ((this the-flex-compile-manager)
 	 (active (flex-compile-manager-active this)))
     (flex-compile-manager-assert-ready this)
-    (when config-options
-      (cond ((child-of-class-p (eieio-object-class active)
-			       'optionable-flex-compiler)
-	     (flex-compiler-read-set-options active config-options))
-	    ((child-of-class-p (eieio-object-class active)
-			       'evaluate-flex-compiler)
-	     (flex-compiler-query-eval active config-options))))
-    (let (compile-def)
-      (let ((display-buffer-alist
-	     (flex-compiler-display-buffer-alist active)))
-	(setq compile-def (flex-compiler-compile active)))
-      (flex-compiler-display-buffer active compile-def))))
+    (if (eq config-options 'compile)
+	(let (comp-def)
+	  (let ((display-buffer-alist
+		 (flex-compiler-display-buffer-alist active)))
+	    (setq comp-def (flex-compiler-compile active)))
+	  (flex-compiler-display-buffer active comp-def))
+      (flex-compiler-configure active config-options))))
 
 ;;;###autoload
 (defun flex-compile-run-or-set-config (action)
@@ -916,37 +1050,32 @@ ACTION is the interactive argument given by the read function."
 	       ((equal '(4) current-prefix-arg) 'find)
 	       ((eq 1 current-prefix-arg) 'set-config)
 	       (t (error "Unknown prefix state: %s" current-prefix-arg)))))
-  (cl-flet ((assert-settable
-	     (fcm active)
-	     (if (not (flex-compile-manager-settable fcm))
-		 (error "Not settable compiler: %s"
-			(config-entry-name active)))))
-    (let* ((this the-flex-compile-manager)
-	   (active (flex-compile-manager-active this)))
-      (flex-compile-manager-assert-ready this)
-      (condition-case err
-	  (cl-case action
-	    (run (let (buf)
-		   (let ((display-buffer-alist
-			  (flex-compiler-display-buffer-alist active)))
-		     (setq buf (flex-compiler-run active)))
-		   (flex-compiler-display-buffer active buf)))
-	    (find (assert-settable this active)
-		  (pop-to-buffer (flex-compiler-config-buffer active)))
-	    (set-config (let ((file (flex-compiler-read-config active)))
-			  (flex-compile-manager-set-config this file)))
-	    (t (error "Unknown action: %S" action)))
-	(cl-no-applicable-method
-	 (message "Unsupported action `%S' on compiler %s: no method %S"
-		  action
-		  (config-entry-name active)
-		  (cl-second err)))))))
+  (let* ((this the-flex-compile-manager)
+	 (active (flex-compile-manager-active this)))
+    (flex-compile-manager-assert-ready this)
+    (condition-case err
+	(cl-case action
+	  (run (let (buf)
+		 (let ((display-buffer-alist
+			(flex-compiler-display-buffer-alist active)))
+		   (setq buf (flex-compiler-run active)))
+		 (flex-compiler-display-buffer active buf)))
+	  (find (if (child-of-class-p (eieio-object-class active)
+				      'conf-file-flex-compiler)
+		    (flex-compiler-conf-file-display active)))
+	  (set-config (flex-compiler-configure active 'immediate))
+	  (t (error "Unknown action: %S" action)))
+      (cl-no-applicable-method
+       (message "Unsupported action `%S' on compiler %s: no method %S"
+		action
+		(config-entry-name active)
+		(cl-second err))))))
 
 (defun flex-compile-read-form (no-input-p)
   "Read the compilation query form from the user.
 
 If NO-INPUT-P is t, use the default witout getting it from the user.
-1
+
 This invokes the `flex-compiler-query-read-form method' on the
 currently activated compiler."
   (let* ((mgr the-flex-compile-manager)
@@ -986,6 +1115,14 @@ FORM is the form to evaluate \(if implemented).  If called with
       (cl-no-applicable-method
        (message "Compiler %s has no ability to clean"
 		(config-entry-name active))))))
+
+;;;###autoload
+(defun flex-compile-show-configuration ()
+  "Create a buffer with the configuration of the current compiler."
+  (interactive)
+  (let* ((this the-flex-compile-manager)
+	 (active (flex-compile-manager-active this)))
+    (flex-compiler-show-configuration active)))
 
 ;;;###autoload
 (defmacro flex-compile-declare-functions (&rest fns)

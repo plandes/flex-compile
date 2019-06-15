@@ -1,6 +1,6 @@
 ;;; flex-compile-python.el --- python compile functions
 
-;; Copyright (C) 2015 - 2017 Paul Landes
+;; Copyright (C) 2015 - 2019 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
@@ -48,15 +48,15 @@
   "Return the PYTHONPATH environment to be used when creating the REPL."
   (getenv "PYTHONPATH"))
 
-(defclass python-flex-compiler (evaluate-flex-compiler) ())
+(defclass python-flex-compiler (repl-flex-compiler)
+  ()
+  :documentation "A Python REPL compiler.")
 
 (cl-defmethod initialize-instance ((this python-flex-compiler) &optional args)
-  (oset this :name "python")
-  (oset this :major-mode 'python-mode)
-  (oset this :mode-desc "python file")
-  (oset this :config-file-desc "python file")
-  (oset this :repl-buffer-regexp "^\\*Python\\*$")
-  (oset this :repl-buffer-start-timeout 0)
+  (setq args (plist-put args :name "python")
+	args (plist-put args :validate-modes '(python-mode))
+	args (plist-put args :repl-buffer-regexp "^\\*Python\\*$")
+	args (plist-put args :repl-buffer-start-timeout 0))
   (cl-call-next-method this args))
 
 (cl-defmethod flex-compiler-load-libraries ((this python-flex-compiler))
@@ -78,10 +78,8 @@
 		(python-shell-completion-native-setup)))))
     (or ret (cl-call-next-method this start-type))))
 
-(cl-defmethod flex-compiler-eval-config ((this python-flex-compiler) file)
+(cl-defmethod flex-compiler-repl-compile ((this python-flex-compiler) file)
   (let ((buf (find-file-noselect file)))
-    ;; (with-current-buffer (flex-compiler-buffer this)
-    ;;   (comint-clear-buffer))
     (with-current-buffer buf
       (python-shell-send-buffer))))
 

@@ -1,6 +1,6 @@
 ;;; flex-compile-choice-prog.el --- compile functions
 
-;; Copyright (C) 2015 - 2017 Paul Landes
+;; Copyright (C) 2015 - 2019 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
@@ -31,23 +31,47 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'dash)
 (require 'flex-compile-manage)
 (require 'choice-program-complete)
 
-(defvar flex-compile-choice-prog-inst-history nil
-  "History for choice-program instances.")
-
 ;;; choice-prog file compiler
-(defclass choice-prog-flex-compiler (optionable-flex-compiler)
+(defclass choice-prog-flex-compiler (conf-flex-compiler
+				     single-buffer-flex-compiler)
   ((program :initarg :program
 	    :initform nil
-	    :documentation "An instance of `choice-prog'."))
+	    :documentation "An instance of `choice-prog'.")
+   (action :initarg :action
+	   :initform nil
+	   :documentation "The action to invoke on the program."))
   :documentation "Invoke choice-prog on a configured choice-program.")
 
-(cl-defmethod initialize-instance ((this choice-prog-flex-compiler)
-				   &optional args)
-  (oset this :name "choice-program")
-  (oset this :force-set-compile-options-p t)
+(cl-defmethod initialize-instance ((this choice-prog-flex-compiler) &optional args)
+  (let* ((read-prog '(lambda (this compiler default prompt history)
+		       (flex-compiler-choice-prog-read-program
+			compiler default prompt history)))
+	 (read-action '(lambda (this compiler default prompt history)
+			 (-> (flex-compiler-choice-prog-program compiler)
+			     (choice-prog-read-option default history))))
+	 (props (list (flex-conf-eval-prop :name 'program
+					   :prompt "Program"
+					   :func read-prog
+					   :compiler this
+					   :required t
+					   :input-type 'last
+					   :order 0)
+		      (flex-conf-eval-prop :name 'action
+					   :prompt "Action"
+					   :func read-action
+					   :compiler this
+					   :required t
+					   :order 1
+					   :input-type 'last))))
+    (setq args (plist-put args :name "choice-program")
+	  args (plist-put args :description "Choice program")
+	  args (plist-put args :buffer-name "Choice Program")
+	  args (plist-put args :props
+			  (append (plist-get args :props) props))))
   (cl-call-next-method this args))
 
 (cl-defmethod flex-compiler-load-libraries ((this choice-prog-flex-compiler))
@@ -56,24 +80,22 @@
 (cl-defmethod flex-compiler-choice-prog-map ((this choice-prog-flex-compiler))
   (->> (choice-prog-instances)
        (-map '(lambda (this)
-		(cons (choice-prog-name this) this)))))
+       		(cons (choice-prog-name this) this)))))
 
-(cl-defmethod flex-compiler-choice-prog-read-program ((this choice-prog-flex-compiler))
+(cl-defmethod flex-compiler-choice-prog-read-program ((this choice-prog-flex-compiler)
+						      default prompt history)
+  "Read a `choice-prog' from the user.
+DEFAULT, PROMPT and HISTORY are used for user input and come from
+the `flex-compile' framework."
   (let ((choices (->> (flex-compiler-choice-prog-map this)
-		      (-map #'car))))
-    (choice-program-complete "Program" choices t t nil
-			     'flex-compile-choice-prog-inst-history
-			     (cl-second flex-compile-choice-prog-inst-history)
-			     nil nil t)))
+		      (-map #'car)
+		      (-map #'intern))))
+    (choice-program-complete prompt choices t t nil history default)))
 
-(cl-defmethod flex-compiler-choice-prog-program ((this choice-prog-flex-compiler)
-						 &optional force-read-p)
-  (with-slots (compile-options program) this
-    (let ((old-program program))
-      (if (or force-read-p (not program))
-	  (setq program (flex-compiler-choice-prog-read-program this)))
-      (if (not (equal program old-program))
-	  (setq compile-options nil))
+(cl-defmethod flex-compiler-choice-prog-program ((this choice-prog-flex-compiler))
+  "Read an action for the \(already) selected `choice-prog'"
+  (with-slots (program) this
+    (when program
       (let ((ret (->> (flex-compiler-choice-prog-map this)
 		      (assoc program)
 		      cdr)))
@@ -81,30 +103,28 @@
 	  (error "No such program: `%S'" program))
 	ret))))
 
-(cl-defmethod flex-compiler-display-buffer-alist ((this choice-prog-flex-compiler))
-  "Return default nil, otherwise prompt reading doesn't play well
-with `display-buffer'."
-  nil)
+(cl-defmethod flex-compiler-conf-set-prop ((this choice-prog-flex-compiler)
+					   prop val)
+  (setf (slot-value this 'action) nil)
+  (flex-compile-clear (flex-compiler-conf-prop-by-name this 'action))
+  (cl-call-next-method this prop val))
 
-(cl-defmethod flex-compiler-compile ((this choice-prog-flex-compiler))
-  (unless (slot-value this 'compile-options)
-    (flex-compiler-read-set-options this nil))
-  (let ((prog (flex-compiler-choice-prog-program this))
-	(mnemonic (car (flex-compiler-options this))))
-    (choice-prog-exec prog mnemonic)))
+(cl-defmethod flex-compiler-buffer-name ((this choice-prog-flex-compiler))
+  (let ((prog (flex-compiler-choice-prog-program this)))
+    (if prog
+	(slot-value prog 'buffer-name)
+      (cl-call-next-method this))))
 
-(cl-defmethod flex-compiler-read-options ((this choice-prog-flex-compiler))
-  (->> (flex-compiler-choice-prog-program this)
-       choice-prog-read-option))
-
-(cl-defmethod flex-compiler-clean ((this choice-prog-flex-compiler))
-  (with-slots (program compile-options) this
-    (setq compile-options nil)
-    (if program
-	(progn
-	  (setq program nil)
-	  (message "Unsetting default program: %S" program))
-      (message "No default program set"))))
+(cl-defmethod flex-compiler-start-buffer ((this choice-prog-flex-compiler)
+					  start-type)
+  (case start-type
+    (compile (let ((prog (flex-compiler-choice-prog-program this))
+		   (action (slot-value this 'action)))
+	       (choice-prog-exec prog action)))
+    (run (flex-compiler-show-configuration this)
+	 nil)
+    (clean (flex-compile-clear this)
+	   nil)))
 
 ;; register the compiler
 (flex-compile-manager-register the-flex-compile-manager

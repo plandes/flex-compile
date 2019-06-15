@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+
+## [0.3] - 2019-06-15
 ### Added
 - Option to start REPLs and script/argument based compilers in a configured
   directory.
@@ -14,6 +16,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Refactoring of persistent framework to be more inline with `config-manage`
   dependency.
+
+### Removed
+- Support for Scala.  After the major refactoring it's non-trivial to retrofit
+  it to the new framework and I'm currently no longer writing Scala.  I'm glad
+  to work with anyone willing to do this work.
 
 
 ## [0.2] - 2017-11-07

@@ -1,6 +1,6 @@
 ;;; flex-compile-clojure.el --- clojure compile functions
 
-;; Copyright (C) 2015 - 2017 Paul Landes
+;; Copyright (C) 2015 - 2019 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
@@ -29,8 +29,8 @@
 
 ;;; Code:
 
-(require 'flex-compile-manage)
 (require 'dash)
+(require 'flex-compile-manage)
 
 (flex-compile-declare-functions
  cider-repl-return cider-connect
@@ -41,7 +41,7 @@
 (defvar flex-compiler-clojure-connect-history nil
   "History for connection mode prompt read in `flex-compiler-query-eval'.")
 
-(defclass clojure-flex-compiler (evaluate-flex-compiler)
+(defclass clojure-flex-compiler (repl-flex-compiler)
   ((repl-host :initarg :repl-host
 	      :type string
 	      :initform "localhost"
@@ -60,56 +60,17 @@ The conection mode, which is either:
   `repl-host' and `repl-port'")))
 
 (cl-defmethod initialize-instance ((this clojure-flex-compiler) &optional args)
-  (oset this :name "clojure")
-  (oset this :major-mode 'clojure-mode)
-  (oset this :mode-desc "clojure file")
-  (oset this :config-file-desc "clojure file")
-  (oset this :repl-buffer-regexp "^\\*cider-repl ")
-  (oset this :derived-buffer-names '(" *nrepl-server*"))
-  (oset this :repl-buffer-start-timeout 0)
+  (let ((props (list (flex-conf-choice-prop :name 'connect-mode
+					    :compiler this
+					    :prompt "Connection mode"
+					    :choices '(jack-in connect)
+					    :input-type 'toggle))))
+    (setq args (plist-put args :name "clojure")
+	  args (plist-put args :validate-modes '(clojure-mode))
+	  args (plist-put args :repl-buffer-regexp "^\\*cider-repl ")
+	  args (plist-put args :repl-buffer-start-timeout 0)
+	  args (plist-put args :props (append (plist-get args :props) props))))
   (cl-call-next-method this args))
-
-(cl-defmethod flex-compiler-load-libraries ((this clojure-flex-compiler))
-  (require 'cider)
-  ;; allow flex-compile to manage windows and frame
-  (setq cider-repl-display-in-current-window nil))
-
-(cl-defmethod flex-compiler-send-input ((this clojure-flex-compiler)
-					&optional command)
-  (goto-char (point-max))
-  (insert command)
-  (cider-repl-return))
-
-(cl-defmethod flex-compiler-eval-form-impl ((this clojure-flex-compiler) form)
-  (nrepl-dict-get (nrepl-sync-request:eval
-		   form
-		   (cider-current-connection)
-		   (cider-current-session)
-		   (cider-current-ns))
-		  "value"))
-
-(cl-defmethod flex-compiler-eval-config ((this clojure-flex-compiler) file)
-  (save-excursion
-    (eval-and-compile
-      (let ((msg "save-excursion needed when REPL is current buffer"))
-	(display-warning 'buffer-manage msg :debug)))
-    ;; silence compiler
-    (apply #'set-buffer (list (find-file-noselect file)))
-    (cider-load-file file)))
-
-(cl-defmethod flex-compiler-eval-initial-at-point ((this clojure-flex-compiler))
-  (cider-last-sexp))
-
-(cl-defmethod flex-compiler-kill-repl ((this clojure-flex-compiler))
-  (condition-case err
-      (cider-quit t)
-    (error "Warning: %S" err))
-  (sit-for 1)
-  (->> (process-list)
-       (-filter #'(lambda (elt)
-		    (string-match "^nrepl-server" (process-name elt))))
-       (-map #'kill-process))
-  (cl-call-next-method this))
 
 (cl-defmethod flex-compiler-query-eval ((this clojure-flex-compiler)
 					config-options)
@@ -132,11 +93,48 @@ with `digital-argument' of `1' the compiler prompts to switch between local
   ;; direction, which would lead to a incorrectly configured REPL
   (cl-call-next-method this 2))
 
+(cl-defmethod flex-compiler-load-libraries ((this clojure-flex-compiler))
+  (require 'cider)
+  ;; allow flex-compile to manage windows and frame
+  (setq cider-repl-display-in-current-window nil))
+
+(cl-defmethod flex-compiler-send-input ((this clojure-flex-compiler)
+					&optional command)
+  (goto-char (point-max))
+  (insert command)
+  (cider-repl-return))
+
+(cl-defmethod flex-compiler-eval-form-impl ((this clojure-flex-compiler) form)
+  (nrepl-dict-get (nrepl-sync-request:eval
+		   form
+		   (cider-current-connection)
+		   (cider-current-ns))
+		  "value"))
+
+(cl-defmethod flex-compiler-repl-compile ((this repl-flex-compiler) file)
+  (save-excursion
+    (apply #'set-buffer (list (find-file-noselect file)))
+    (cider-load-file file)))
+
+(cl-defmethod flex-compiler-eval-initial-at-point ((this clojure-flex-compiler))
+  (cider-last-sexp))
+
+(cl-defmethod flex-compiler-kill-repl ((this clojure-flex-compiler))
+  (condition-case err
+      (cider-quit t)
+    (error "Warning: %S" err))
+  (sit-for 1)
+  (->> (process-list)
+       (-filter #'(lambda (elt)
+		    (string-match "^nrepl-server" (process-name elt))))
+       (-map #'kill-process))
+  (cl-call-next-method this))
+
 (cl-defmethod flex-compiler-repl-start ((this clojure-flex-compiler))
   (with-slots (connect-mode repl-host repl-port) this
-    (with-current-buffer (flex-compiler-config-buffer this)
+    (with-current-buffer (flex-compiler-conf-file-buffer this)
       (cl-case connect-mode
-	(connect (cider-connect repl-host repl-port))
+	(connect (cider-connect (list :host repl-host :port repl-port)))
 	(jack-in (cider-jack-in nil))
 	(t (error "No such connection mode supported: %S" connect-mode))))))
 

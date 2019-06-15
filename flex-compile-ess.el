@@ -1,6 +1,6 @@
 ;;; flex-compile-ess.el --- ess compile functions
 
-;; Copyright (C) 2015 - 2017 Paul Landes
+;; Copyright (C) 2015 - 2019 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
@@ -34,16 +34,16 @@
 (flex-compile-declare-functions
  ess-eval-region R)
 
-(defclass ess-flex-compiler
-  (config-flex-compiler repl-flex-compiler single-buffer-flex-compiler)
-  ())
+(defclass ess-flex-compiler (repl-flex-compiler)
+  ()
+  :documentation "An Emacs Speaks Statisics compiler.")
 
 (cl-defmethod initialize-instance ((this ess-flex-compiler) &optional args)
-  (oset this :name "ess")
-  (oset this :major-mode 'ess-mode)
-  (oset this :mode-desc "ess")
-  (oset this :config-file-desc "ess file")
-  (oset this :repl-buffer-regexp "^\\*R\\*$")
+  (setq args (plist-put args :name "ess")
+	args (plist-put args :description "Emacs speaks statistics")
+	args (plist-put args :validate-modes '(ess-r-mode))
+	args (plist-put args :repl-buffer-regexp "^\\*R:.+\\*$")
+	args (plist-put args :repl-buffer-start-timeout 5))
   (cl-call-next-method this args))
 
 (cl-defmethod flex-compiler-load-libraries ((this ess-flex-compiler))
@@ -51,22 +51,12 @@
 
 (cl-defmethod flex-compiler-repl-start ((this ess-flex-compiler))
   (let ((ess-ask-for-ess-directory nil))
-    (with-current-buffer (flex-compiler-config-buffer this)
+    (with-current-buffer (find-file-noselect (slot-value this 'config-file))
       (R))))
 
-(cl-defmethod flex-compiler-repl-compile-source ((this ess-flex-compiler))
-  (let ((file (flex-compiler-config this)))
-    (flex-compiler-run-command this (format "source('%s')" file))))
-
-(cl-defmethod flex-compiler-display-buffer-alist ((this ess-flex-compiler))
-  "Return default nil, otherwise prompt reading doesn't play well
-with `display-buffer'."
-  nil)
-
-(cl-defmethod flex-compiler-repl-compile ((this ess-flex-compiler))
-  (let ((buf (flex-compiler-config-buffer this)))
-    (with-current-buffer buf
-      (ess-eval-region (point-min) (point-max) nil))))
+(cl-defmethod flex-compiler-repl-compile ((this ess-flex-compiler) file)
+  (with-current-buffer (find-file-noselect file)
+    (ess-eval-region (point-min) (point-max) nil)))
 
 (flex-compile-manager-register the-flex-compile-manager (ess-flex-compiler))
 
