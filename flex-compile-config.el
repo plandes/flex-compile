@@ -329,7 +329,8 @@ with \\[universal-argument]."
 	       (val (or (slot-value this name) "<not set>")))
 	  (insert (format "%S: %s\n" name val))))
       (read-only-mode 1)
-      (display-buffer (current-buffer)))))
+      (display-buffer (current-buffer))
+      (current-buffer))))
 
 
 

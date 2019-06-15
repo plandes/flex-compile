@@ -51,6 +51,7 @@
 	  args (plist-put args :validate-modes
 			  '(sh-mode cperl-mode python-mode))
 	  args (plist-put args :buffer-name "Script Compile")
+	  args (plist-put args :kill-buffer-clean t)
 	  args (plist-put args :props
 			  (append (plist-get args :props) props))))
   (cl-call-next-method this args))
@@ -66,18 +67,21 @@
 
 (cl-defmethod flex-compiler-start-buffer ((this script-flex-compiler)
 					  start-type)
-  (with-slots (config-file start-directory arguments) this
-    (let ((default-directory start-directory)
-	  (buffer-name (flex-compiler-buffer-name this))
-	  (cmd (concat config-file " "
-		       (mapconcat #'identity arguments " ")))
-	  reset-target
-	  buf)
-      (with-current-buffer
-	  (setq buf (compilation-start cmd nil
-				       #'(lambda (mode-name)
-					   buffer-name))))
-      buf)))
+  (cl-case start-type
+    (compile
+     (with-slots (config-file start-directory arguments) this
+       (let ((default-directory start-directory)
+	     (buffer-name (flex-compiler-buffer-name this))
+	     (cmd (concat config-file " "
+			  (mapconcat #'identity arguments " ")))
+	     reset-target
+	     buf)
+	 (with-current-buffer
+	     (setq buf (compilation-start cmd nil
+					  #'(lambda (mode-name)
+					      buffer-name))))
+	 buf)))
+    (run (error "No defined run action for scripts"))))
 
 (flex-compile-manager-register the-flex-compile-manager (script-flex-compiler))
 

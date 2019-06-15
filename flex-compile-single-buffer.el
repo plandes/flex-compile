@@ -75,7 +75,11 @@ frames, otherwise display the buffer.
 (defclass single-buffer-flex-compiler (flex-compiler)
   ((buffer-name :initarg :buffer-name
 		:type string
-		:documentation "The default name of the single buffer."))
+		:documentation "The default name of the single buffer.")
+   (kill-buffer-clean :initarg :kill-buffer-clean
+		      :initform nil
+		      :type boolean
+		      :documentation "If non-nil kill the buffer on clean."))
   :abstract t
   :documentation "A flex compiler that has a single buffer.")
 
@@ -173,7 +177,37 @@ MODE is either `flex-compile-display-buffer-new-mode' or
   (flex-compiler-single-buffer--flex-comp-def this 'run t))
 
 (cl-defmethod flex-compiler-clean ((this single-buffer-flex-compiler))
+  (with-slots (kill-buffer-clean) this
+    (when kill-buffer-clean
+      (let ((buf (flex-compiler-buffer this)))
+	(if (buffer-live-p buf)
+	    (kill-buffer buf)))))
   (flex-compiler-single-buffer--flex-comp-def this 'clean t))
+
+
+
+;; functions
+
+;;;###autoload
+(defun flex-compiler-set-buffer-exists-mode ()
+  "Query and set the value for the display mode for existing buffers.
+This sets but doesn't configure
+`flex-compile-display-buffer-exists-mode'."
+  (interactive)
+  (let ((choices (->> (cdr flex-compile-display-mode-options)
+		      (-map 'last)
+		      (-map 'first)))
+	(def (or (cl-second flex-compiler-set-buffer-exists)
+		 (car flex-compiler-set-buffer-exists))))
+    (setq flex-compile-display-buffer-exists-mode
+	  (choice-program-complete "Buffer Exists Mode"
+				   choices
+				   nil t ; return string, require match
+				   nil	 ; initial
+				   'flex-compiler-set-buffer-exists ; history
+				   def				    ; def
+				   nil	; allow-empty
+				   t t))))
 
 (provide 'flex-compile-single-buffer)
 

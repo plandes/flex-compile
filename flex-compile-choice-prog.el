@@ -70,6 +70,7 @@
     (setq args (plist-put args :name "choice-program")
 	  args (plist-put args :description "Choice program")
 	  args (plist-put args :buffer-name "Choice Program")
+	  args (plist-put args :kill-buffer-clean t)
 	  args (plist-put args :props
 			  (append (plist-get args :props) props))))
   (cl-call-next-method this args))
@@ -121,10 +122,7 @@ the `flex-compile' framework."
     (compile (let ((prog (flex-compiler-choice-prog-program this))
 		   (action (slot-value this 'action)))
 	       (choice-prog-exec prog action)))
-    (run (flex-compiler-show-configuration this)
-	 nil)
-    (clean (flex-compile-clear this)
-	   nil)))
+    (run (flex-compiler-show-configuration this))))
 
 ;; register the compiler
 (flex-compile-manager-register the-flex-compile-manager

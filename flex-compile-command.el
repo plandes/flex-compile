@@ -74,11 +74,6 @@
 	  args (plist-put args :props (append (plist-get args :props) props))))
   (cl-call-next-method this args))
 
-(cl-defmethod flex-compiler-display-buffer-alist ((this command-flex-compiler))
-  "Return default nil, otherwise prompt reading doesn't play well
-with `display-buffer'."
-  nil)
-
 (cl-defmethod flex-compiler-compile ((this command-flex-compiler))
   (unless (slot-value this 'sexp)
     (flex-compiler-configure this nil))
