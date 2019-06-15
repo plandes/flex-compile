@@ -119,7 +119,7 @@ This is done by creating a command with `make' found in the executable path."
 (cl-defmethod flex-compiler-start-buffer ((this make-flex-compiler)
 					  start-type)
   (with-slots (target) this
-    (case start-type
+    (cl-case start-type
       (compile (flex-compiler-run-make this target))
       (run (flex-compiler-run-make this "run"))
       (clean (flex-compiler-run-make this "clean")))))

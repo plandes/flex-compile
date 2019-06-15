@@ -117,7 +117,7 @@ the `flex-compile' framework."
 
 (cl-defmethod flex-compiler-start-buffer ((this choice-prog-flex-compiler)
 					  start-type)
-  (case start-type
+  (cl-case start-type
     (compile (let ((prog (flex-compiler-choice-prog-program this))
 		   (action (slot-value this 'action)))
 	       (choice-prog-exec prog action)))

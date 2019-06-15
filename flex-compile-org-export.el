@@ -32,6 +32,10 @@
 
 (require 'flex-compile-manage)
 
+(flex-compile-declare-functions
+ org-open-file
+ org-twbs-export-to-html)
+
 ;;; func file compiler
 (defclass org-export-flex-compiler (conf-file-flex-compiler)
   ((method :initarg :methods

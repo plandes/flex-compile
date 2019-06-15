@@ -64,7 +64,7 @@ configuration file.")
       (backtrace)))
   (signal 'flex-compiler-un-implemented
 	  (list method (with-temp-buffer
-			 (cl-object-print this (current-buffer))))))
+			 (cl-print-object this (current-buffer))))))
 
 (cl-defmethod flex-compiler-load-libraries ((this flex-compiler))
   "Call back for to load and require libraries needed by the compiler.")
@@ -75,7 +75,7 @@ configuration file.")
     (unless manager
       (error "No manager set in compiler: %S"
 	     (with-temp-buffer
-	       (cl-object-print this (current-buffer)))))
+	       (cl-print-object this (current-buffer)))))
     (config-persistable-save manager)))
 
 (cl-defmethod flex-compiler-reset-state ((this flex-compiler))
