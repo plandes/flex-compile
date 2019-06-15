@@ -186,9 +186,9 @@ MODE is either `flex-compile-display-buffer-new-mode' or
 	(let ((killfn `(lambda
 			 ()
 			 (let ((buf (flex-compiler-buffer ,this)))
-			   (message "Killing buffer %s" buf)
-			   (if (buffer-live-p buf)
-			       (kill-buffer buf))))))
+			   (when (buffer-live-p buf)
+			     (message "Cleaning up buffer %s" buf)
+			     (kill-buffer buf))))))
 	  (if (numberp kill-buffer-clean)
 	      (run-at-time kill-buffer-clean nil killfn)
 	    (funcall killfn)))))

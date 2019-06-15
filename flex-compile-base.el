@@ -116,14 +116,15 @@ a `flex-compiler' can explictly control buffer display with
 
 (defclass no-op-flex-compiler (flex-compiler)
   ()
-  :documentation "A no-op compiler For disabled state.")
+  :documentation "A no-op compiler for the disabled state.")
 
 (cl-defmethod initialize-instance ((this no-op-flex-compiler) &optional args)
-  (setq args (plist-put args :name "disable"))
+  (setq args (plist-put args :name "disable")
+	args (plist-put args :description "Do nothing"))
   (cl-call-next-method this args))
 
 (cl-defmethod flex-compiler--unimplemented ((this no-op-flex-compiler) method)
-  (message "Disabled compiler skipping method `%s'" method))
+  (message "Compiler is disabled"))
 
 (provide 'flex-compile-base)
 

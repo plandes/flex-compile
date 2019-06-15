@@ -58,7 +58,7 @@
 					   :input-type 'last
 					   :order 1))))
     (setq args (plist-put args :name "make")
-	  args (plist-put args :description "Makefile")
+	  args (plist-put args :description "Make")
 	  args (plist-put args :validate-modes '(makefile-gmake-mode))
 	  args (plist-put args :buffer-name "compilation")
 	  args (plist-put args :kill-buffer-clean 2)

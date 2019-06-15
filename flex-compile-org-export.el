@@ -60,8 +60,7 @@
     (setq args (plist-put args :name "org-export")
 	  args (plist-put args :description "Org mode")
 	  args (plist-put args :validate-modes '(org-mode))
-	  args (plist-put args :props
-			  (append (plist-get args :props) props))))
+	  args (plist-put args :props (append (plist-get args :props) props))))
   (cl-call-next-method this args))
 
 (cl-defmethod flex-compiler-load-libraries ((this org-export-flex-compiler))
