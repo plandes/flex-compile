@@ -80,7 +80,7 @@ with `display-buffer'."
   nil)
 
 (cl-defmethod flex-compiler-compile ((this command-flex-compiler))
-  (unless (oref this :sexp)
+  (unless (slot-value this 'sexp)
     (flex-compiler-configure this nil))
   (with-slots (sexp) this
     (let ((res (apply sexp)))

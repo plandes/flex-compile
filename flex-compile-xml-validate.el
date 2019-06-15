@@ -44,10 +44,6 @@
 	args (plist-put args :input-type 'last))
   (cl-call-next-method this args))
 
-;; (cl-defmethod flex-compiler-conf-validate ((this flex-conf-schema-file-prop)
-;; 					   val)
-;;   "Don't bother checking the mode for files we're not even visiting.")
-
 (cl-defmethod flex-compiler-guess-schema-file ((this flex-conf-schema-file-prop))
   "Try to determine where the XSD is by the location "
   (with-temp-buffer
@@ -84,12 +80,10 @@ Location of the schema file to validate against.")))
 
 (cl-defmethod initialize-instance ((this xml-validate-flex-compiler)
 				   &optional args)
-  (let* ((fn #'(lambda (this compiler &rest args)
-		 (flex-compiler-makefile-read compiler)))
-	 (props (list (flex-conf-schema-file-prop :name 'schema-file
-						  :compiler this
-						  :required t
-						  :order 1))))
+  (let ((props (list (flex-conf-schema-file-prop :name 'schema-file
+						 :compiler this
+						 :required t
+						 :order 1))))
     (setq args (plist-put args :name "xml-validate")
 	  args (plist-put args :description "XML")
 	  args (plist-put args :validate-modes '(nxml-mode))

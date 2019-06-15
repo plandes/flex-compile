@@ -38,8 +38,8 @@
  cider-current-connection cider-current-session cider-current-ns
  cider-load-file cider-last-sexp cider-quit cider-jack-in)
 
-(defvar flex-compiler-clojure-connect-history nil
-  "History for connection mode prompt read in `flex-compiler-query-eval'.")
+(flex-compile-declare-variables
+ cider-repl-display-in-current-window)
 
 (defclass clojure-flex-compiler (repl-flex-compiler)
   ((repl-host :initarg :repl-host
@@ -71,27 +71,6 @@ The conection mode, which is either:
 	  args (plist-put args :repl-buffer-start-timeout 0)
 	  args (plist-put args :props (append (plist-get args :props) props))))
   (cl-call-next-method this args))
-
-(cl-defmethod flex-compiler-query-eval ((this clojure-flex-compiler)
-					config-options)
-  "If invoked with interactively with from `flex-compile-compile':
-
-   \\[execute-extended-command] 1 \\[universal-argument] \\[flex-compile-compile]
-
-with `digital-argument' of `1' the compiler prompts to switch between local
-`cider-jack-in' mode or remote `cider-connect' mode."
-  (if (equal config-options 1)
-      (with-slots (connect-mode) this
-	(->> (choice-program-complete
-	      "Connection mode" '(jack-in connect) nil t nil
-	      'flex-compiler-clojure-connect-history
-	      (or (cl-second flex-compiler-clojure-connect-history)
-		  'connect)
-	      nil t t)
-	     (setq connect-mode))))
-  ;; don't pass config-options since that would lead to prompt for the starting
-  ;; direction, which would lead to a incorrectly configured REPL
-  (cl-call-next-method this 2))
 
 (cl-defmethod flex-compiler-load-libraries ((this clojure-flex-compiler))
   (require 'cider)

@@ -69,8 +69,7 @@
   (if nil
       (shell-command "osascript -e 'tell application \"Emacs\" to activate'"))
   (with-slots (method config-file) this
-    (save-excursion
-      (set-buffer (flex-compiler-conf-file-buffer this))
+    (with-current-buffer (flex-compiler-conf-file-buffer this)
       (org-open-file (funcall method)))))
 
 (cl-defmethod flex-compiler-clean ((this org-export-flex-compiler))
