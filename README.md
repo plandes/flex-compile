@@ -114,6 +114,8 @@ bindings):
   the `Makefile`, `.clj`, `.r`, `.sh` file etc. *compile*, run or interpret.
   Note that the prefix `C-u` isn't needed for some compilers like the `script`
   compiler.
+* **Generate Compiler Docs** (`M-x flex-compile-doc-show`): this generates the
+  documentation given in the [compilers](#compilers) section (verbatim).
 
 Each compiler also has configuration setting ability, which is invoked with the
 `C-u` universal argument to the compile `C-x C-u` invocation per the
