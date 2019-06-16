@@ -37,9 +37,10 @@
 (require 'flex-compile-base)
 
 (defclass flex-conf-prop (eieio-named)
-  ((name :initarg :name
-	 :type symbol
-	 :documentation "Name of the property")
+  (
+   ;; (name :initarg :name
+   ;; 	 :type symbol
+   ;; 	 :documentation "Name of the property")
    (compiler :initarg :compiler
 	     :type flex-compiler
 	     :documentation "The compiler that `owns' this property")
@@ -67,17 +68,16 @@ Whether or not the property is needed for compilation, run, or clean")
 This is a container class that provides the meta data for the compiler.")
 
 (cl-defmethod initialize-instance ((this flex-conf-prop) &optional args)
-  (dolist (elt (list :compiler :name :prompt))
+  (dolist (elt (list :object-name :compiler :prompt))
     (unless (plist-get args elt)
       (error "Missing initarg: %S in %s" elt this)))
-  (setq args (plist-put args :object-name (plist-get args :name)))
   (cl-call-next-method this args)
   (set (slot-value this 'history) nil))
 
 (cl-defmethod object-print ((this flex-conf-prop) &rest strings)
-  (with-slots (name order) this
+  (with-slots (object-name order) this
     (apply #'cl-call-next-method this
-	   (format ": %s (%d)" name order)
+	   (format ": %s (%d)" object-name order)
 	   strings)))
 
 (cl-defmethod flex-compiler-conf-default-input ((this flex-conf-prop))
@@ -114,9 +114,9 @@ The default reads a string using `flex-compiler-conf-default' and
     (setq (symbol-value history) nil)))
 
 (cl-defmethod flex-compile-description ((this flex-conf-prop))
-  (with-slots (name) this
+  (with-slots (object-name) this
     (with-temp-buffer
-      (insert (symbol-name name))
+      (insert (symbol-name object-name))
       (goto-char (point-min))
       (while (search-forward "-" nil t)
 	(replace-match " " t t))
@@ -128,7 +128,7 @@ The default reads a string using `flex-compiler-conf-default' and
 	(doc (->> (slot-value this 'compiler)
 		  eieio-object-class
 		  flex-compile-slots
-		  (assq (slot-value this 'name))
+		  (assq (slot-value this 'object-name))
 		  (assq 'documentation)
 		  cdr)))
     (setq doc
@@ -278,10 +278,10 @@ since this class sets :pslots in the `config-persistent' subclass.")
 (cl-defmethod initialize-instance ((this conf-flex-compiler) &optional args)
   (let* ((props (plist-get args :props))
 	 (choices (mapcar #'(lambda (prop)
-			      (slot-value prop 'name))
+			      (slot-value prop 'object-name))
 			  props)))
     (setq args (plist-put args :last-selection
-			  (flex-conf-choice-prop :name 'last-selection
+			  (flex-conf-choice-prop :object-name 'last-selection
 						 :prompt "Property"
 						 :compiler this
 						 :choices choices
@@ -305,9 +305,9 @@ since this class sets :pslots in the `config-persistent' subclass.")
 (cl-defmethod flex-compiler-conf-set-prop ((this conf-flex-compiler) prop val)
   "Set a property with name \(symbol) PROP to VAL."
   (flex-compiler-conf-validate prop val)
-  (setf (slot-value this (slot-value prop 'name)) val)
+  (setf (slot-value this (slot-value prop 'object-name)) val)
   (flex-compiler-save-config this)
-  (message "Set %S to %s" (slot-value prop 'name)
+  (message "Set %S to %s" (slot-value prop 'object-name)
 	   (if (stringp val)
 	       val
 	     (prin1-to-string val))))
@@ -324,7 +324,7 @@ since this class sets :pslots in the `config-persistent' subclass.")
   "Get a property by \(symbol) NAME."
   (with-slots (props) this
     (let ((prop-map (mapcar #'(lambda (prop)
-				`(,(slot-value prop 'name) . ,prop))
+				`(,(slot-value prop 'object-name) . ,prop))
 			    props)))
       (cdr (assq name prop-map)))))
 
@@ -355,7 +355,7 @@ with \\[universal-argument]."
 (cl-defmethod flex-compiler-set-required ((this conf-flex-compiler))
   "Set all required properties for the compiler."
   (dolist (prop (flex-compiler-conf-prop-by-order this))
-    (let* ((name (slot-value prop 'name))
+    (let* ((name (slot-value prop 'object-name))
 	   (val (slot-value this name))
 	   ;; minibuffer reading has odd behavior when this isn't nil
 	   (display-buffer-alist nil))
@@ -369,7 +369,7 @@ with \\[universal-argument]."
     (flex-compiler-conf-set-prop this prop nil))
   (dolist (prop (flex-compiler-conf-prop-by-order this))
     (flex-compile-clear prop))
-  (message "Cleared %s configuration" (slot-value this 'name)))
+  (message "Cleared %s configuration" (config-entry-name this)))
 
 (cl-defmethod flex-compiler-show-configuration ((this conf-flex-compiler))
   "Create a buffer with the configuration of the compiler."
@@ -380,7 +380,7 @@ with \\[universal-argument]."
       (erase-buffer)
       (insert (format "%s configuration:\n" description))
       (dolist (prop (flex-compiler-conf-prop-by-order this))
-	(let* ((name (slot-value prop 'name))
+	(let* ((name (slot-value prop 'object-name))
 	       (val (or (slot-value this name) "<not set>")))
 	  (insert (format "%S: %s\n" name val))))
       (read-only-mode 1)
@@ -420,13 +420,13 @@ this when the compile starts"))
 				   &optional args)
   (let* ((modes (plist-get args :validate-modes))
 	 (desc (plist-get args :description))
-	 (name (plist-get args :name))
+	 (name (plist-get args :object-name))
 	 (prompt (format "%s file" (or desc (capitalize name))))
-	 (props (list (flex-conf-directory-prop :name 'start-directory
+	 (props (list (flex-conf-directory-prop :object-name 'start-directory
 						:compiler this
 						:prompt "Start directory"
 						:input-type 'last)
-		      (flex-conf-file-prop :name 'config-file
+		      (flex-conf-file-prop :object-name 'config-file
 					   :prompt prompt
 					   :compiler this
 					   :validate-modes modes
@@ -451,7 +451,7 @@ this when the compile starts"))
 
 (cl-defmethod flex-compiler-conf-set-prop ((this conf-file-flex-compiler)
 					   prop val)
-  (if (eq (slot-value prop 'name) 'config-file)
+  (if (eq (slot-value prop 'object-name) 'config-file)
       (with-slots (start-directory) this
 	(flex-compiler-conf-validate prop val)
 	(setq start-directory (file-name-directory val))))

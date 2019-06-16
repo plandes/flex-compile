@@ -49,13 +49,7 @@
 		  (t))
 		(read (read-string prompt sexp history)))))
      (with-slots (history choices prompt) this
-       (let* (
-	      ;; (def (save-mark-and-excursion
-	      ;; 	     (mark-sexp)
-	      ;; 	     (buffer-substring-no-properties
-	      ;; 	      (region-beginning) (region-end))))
-	      (prompt (format "%s (or RET for sexp): " prompt))
-	      (cmd (read-command prompt))
+       (let* ((cmd (read-command (format "%s (or RET for sexp): " prompt)))
 	      (sexp-prompt (format "%s: " prompt)))
 	 (if (eq '## cmd)
 	     (let ((func (read-sexp sexp-prompt history nil)))
@@ -76,11 +70,11 @@ form.  This is handy for functions that you end up invoking over and over with
 `M-x` (i.e. `cider-test-run-ns-tests`).  See [motivation](#motivation).")
 
 (cl-defmethod initialize-instance ((this command-flex-compiler) &optional args)
-  (let ((props (list (flex-conf-sexp-prop :name 'sexp
+  (let ((props (list (flex-conf-sexp-prop :object-name 'sexp
 					  :compiler this
 					  :prompt "Expression"
 					  :input-type 'last))))
-    (setq args (plist-put args :name "command")
+    (setq args (plist-put args :object-name "command")
 	  args (plist-put args :props (append (plist-get args :props) props))))
   (cl-call-next-method this args))
 

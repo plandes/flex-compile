@@ -42,7 +42,7 @@ This is a REPL based compiler to evaluate R code with
 [Emacs Speaks Statistics](https://ess.r-project.org) .")
 
 (cl-defmethod initialize-instance ((this ess-flex-compiler) &optional args)
-  (setq args (plist-put args :name "ess")
+  (setq args (plist-put args :object-name "ess")
 	args (plist-put args :description "Emacs speaks statistics")
 	args (plist-put args :validate-modes '(ess-r-mode))
 	args (plist-put args :repl-buffer-regexp "^\\*R:.+\\*$")

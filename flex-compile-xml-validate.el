@@ -84,11 +84,11 @@ Implementation compiler for XML validation using command line
 
 (cl-defmethod initialize-instance ((this xml-validate-flex-compiler)
 				   &optional args)
-  (let ((props (list (flex-conf-schema-file-prop :name 'schema-file
+  (let ((props (list (flex-conf-schema-file-prop :object-name 'schema-file
 						 :compiler this
 						 :required t
 						 :order 1))))
-    (setq args (plist-put args :name "xml-validate")
+    (setq args (plist-put args :object-name "xml-validate")
 	  args (plist-put args :description "XML")
 	  args (plist-put args :validate-modes '(nxml-mode))
 	  args (plist-put args :buffer-name "XML Validation")

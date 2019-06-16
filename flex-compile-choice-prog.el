@@ -55,21 +55,21 @@ Prompt and more easily invoke choice/action based programs using the
 	 (read-action '(lambda (this compiler default prompt history)
 			 (-> (flex-compiler-choice-prog-program compiler t)
 			     (choice-prog-read-option default history))))
-	 (props (list (flex-conf-eval-prop :name 'program
+	 (props (list (flex-conf-eval-prop :object-name 'program
 					   :prompt "Program"
 					   :func read-prog
 					   :compiler this
 					   :required t
 					   :input-type 'last
 					   :order 0)
-		      (flex-conf-eval-prop :name 'action
+		      (flex-conf-eval-prop :object-name 'action
 					   :prompt "Action"
 					   :func read-action
 					   :compiler this
 					   :required t
 					   :order 1
 					   :input-type 'last))))
-    (setq args (plist-put args :name "choice-program")
+    (setq args (plist-put args :object-name "choice-program")
 	  args (plist-put args :description "Choice program")
 	  args (plist-put args :buffer-name "Choice Program")
 	  args (plist-put args :kill-buffer-clean t)
@@ -110,7 +110,7 @@ the `flex-compile' framework."
 
 (cl-defmethod flex-compiler-conf-set-prop ((this choice-prog-flex-compiler)
 					   prop val)
-  (when (eq (slot-value prop 'name) 'program)
+  (when (eq (slot-value prop 'object-name) 'program)
     (setf (slot-value this 'action) nil)
     (flex-compile-clear (flex-compiler-conf-prop-by-name this 'action)))
   (cl-call-next-method this prop val))

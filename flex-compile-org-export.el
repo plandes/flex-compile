@@ -53,13 +53,13 @@ then shows the output in the browser.  Only HTML is currently supported.")
 	 (choices '(("Plain HTML" . org-html-export-to-html)
 		    ("Bootstrap HTML" . org-twbs-export-to-html)))
 	 (props (list (flex-conf-choice-description-prop
-		       :name 'export-fn
+		       :object-name 'export-fn
 		       :prompt "Export format"
 		       :compiler this
 		       :choices choices
 		       :required t
 		       :input-type 'toggle))))
-    (setq args (plist-put args :name "org-export")
+    (setq args (plist-put args :object-name "org-export")
 	  args (plist-put args :description "Org mode")
 	  args (plist-put args :validate-modes '(org-mode))
 	  args (plist-put args :props (append (plist-get args :props) props))))

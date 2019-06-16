@@ -77,7 +77,7 @@ The history variable for the eval form history."))
 (cl-defmethod initialize-instance ((this repl-flex-compiler) &optional args)
   (let* ((fn '(lambda (this default prmopt history)
 		(split-string (read-string prompt nil history default))))
-	 (props (list (flex-conf-choice-prop :name 'output-clear
+	 (props (list (flex-conf-choice-prop :object-name 'output-clear
 					     :compiler this
 					     :prompt "Clear output on compile"
 					     :choices '(yes no)

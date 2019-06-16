@@ -56,7 +56,7 @@ This is a REPL based compiler that allows for evaluation Python buffers and
 expressions using [python mode](https://github.com/fgallina/python.el).")
 
 (cl-defmethod initialize-instance ((this python-flex-compiler) &optional args)
-  (setq args (plist-put args :name "python")
+  (setq args (plist-put args :object-name "python")
 	args (plist-put args :validate-modes '(python-mode))
 	args (plist-put args :repl-buffer-regexp "^\\*Python\\*$")
 	args (plist-put args :repl-buffer-start-timeout 0))

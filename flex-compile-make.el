@@ -55,17 +55,17 @@ commands (see [usage](#usage)).")
 (cl-defmethod initialize-instance ((this make-flex-compiler) &optional args)
   (let* ((fn #'(lambda (this compiler &rest args)
 		 (flex-compiler-makefile-read compiler this)))
-	 (props (list (flex-conf-eval-prop :name 'target
+	 (props (list (flex-conf-eval-prop :object-name 'target
 					   :prompt "Target"
 					   :func fn
 					   :compiler this
 					   :input-type 'last
 					   :order 1))))
-    (setq args (plist-put args :name "make")
+    (setq args (plist-put args :object-name "make")
 	  args (plist-put args :description "Make")
 	  args (plist-put args :validate-modes '(makefile-gmake-mode))
 	  args (plist-put args :buffer-name "compilation")
-	  args (plist-put args :kill-buffer-clean 2)
+;	  args (plist-put args :kill-buffer-clean 2)
 	  args (plist-put args :props (append (plist-get args :props) props))))
   (cl-call-next-method this args))
 
@@ -114,6 +114,11 @@ This is done by creating a command with `make' found in the executable path."
 	  "Target" targets t nil nil history none nil nil t)
 	 (funcall #'(lambda (elt)
 		      (if (equal none elt) nil elt))))))
+
+(cl-defmethod flex-compiler-conf-set-prop ((this make-flex-compiler)
+					   prop val)
+  (setf (slot-value this 'target) nil)
+  (cl-call-next-method this prop val))
 
 (cl-defmethod flex-compiler-configure ((this make-flex-compiler)
 				       config-options)

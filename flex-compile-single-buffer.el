@@ -107,14 +107,14 @@ If this is an integer, wait the value in seconds and then kill."))
 				 `(,(nth 2 elt) . ,(car (last elt)))))
 		       (append '(("Global" . global)))))
 	 (props (list (flex-conf-choice-description-prop
-		       :name 'buffer-exists-mode
+		       :object-name 'buffer-exists-mode
 		       :compiler this
 		       :prompt "Exists buffer mode"
 		       :choices choices
 		       :order 10
 		       :input-type 'toggle)
 		      (flex-conf-choice-description-prop
-		       :name 'buffer-new-mode
+		       :object-name 'buffer-new-mode
 		       :compiler this
 		       :prompt "New buffer mode"
 		       :choices choices

@@ -94,7 +94,7 @@
 				      (config-entry-name b)))))
     (setq entries (append entries (cons compiler nil)))
     (setf (slot-value compiler 'manager) this)
-    (message "Registered %s compiler" (slot-value compiler 'name))))
+    (message "Registered %s compiler" (config-entry-name compiler))))
 
 (cl-defmethod config-manager-entry-names ((this flex-compile-manager))
   "Return the names of all registered compilers."
@@ -130,7 +130,7 @@ This is done by simply re-instantiating all current registered compilers."
 STREAM is where the output of the documentation goes."
   (insert (format "%s Compilers\n" (make-string level ?#)))
   (dolist (compiler (config-manager--entries this nil nil 'lexical))
-    (unless (equal (slot-value compiler 'name) "disable")
+    (unless (equal (config-entry-name compiler) "disable")
       (flex-compile-doc compiler (1+ level)))))
 
 
@@ -245,7 +245,7 @@ to invoke this command with full configuration support."
 	  (flex-compiler-configure active config-options)
 	(cl-no-applicable-method
 	 (message "Compiler %s is not configurable"
-		  (slot-value active 'name)))))))
+		  (config-entry-name active)))))))
 
 ;;;###autoload
 (defun flex-compile-run-or-set-config (action)

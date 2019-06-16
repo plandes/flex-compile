@@ -74,12 +74,12 @@ See documetation with `M-h f flex-compiler-query-eval' method for more
 inforamtion (and current binding).")
 
 (cl-defmethod initialize-instance ((this clojure-flex-compiler) &optional args)
-  (let ((props (list (flex-conf-choice-prop :name 'connect-mode
+  (let ((props (list (flex-conf-choice-prop :object-name 'connect-mode
 					    :compiler this
 					    :prompt "Connection mode"
 					    :choices '(jack-in connect)
 					    :input-type 'toggle))))
-    (setq args (plist-put args :name "clojure")
+    (setq args (plist-put args :object-name "clojure")
 	  args (plist-put args :validate-modes '(clojure-mode))
 	  args (plist-put args :repl-buffer-regexp "^\\*cider-repl ")
 	  args (plist-put args :repl-buffer-start-timeout 0)

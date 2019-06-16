@@ -45,12 +45,12 @@ See [motivation](#motivation).")
 (cl-defmethod initialize-instance ((this script-flex-compiler) &optional args)
   (let* ((fn '(lambda (this compiler default prompt history)
 		(split-string (read-string prompt nil history default))))
-	 (props (list (flex-conf-eval-prop :name 'arguments
+	 (props (list (flex-conf-eval-prop :object-name 'arguments
 					   :prompt "Arguments"
 					   :func fn
 					   :compiler this
 					   :input-type 'last))))
-    (setq args (plist-put args :name "script")
+    (setq args (plist-put args :object-name "script")
 	  args (plist-put args :description "Script")
 	  args (plist-put args :validate-modes
 			  '(sh-mode cperl-mode python-mode))

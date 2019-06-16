@@ -54,7 +54,7 @@ configuration file.")
 (cl-defmethod initialize-instance ((this flex-compiler) &optional args)
   (if (null (plist-get args :description))
       (setq args (plist-put args :description
-			    (capitalize (plist-get args :name)))))
+			    (capitalize (plist-get args :object-name)))))
   (cl-call-next-method this args))
 
 (cl-defmethod flex-compiler--unimplemented ((this flex-compiler) method)
@@ -138,7 +138,7 @@ a `flex-compiler' can explictly control buffer display with
   :documentation "A no-op compiler for the disabled state.")
 
 (cl-defmethod initialize-instance ((this no-op-flex-compiler) &optional args)
-  (setq args (plist-put args :name "disable")
+  (setq args (plist-put args :object-name "disable")
 	args (plist-put args :description "Do nothing"))
   (cl-call-next-method this args))
 
