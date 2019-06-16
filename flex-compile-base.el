@@ -83,6 +83,10 @@ This implementation sets all slots to nil."
   "Invoke the clean functionality of the compiler."
   (config-persistent--unimplemented this "clean"))
 
+(cl-defmethod config-entry-set-name ((this flex-compiler) name)
+  "Disallow renaming from the `config-manage-mode' as it makes no sense."
+  (config-persistent--unimplemented this "set-name"))
+
 (cl-defmethod flex-compiler-display-buffer ((this flex-compiler)
 					    &optional compile-def)
   "Called to display the compilation buffer \(if any).

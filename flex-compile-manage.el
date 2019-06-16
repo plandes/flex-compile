@@ -117,6 +117,10 @@ Each is an implementation of glue code to the respective compilation method.")
   (let ((active (flex-compile-manager-active this)))
     (flex-compiler-load-libraries active)))
 
+(cl-defmethod config-manager-remove-entry ((this flex-compile-manager) entry)
+  "Disallow entry deletion since it makes no sense for this implementation."
+  (config-persistent--unimplemented this "remove-entry"))
+
 (cl-defmethod flex-compile-clear ((this flex-compile-manager))
   "Clear all compiler's state.
 This is done by simply re-instantiating all current registered compilers."
