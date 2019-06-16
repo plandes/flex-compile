@@ -32,7 +32,7 @@
 (require 'subr-x)
 (require 'flex-compile-manage)
 
-(flex-compile-declare-functions
+(config-manage-declare-functions
  python-nav-backward-statement
  python-nav-forward-statement
  python-shell-calculate-command
@@ -41,7 +41,7 @@
  python-shell-send-buffer
  python-shell-send-string
  run-python)
-(flex-compile-declare-variables
+(config-manage-declare-variables
  python-shell-completion-native-enable)
 
 (defun flex-compile-python-path ()

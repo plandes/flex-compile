@@ -31,17 +31,24 @@ build:		$(ELPA_FILE) $(OBJECTS)
 
 .PHONY:		test
 test:		build cleantest
-		$(CASK) exec ert-runner -L $(LISP_DIR)
+		@if [ -d test ] ; then \
+			$(CASK) exec ert-runner -L $(LISP_DIR) ; \
+		fi
+
+.PHONY:		tmp
+tmp:		$(DOC_DIR)
 
 $(DOC_DIR):
 		mkdir -p $(DOC_DIR)
-		pandoc README.md -s -o $(DOC_DIR)/$(APP_NAME).texi
+		@if [ -f README.md ] ; then \
+			pandoc README.md -s -o $(DOC_DIR)/$(APP_NAME).texi ; \
+		fi
 
 .PHONY:		mkdoc
 mkdoc:		$(DOC_DIR)
 
 .PHONY:		package
-package:	test
+package:	test mkdoc
 		$(CASK) package
 
 # clean

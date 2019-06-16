@@ -32,7 +32,7 @@
 
 (require 'flex-compile-manage)
 
-(flex-compile-declare-functions
+(config-manage-declare-functions
  org-open-file
  org-twbs-export-to-html)
 

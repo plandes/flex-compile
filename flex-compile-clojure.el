@@ -32,13 +32,13 @@
 (require 'dash)
 (require 'flex-compile-manage)
 
-(flex-compile-declare-functions
+(config-manage-declare-functions
  cider-repl-return cider-connect
  nrepl-dict-get nrepl-sync-request:eval
  cider-current-connection cider-current-session cider-current-ns
  cider-load-file cider-last-sexp cider-quit cider-jack-in)
 
-(flex-compile-declare-variables
+(config-manage-declare-variables
  cider-repl-display-in-current-window)
 
 (defclass clojure-flex-compiler (repl-flex-compiler)

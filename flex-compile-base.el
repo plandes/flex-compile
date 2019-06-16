@@ -47,25 +47,11 @@
 Instances of this class are also persistable and their state is stored in a
 configuration file.")
 
-(define-error 'flex-compiler-un-implemented
-  "Un-implemented method flex-compiler method"
-  'cl-no-applicable-method)
-
 (cl-defmethod initialize-instance ((this flex-compiler) &optional args)
   (if (null (plist-get args :description))
       (setq args (plist-put args :description
 			    (capitalize (plist-get args :object-name)))))
   (cl-call-next-method this args))
-
-(cl-defmethod flex-compiler--unimplemented ((this flex-compiler) method)
-  (with-temp-buffer
-    (set-buffer (get-buffer-create "*flex-compiler-backtrace*"))
-    (erase-buffer)
-    (let ((standard-output (current-buffer)))
-      (backtrace)))
-  (signal 'flex-compiler-un-implemented
-	  (list method (with-temp-buffer
-			 (cl-print-object this (current-buffer))))))
 
 (cl-defmethod flex-compiler-load-libraries ((this flex-compiler))
   "Call back for to load and require libraries needed by the compiler.")
@@ -86,15 +72,15 @@ This implementation sets all slots to nil."
 
 (cl-defmethod flex-compiler-run ((this flex-compiler))
   "Invoke the run functionality of the compiler."
-  (flex-compiler--unimplemented this "run"))
+  (config-persistent--unimplemented this "run"))
 
 (cl-defmethod flex-compiler-compile ((this flex-compiler))
   "Invoke the compile functionality of the compiler."
-  (flex-compiler--unimplemented this "compile"))
+  (config-persistent--unimplemented this "compile"))
 
 (cl-defmethod flex-compiler-clean ((this flex-compiler))
   "Invoke the clean functionality of the compiler."
-  (flex-compiler--unimplemented this "clean"))
+  (config-persistent--unimplemented this "clean"))
 
 (cl-defmethod flex-compiler-display-buffer ((this flex-compiler)
 					    &optional compile-def)
@@ -142,8 +128,9 @@ a `flex-compiler' can explictly control buffer display with
 	args (plist-put args :description "Do nothing"))
   (cl-call-next-method this args))
 
-(cl-defmethod flex-compiler--unimplemented ((this no-op-flex-compiler) method)
-  (message "Compiler is disabled"))
+(cl-defmethod config-persistent--unimplemented ((this no-op-flex-compiler)
+						method)
+  (message "Compiler is disabled for %S" method))
 
 
 

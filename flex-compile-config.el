@@ -37,11 +37,7 @@
 (require 'flex-compile-base)
 
 (defclass flex-conf-prop (eieio-named)
-  (
-   ;; (name :initarg :name
-   ;; 	 :type symbol
-   ;; 	 :documentation "Name of the property")
-   (compiler :initarg :compiler
+  ((compiler :initarg :compiler
 	     :type flex-compiler
 	     :documentation "The compiler that `owns' this property")
    (prompt :initarg :prompt
@@ -127,7 +123,7 @@ The default reads a string using `flex-compiler-conf-default' and
   (let ((desc (flex-compile-description this))
 	(doc (->> (slot-value this 'compiler)
 		  eieio-object-class
-		  flex-compile-slots
+		  config-manage-slots
 		  (assq (slot-value this 'object-name))
 		  (assq 'documentation)
 		  cdr)))
