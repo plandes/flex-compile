@@ -125,7 +125,7 @@ This is done by simply re-instantiating all current registered compilers."
 	   funcall
 	   (flex-compile-manager-register this)))))
 
-(cl-defmethod flex-compile-doc ((this flex-compile-manager) level)
+(cl-defmethod config-prop-doc ((this flex-compile-manager) level)
   "Create markdown documentation on all compilers and their meta data.
 STREAM is where the output of the documentation goes."
   (insert (format "%s Compilers\n" (make-string level ?#)))
@@ -242,7 +242,7 @@ to invoke this command with full configuration support."
 	    (setq comp-def (flex-compiler-compile active)))
 	  (flex-compiler-display-buffer active comp-def))
       (condition-case nil
-	  (flex-compiler-configure active config-options)
+	  (config-prop-entry-configure active config-options)
 	(cl-no-applicable-method
 	 (message "Compiler %s is not configurable"
 		  (config-entry-name active)))))))
@@ -271,7 +271,7 @@ ACTION is the interactive argument given by the read function."
 	  (find (if (child-of-class-p (eieio-object-class active)
 				      'conf-file-flex-compiler)
 		    (flex-compiler-conf-file-display active)))
-	  (set-config (flex-compiler-configure active 'immediate))
+	  (set-config (config-prop-entry-configure active 'immediate))
 	  (t (error "Unknown action: %S" action)))
       (cl-no-applicable-method
        (message "Unsupported action `%S' on compiler %s: no method %S"
@@ -330,7 +330,7 @@ FORM is the form to evaluate \(if implemented).  If called with
   (let ((buf (get-buffer-create "*Compiler Documentation*")))
     (with-current-buffer buf
       (erase-buffer)
-      (flex-compile-doc the-flex-compile-manager 2)
+      (config-prop-doc the-flex-compile-manager 2)
       (and (fboundp 'markdown-mode) (markdown-mode)))
     (display-buffer buf)
     buf))
@@ -341,7 +341,7 @@ FORM is the form to evaluate \(if implemented).  If called with
   (interactive)
   (let* ((this the-flex-compile-manager)
 	 (active (flex-compile-manager-active this)))
-    (flex-compiler-show-configuration active)))
+    (config-prop-entry-show-configuration active)))
 
 (provide 'flex-compile-manage)
 

@@ -67,7 +67,7 @@ If non-`nil' then don't prompt to kill a REPL buffer on clean.")
 		 :documentation "\
 Whether or not to clear comint buffer after a compilation.")
    (form-history :initarg :form-history
-		 :initform (gensym "flex-conf-repl-form-history")
+		 :initform (gensym "config-repl-form-history")
 		 :type symbol
 		 :documentation "\
 The history variable for the eval form history."))
@@ -77,17 +77,17 @@ The history variable for the eval form history."))
 (cl-defmethod initialize-instance ((this repl-flex-compiler) &optional args)
   (let* ((fn '(lambda (this default prmopt history)
 		(split-string (read-string prompt nil history default))))
-	 (props (list (flex-conf-choice-prop :object-name 'output-clear
-					     :compiler this
-					     :prompt "Clear output on compile"
-					     :choices '(yes no)
-					     :input-type 'toggle))))
+	 (props (list (config-choice-prop :object-name 'output-clear
+					  :prop-entry this
+					  :prompt "Clear output on compile"
+					  :choices '(yes no)
+					  :input-type 'toggle))))
     (setq args (plist-put args :props (append (plist-get args :props) props))))
   (cl-call-next-method this args))
 
 (cl-defmethod flex-compiler-repl-start ((this repl-flex-compiler))
   "Start the REPL."
-  (flex-compiler--unimplemented this "start-repl"))
+  (config-persistent--unimplemented this "start-repl"))
 
 (cl-defmethod flex-compiler-repl-compile ((this repl-flex-compiler) file)
   "Invoked by `compile' type messages from the compiler manager.
@@ -97,7 +97,7 @@ insertion in the REPL buffer.
 
 This method is meant to allow for REPL compiles \(really some kind of
 evaluation), while allowing base class compilation features.."
-  (flex-compiler--unimplemented this "repl-compile"))
+  (config-persistent--unimplemented this "repl-compile"))
 
 (cl-defmethod flex-compiler-wait-for-buffer ((this repl-flex-compiler))
   "Wait for the compilation to start.
@@ -134,8 +134,8 @@ The caller raises and error if it doesn't start in time."
     (let ((timeout repl-buffer-start-timeout)
 	  buf)
       (unless (flex-compiler-repl-running-p this)
-	(flex-compiler-set-required this)
-  	(let ((default-directory (or start-directory default-directory)))
+	(config-prop-entry-set-required this)
+	(let ((default-directory (or start-directory default-directory)))
 	  (flex-compiler-repl-start this))
 	(when (> timeout 0)
 	  (setq buf (flex-compiler-wait-for-buffer this))
@@ -170,7 +170,7 @@ The caller raises and error if it doesn't start in time."
 
 (cl-defmethod flex-compiler-kill-repl ((this repl-flex-compiler))
   "Kill the compiler's REPL."
-  (with-slots (name derived-buffer-names no-prompt-kill-repl-buffer) this
+  (with-slots ( derived-buffer-names no-prompt-kill-repl-buffer) this
     (let ((bufs (append (mapcar 'get-buffer derived-buffer-names)
 			(cons (flex-compiler-buffer this) nil)))
 	  (count 0))
@@ -182,10 +182,11 @@ The caller raises and error if it doesn't start in time."
 		   kill-buffer-query-functions)))
 	    (kill-buffer buf))
 	  (cl-incf count)))
-      (message "%s killed %d buffer(s)" (capitalize name) count))))
+      (message "%s killed %d buffer(s)"
+	       (capitalize (config-entry-name this)) count))))
 
 (cl-defmethod flex-compiler-start-buffer ((this repl-flex-compiler) start-type)
-  (flex-compiler-set-required this)
+  (config-prop-entry-set-required this)
   (with-slots (config-file output-clear) this
     (let ((runningp (flex-compiler-repl-running-p this)))
       (cl-case start-type
@@ -215,7 +216,7 @@ The caller raises and error if it doesn't start in time."
 
 (cl-defmethod flex-compiler-eval-form-impl ((this repl-flex-compiler) form)
   "Evaluate the FORM and return the response of the REPL."
-  (flex-compiler--unimplemented this "eval-form-impl"))
+  (config-persistent--unimplemented this "eval-form-impl"))
 
 (cl-defmethod flex-compiler-query-read-form ((this repl-flex-compiler)
 					     no-input-p)

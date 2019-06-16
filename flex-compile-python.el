@@ -31,6 +31,7 @@
 
 (require 'subr-x)
 (require 'flex-compile-manage)
+(require 'flex-compile-repl)
 
 (config-manage-declare-functions
  python-nav-backward-statement

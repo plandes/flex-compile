@@ -69,16 +69,16 @@ mode or connecting to a host and port remotely with `cider-connect'.  You can
 switch betwee these two methods with the [given keybindings](#key-bindings):
 
   `M-x 1 C-u C-x C-u'
-  
+
 See documetation with `M-h f flex-compiler-query-eval' method for more
 inforamtion (and current binding).")
 
 (cl-defmethod initialize-instance ((this clojure-flex-compiler) &optional args)
-  (let ((props (list (flex-conf-choice-prop :object-name 'connect-mode
-					    :compiler this
-					    :prompt "Connection mode"
-					    :choices '(jack-in connect)
-					    :input-type 'toggle))))
+  (let ((props (list (config-choice-prop :object-name 'connect-mode
+					 :prop-entry this
+					 :prompt "Connection mode"
+					 :choices '(jack-in connect)
+					 :input-type 'toggle))))
     (setq args (plist-put args :object-name "clojure")
 	  args (plist-put args :validate-modes '(clojure-mode))
 	  args (plist-put args :repl-buffer-regexp "^\\*cider-repl ")
@@ -99,9 +99,9 @@ inforamtion (and current binding).")
 
 (cl-defmethod flex-compiler-eval-form-impl ((this clojure-flex-compiler) form)
   (let* ((res (nrepl-sync-request:eval
-		   form
-		   (cider-current-connection)
-		   (cider-current-ns))))
+	       form
+	       (cider-current-connection)
+	       (cider-current-ns))))
     (or (nrepl-dict-get res "err")
 	(nrepl-dict-get res "value"))))
 

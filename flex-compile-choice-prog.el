@@ -32,8 +32,8 @@
 
 (require 'cl-lib)
 (require 'dash)
-(require 'flex-compile-manage)
 (require 'choice-program-complete)
+(require 'flex-compile-manage)
 
 ;;; choice-prog file compiler
 (defclass choice-prog-flex-compiler (single-buffer-flex-compiler
@@ -55,20 +55,20 @@ Prompt and more easily invoke choice/action based programs using the
 	 (read-action '(lambda (this compiler default prompt history)
 			 (-> (flex-compiler-choice-prog-program compiler t)
 			     (choice-prog-read-option default history))))
-	 (props (list (flex-conf-eval-prop :object-name 'program
-					   :prompt "Program"
-					   :func read-prog
-					   :compiler this
-					   :required t
-					   :input-type 'last
-					   :order 0)
-		      (flex-conf-eval-prop :object-name 'action
-					   :prompt "Action"
-					   :func read-action
-					   :compiler this
-					   :required t
-					   :order 1
-					   :input-type 'last))))
+	 (props (list (config-eval-prop :object-name 'program
+					:prompt "Program"
+					:func read-prog
+					:prop-entry this
+					:required t
+					:input-type 'last
+					:order 0)
+		      (config-eval-prop :object-name 'action
+					:prompt "Action"
+					:func read-action
+					:prop-entry this
+					:required t
+					:order 1
+					:input-type 'last))))
     (setq args (plist-put args :object-name "choice-program")
 	  args (plist-put args :description "Choice program")
 	  args (plist-put args :buffer-name "Choice Program")
@@ -82,7 +82,7 @@ Prompt and more easily invoke choice/action based programs using the
 (cl-defmethod flex-compiler-choice-prog-map ((this choice-prog-flex-compiler))
   (->> (choice-prog-instances)
        (-map '(lambda (this)
-       		(cons (choice-prog-name this) this)))))
+		(cons (choice-prog-name this) this)))))
 
 (cl-defmethod flex-compiler-choice-prog-read-program ((this choice-prog-flex-compiler)
 						      default prompt history)
@@ -108,11 +108,11 @@ the `flex-compile' framework."
 	  (error "No such program: `%S'" program))
 	ret))))
 
-(cl-defmethod flex-compiler-conf-set-prop ((this choice-prog-flex-compiler)
-					   prop val)
+(cl-defmethod config-prop-set-prop ((this choice-prog-flex-compiler)
+				    prop val)
   (when (eq (slot-value prop 'object-name) 'program)
     (setf (slot-value this 'action) nil)
-    (flex-compile-clear (flex-compiler-conf-prop-by-name this 'action)))
+    (config-persistent-reset (config-prop-by-name this 'action)))
   (cl-call-next-method this prop val))
 
 (cl-defmethod flex-compiler-buffer-name ((this choice-prog-flex-compiler))
@@ -127,7 +127,7 @@ the `flex-compile' framework."
     (compile (let ((prog (flex-compiler-choice-prog-program this))
 		   (action (slot-value this 'action)))
 	       (choice-prog-exec prog action)))
-    (run (flex-compiler-show-configuration this))))
+    (run (config-prop-entry-show-configuration this))))
 
 ;; register the compiler
 (flex-compile-manager-register the-flex-compile-manager

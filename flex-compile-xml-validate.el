@@ -33,21 +33,21 @@
 
 (eval-when-compile (require 'xml))
 
-(defclass flex-conf-schema-file-prop (flex-conf-file-prop)
+(defclass config-schema-file-prop (config-file-prop)
   ()
   :documentation "A schema file property")
 
-(cl-defmethod initialize-instance ((this flex-conf-schema-file-prop)
+(cl-defmethod initialize-instance ((this config-schema-file-prop)
 				   &optional args)
   (setq args (plist-put args :prompt "Schema file")
 	args (plist-put args :validate-modes '(nxml-mode))
 	args (plist-put args :input-type 'last))
   (cl-call-next-method this args))
 
-(cl-defmethod flex-compiler-guess-schema-file ((this flex-conf-schema-file-prop))
+(cl-defmethod flex-compiler-guess-schema-file ((this config-schema-file-prop))
   "Try to determine where the XSD is by the location "
   (with-temp-buffer
-    (-> (slot-value this 'compiler)
+    (-> (slot-value this 'prop-entry)
 	(slot-value 'config-file)
 	insert-file-contents)
     (condition-case nil
@@ -61,7 +61,7 @@
 			      (match-string 1 xsi)))))
       (error))))
 
-(cl-defmethod flex-compiler-conf-read ((this flex-conf-schema-file-prop))
+(cl-defmethod config-prop-read ((this config-schema-file-prop))
   (let* ((schema-guess (flex-compiler-guess-schema-file this))
 	 (initial (and schema-guess (file-name-nondirectory schema-guess)))
 	 (dir (and schema-guess (file-name-directory schema-guess))))
@@ -84,10 +84,10 @@ Implementation compiler for XML validation using command line
 
 (cl-defmethod initialize-instance ((this xml-validate-flex-compiler)
 				   &optional args)
-  (let ((props (list (flex-conf-schema-file-prop :object-name 'schema-file
-						 :compiler this
-						 :required t
-						 :order 1))))
+  (let ((props (list (config-schema-file-prop :object-name 'schema-file
+					      :prop-entry this
+					      :required t
+					      :order 1))))
     (setq args (plist-put args :object-name "xml-validate")
 	  args (plist-put args :description "XML")
 	  args (plist-put args :validate-modes '(nxml-mode))
@@ -98,8 +98,8 @@ Implementation compiler for XML validation using command line
 (cl-defmethod flex-compiler-load-libraries ((this xml-validate-flex-compiler))
   (require 'xml))
 
-(cl-defmethod flex-compiler-conf-set-prop ((this xml-validate-flex-compiler)
-					   prop val)
+(cl-defmethod config-prop-set-prop ((this xml-validate-flex-compiler)
+				    prop val)
   (setf (slot-value this 'schema-file) nil)
   (cl-call-next-method this prop val))
 

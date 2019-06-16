@@ -45,11 +45,11 @@ See [motivation](#motivation).")
 (cl-defmethod initialize-instance ((this script-flex-compiler) &optional args)
   (let* ((fn '(lambda (this compiler default prompt history)
 		(split-string (read-string prompt nil history default))))
-	 (props (list (flex-conf-eval-prop :object-name 'arguments
-					   :prompt "Arguments"
-					   :func fn
-					   :compiler this
-					   :input-type 'last))))
+	 (props (list (config-eval-prop :object-name 'arguments
+					:prompt "Arguments"
+					:func fn
+					:prop-entry this
+					:input-type 'last))))
     (setq args (plist-put args :object-name "script")
 	  args (plist-put args :description "Script")
 	  args (plist-put args :validate-modes
@@ -64,28 +64,29 @@ See [motivation](#motivation).")
   (require 'compile)
   (require 'choice-program))
 
-(cl-defmethod flex-compiler-conf-set-prop ((this script-flex-compiler)
+(cl-defmethod config-prop-set-prop ((this script-flex-compiler)
 					   prop val)
   (setf (slot-value this 'arguments) nil)
   (cl-call-next-method this prop val))
 
 (cl-defmethod flex-compiler-start-buffer ((this script-flex-compiler)
 					  start-type)
-  (cl-case start-type
-    (compile
-     (with-slots (config-file start-directory arguments) this
-       (let ((default-directory start-directory)
-	     (buffer-name (flex-compiler-buffer-name this))
-	     (cmd (concat config-file " "
-			  (mapconcat #'identity arguments " ")))
-	     reset-target
-	     buf)
-	 (with-current-buffer
-	     (setq buf (compilation-start cmd nil
-					  #'(lambda (mode-name)
-					      buffer-name))))
-	 buf)))
-    (run (error "No defined run action for scripts"))))
+  (let ((a (config-prop-by-name this 'start-directory)))
+   (cl-case start-type
+     (compile
+      (with-slots (config-file start-directory arguments) this
+	(let ((default-directory start-directory)
+	      (buffer-name (flex-compiler-buffer-name this))
+	      (cmd (concat config-file " "
+			   (mapconcat #'identity arguments " ")))
+	      reset-target
+	      buf)
+	  (with-current-buffer
+	      (setq buf (compilation-start cmd nil
+					   #'(lambda (mode-name)
+					       buffer-name))))
+	  buf)))
+     (run (error "No defined run action for scripts")))))
 
 (flex-compile-manager-register the-flex-compile-manager (script-flex-compiler))
 

@@ -52,10 +52,10 @@ then shows the output in the browser.  Only HTML is currently supported.")
 		(split-string (read-string prompt nil history default))))
 	 (choices '(("Plain HTML" . org-html-export-to-html)
 		    ("Bootstrap HTML" . org-twbs-export-to-html)))
-	 (props (list (flex-conf-choice-description-prop
+	 (props (list (config-choice-description-prop
 		       :object-name 'export-fn
 		       :prompt "Export format"
-		       :compiler this
+		       :prop-entry this
 		       :choices choices
 		       :required t
 		       :input-type 'toggle))))
@@ -70,7 +70,7 @@ then shows the output in the browser.  Only HTML is currently supported.")
   (require 'choice-program-complete))
 
 (cl-defmethod flex-compiler-compile ((this org-export-flex-compiler))
-  (flex-compiler-set-required this)
+  (config-prop-entry-set-required this)
   (if nil
       (shell-command "osascript -e 'tell application \"Emacs\" to activate'"))
   (with-slots (export-fn config-file) this
@@ -78,7 +78,7 @@ then shows the output in the browser.  Only HTML is currently supported.")
       (org-open-file (funcall export-fn)))))
 
 (cl-defmethod flex-compiler-clean ((this org-export-flex-compiler))
-  (flex-compiler-set-required this)
+  (config-prop-entry-set-required this)
   (with-slots (config-file) this
     (let ((html-file (replace-regexp-in-string "\.org$" ".html" config-file)))
       (if (not (file-exists-p html-file))

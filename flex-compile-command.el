@@ -32,10 +32,11 @@
 
 (require 'flex-compile-manage)
 
-(defclass flex-conf-sexp-prop (flex-conf-prop) ()
+(defclass config-sexp-prop (config-prop)
+  ()
   :documentation "Property that prompts for a selection of a list of choices.")
 
-(cl-defmethod flex-compiler-conf-read ((this flex-conf-sexp-prop))
+(cl-defmethod config-prop-read ((this config-sexp-prop))
   (list
    (cl-flet ((read-sexp
 	      (prompt history no-read-p)
@@ -70,10 +71,10 @@ form.  This is handy for functions that you end up invoking over and over with
 `M-x` (i.e. `cider-test-run-ns-tests`).  See [motivation](#motivation).")
 
 (cl-defmethod initialize-instance ((this command-flex-compiler) &optional args)
-  (let ((props (list (flex-conf-sexp-prop :object-name 'sexp
-					  :compiler this
-					  :prompt "Expression"
-					  :input-type 'last))))
+  (let ((props (list (config-sexp-prop :object-name 'sexp
+				       :prop-entry this
+				       :prompt "Expression"
+				       :input-type 'last))))
     (setq args (plist-put args :object-name "command")
 	  args (plist-put args :props (append (plist-get args :props) props))))
   (cl-call-next-method this args))
@@ -84,7 +85,7 @@ form.  This is handy for functions that you end up invoking over and over with
 
 (cl-defmethod flex-compiler-compile ((this command-flex-compiler))
   (unless (slot-value this 'sexp)
-    (flex-compiler-configure this nil))
+    (config-prop-entry-configure this nil))
   (with-slots (sexp) this
     (let ((res (apply sexp)))
       (message "%S "res)

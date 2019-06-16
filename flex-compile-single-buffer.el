@@ -35,7 +35,6 @@
 (require 'dash)
 (require 'eieio)
 (require 'flex-compile-base)
-(require 'flex-compile-config)
 
 (defconst flex-compile-display-mode-options
   '(choice (const :tag "This Window" switch)
@@ -106,16 +105,16 @@ If this is an integer, wait the value in seconds and then kill."))
 		       (-map #'(lambda (elt)
 				 `(,(nth 2 elt) . ,(car (last elt)))))
 		       (append '(("Global" . global)))))
-	 (props (list (flex-conf-choice-description-prop
+	 (props (list (config-choice-description-prop
 		       :object-name 'buffer-exists-mode
-		       :compiler this
+		       :prop-entry this
 		       :prompt "Exists buffer mode"
 		       :choices choices
 		       :order 10
 		       :input-type 'toggle)
-		      (flex-conf-choice-description-prop
+		      (config-choice-description-prop
 		       :object-name 'buffer-new-mode
-		       :compiler this
+		       :prop-entry this
 		       :prompt "New buffer mode"
 		       :choices choices
 		       :order 11
@@ -136,7 +135,7 @@ If this is an integer, wait the value in seconds and then kill."))
   "Return a new buffer with a processing compilation.
 START-TYPE is either symbols `compile', `run', `clean' depending
 if invoked by `flex-compiler-compile' or `flex-compiler-run'."
-  (flex-compiler--unimplemented this "start-buffer"))
+  (config-persistent--unimplemented this "start-buffer"))
 
 (cl-defmethod flex-compiler-display-modes ((this single-buffer-flex-compiler))
   "Return an alist with keys `new' and `exists'.
@@ -212,7 +211,7 @@ MODE is either `flex-compile-display-buffer-new-mode' or
 	 (buf (flex-compiler-buffer this)))
     (when (or startp (null buf))
 	(if (child-of-class-p (eieio-object-class this) 'conf-flex-compiler)
-	    (flex-compiler-set-required this))
+	    (config-prop-entry-set-required this))
 	(setq buf (flex-compiler-start-buffer this start-type)))
     `((newp . ,(not has-buffer-p))
       (buffer . ,buf))))

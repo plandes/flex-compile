@@ -39,14 +39,14 @@
 ;;; Code:
 
 (require 'flex-compile-manage)
+(require 'flex-compile-script)
 (require 'flex-compile-make)
 (require 'flex-compile-command)
-(require 'flex-compile-clojure)
-(require 'flex-compile-script)
-(require 'flex-compile-python)
-(require 'flex-compile-xml-validate)
-(require 'flex-compile-org-export)
 (require 'flex-compile-choice-prog)
+(require 'flex-compile-org-export)
+(require 'flex-compile-xml-validate)
+(require 'flex-compile-python)
+(require 'flex-compile-clojure)
 (require 'flex-compile-ess)
 
 (defun flex-compile-init ()

@@ -32,6 +32,7 @@
 
 (require 'eieio)
 (require 'config-manage)
+(require 'config-manage-prop)
 
 (defgroup flex-compile nil
   "Compile Helper Functions"
@@ -39,7 +40,7 @@
   :group 'compilation
   :prefix '"flex-compile")
 
-(defclass flex-compiler (config-entry)
+(defclass flex-compiler (config-prop-entry)
   ()
   :abstract true
   :method-invocation-order :c3
