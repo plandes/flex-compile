@@ -73,7 +73,21 @@ frames, otherwise display the buffer.
   "History variable for `flex-compiler-set-buffer-exists-mode'.")
 
 (defclass single-buffer-flex-compiler (flex-compiler)
-  ((buffer-name :initarg :buffer-name
+  ((buffer-new-mode :initarg :buffer-new-mode
+		    :initform 'global
+		    :type symbol
+		    :documentation "\
+Compiler instance of `flex-compile-display-buffer-new-mode'.
+This is one of `flex-compile-display-mode-options' or `global' to use the value
+of `flex-compile-display-buffer-new-mode'")
+   (buffer-exists-mode :initarg :buffer-exists-mode
+		       :initform 'global
+		       :type symbol
+		       :documentation "\
+Compiler instance of `flex-compile-display-buffer-exists-mode'.
+This is one of `flex-compile-display-mode-options' or `global' to use the value
+of `flex-compile-display-buffer-exists-mode'")
+   (buffer-name :initarg :buffer-name
 		:type string
 		:documentation "The default name of the single buffer.")
    (kill-buffer-clean :initarg :kill-buffer-clean
@@ -84,6 +98,29 @@ If non-nil kill the buffer on clean.
 If this is an integer, wait the value in seconds and then kill."))
   :abstract t
   :documentation "A flex compiler that has a single buffer.")
+
+(cl-defmethod initialize-instance ((this single-buffer-flex-compiler)
+				   &optional args)
+  (let* ((choices (->> (cdr flex-compile-display-mode-options)
+		       (-map #'(lambda (elt)
+				 `(,(nth 2 elt) . ,(last elt))))
+		       (append '(("Global" . global)))))
+	 (props (list (flex-conf-choice-description-prop
+		       :name 'buffer-exists-mode
+		       :compiler this
+		       :prompt "Exists buffer mode"
+		       :choices choices
+		       :order 10
+		       :input-type 'toggle)
+		      (flex-conf-choice-description-prop
+		       :name 'buffer-new-mode
+		       :compiler this
+		       :prompt "New buffer mode"
+		       :choices choices
+		       :order 11
+		       :input-type 'toggle))))
+    (setq args (plist-put args :props (append (plist-get args :props) props))))
+  (cl-call-next-method this args))
 
 (cl-defmethod flex-compiler-buffer-name ((this single-buffer-flex-compiler))
   "Return the name of the single buffer."
@@ -104,8 +141,15 @@ if invoked by `flex-compiler-compile' or `flex-compiler-run'."
   "Return an alist with keys `new' and `exists'.
 This implementation returns `flex-compile-display-buffer-new-mode' and
 `flex-compile-display-buffer-exists-mode' respectfully."
-  `((new . ,flex-compile-display-buffer-new-mode)
-    (exists . ,flex-compile-display-buffer-exists-mode)))
+  (with-slots (buffer-new-mode buffer-exists-mode) this
+    (let ((new-mode (if (eq buffer-new-mode 'global)
+			flex-compile-display-buffer-new-mode
+		      buffer-new-mode))
+	  (exists-mode (if (eq buffer-exists-mode 'global)
+			   flex-compile-display-buffer-exists-mode
+			 buffer-exists-mode)))
+      `((new . ,new-mode)
+	(exists . ,exists-mode)))))
 
 (defun flex-compiler-display-function (mode)
   "Return a function used for displaying a buffer using MODE.

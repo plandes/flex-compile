@@ -41,8 +41,8 @@
   "History for makefile targets on compile.")
 
 ;;; make file compiler
-(defclass make-flex-compiler (conf-file-flex-compiler
-			      single-buffer-flex-compiler)
+(defclass make-flex-compiler (single-buffer-flex-compiler
+			      conf-file-flex-compiler)
   ((target :initarg :target
 	   :initform nil
 	   :type (or null string)))
@@ -102,6 +102,7 @@ This is done by creating a command with `make' found in the executable path."
 			   (member elt '("run" "clean")))))))
 
 (cl-defmethod flex-compiler-makefile-read ((this make-flex-compiler))
+  (flex-compiler-set-required this)
   (let ((targets (flex-compiler-makefile-targets this))
 	(none "<none>"))
     (->> (choice-program-complete "Target" targets t nil nil

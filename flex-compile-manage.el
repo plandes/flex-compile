@@ -121,9 +121,9 @@ This is done by simply re-instantiating all current registered compilers."
   (let ((entries (slot-value this 'entries)))
     (setf (slot-value this 'entries) nil)
     (dolist (compiler entries)
-      (-> (eieio-object-class compiler)
-	  funcall
-	  (flex-compile-manager-register this)))))
+      (->> (eieio-object-class compiler)
+	   funcall
+	   (flex-compile-manager-register this)))))
 
 
 

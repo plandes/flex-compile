@@ -36,8 +36,8 @@
 (require 'choice-program-complete)
 
 ;;; choice-prog file compiler
-(defclass choice-prog-flex-compiler (conf-flex-compiler
-				     single-buffer-flex-compiler)
+(defclass choice-prog-flex-compiler (single-buffer-flex-compiler
+				     conf-flex-compiler)
   ((program :initarg :program
 	    :initform nil
 	    :documentation "An instance of `choice-prog'.")
@@ -51,7 +51,7 @@
 		       (flex-compiler-choice-prog-read-program
 			compiler default prompt history)))
 	 (read-action '(lambda (this compiler default prompt history)
-			 (-> (flex-compiler-choice-prog-program compiler)
+			 (-> (flex-compiler-choice-prog-program compiler t)
 			     (choice-prog-read-option default history))))
 	 (props (list (flex-conf-eval-prop :name 'program
 					   :prompt "Program"
@@ -71,8 +71,7 @@
 	  args (plist-put args :description "Choice program")
 	  args (plist-put args :buffer-name "Choice Program")
 	  args (plist-put args :kill-buffer-clean t)
-	  args (plist-put args :props
-			  (append (plist-get args :props) props))))
+	  args (plist-put args :props (append (plist-get args :props) props))))
   (cl-call-next-method this args))
 
 (cl-defmethod flex-compiler-load-libraries ((this choice-prog-flex-compiler))
@@ -93,9 +92,12 @@ the `flex-compile' framework."
 		      (-map #'intern))))
     (choice-program-complete prompt choices t t nil history default)))
 
-(cl-defmethod flex-compiler-choice-prog-program ((this choice-prog-flex-compiler))
+(cl-defmethod flex-compiler-choice-prog-program ((this choice-prog-flex-compiler)
+						 &optional expectp)
   "Read an action for the \(already) selected `choice-prog'"
   (with-slots (program) this
+    (if (and (null program) expectp)
+	(error "No program set"))
     (when program
       (let ((ret (->> (flex-compiler-choice-prog-map this)
 		      (assoc program)

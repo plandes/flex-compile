@@ -32,8 +32,8 @@
 (require 'flex-compile-manage)
 
 ;;; script file compiler
-(defclass script-flex-compiler (conf-file-flex-compiler
-				single-buffer-flex-compiler)
+(defclass script-flex-compiler (single-buffer-flex-compiler
+				conf-file-flex-compiler)
   ((arguments :initarg :arguments
 	      :initform nil
 	      :documentation "The arguments to give to the script.")))

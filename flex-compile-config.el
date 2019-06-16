@@ -118,37 +118,56 @@ The default reads a string using `flex-compiler-conf-default' and
 ;; properties
 (defclass flex-conf-choice-prop (flex-conf-prop)
   ((choices :initarg :choices
-	    :type list
-	    :documentation "A list of symbols or strings for the choices \
-to prompt the user"))
+	    :initform nil
+	    :type (or null list)
+	    :documentation "\
+A list of symbols or strings for the choices to prompt the user.
+Either this is non-nil or :choices-fn is, but not both.")
+   (choices-fn :initarg :choices-fn
+	       :initform nil
+	       :type (or null function)
+	       :documentation "\
+A function used to generate choices in places of :choices.
+The function takes this class instance as the single parameter.
+Either this is non-nil or :choices is, but not both.")
+   (ignore-case :initarg :ignore-case
+		:initform t
+		:type boolean
+		:documentation "\
+This is always used for `completion-ignore-case'."))
   :documentation "Property that prompts for a selection of a list of choices.")
 
+(cl-defmethod flex-compiler-choices ((this flex-conf-choice-prop))
+  (with-slots (choices choices-fn) this
+    (or choices (funcall choices-fn this))))
+
 (cl-defmethod flex-compiler-conf-read ((this flex-conf-choice-prop))
-  (with-slots (history choices) this
-    (if (= 1 (length choices))
-	(car choices)
-      (let* ((default (flex-compiler-conf-default-input this))
-	     (prompt (flex-compiler-conf-prompt this)))
-	(choice-program-complete prompt choices nil t nil history default)))))
+  (with-slots (history ignore-case) this
+    (let ((choices (flex-compiler-choices this)))
+     (if (= 1 (length choices))
+	 (car choices)
+       (let ((default (flex-compiler-conf-default-input this))
+	     (prompt (flex-compiler-conf-prompt this))
+	     (completion-ignore-case ignore-case))
+	 (choice-program-complete prompt choices nil t nil history default))))))
 
 
-(defclass flex-conf-choice-description-prop (flex-conf-prop)
-  ((methods :initarg :methods
-	   :type list
-	   :documentation "A list of symbols or strings for the choices \
-to prompt the user"))
+(defclass flex-conf-choice-description-prop (flex-conf-choice-prop)
+  ()
   :documentation "Property that prompts for a selection of a list of choices.")
 
 (cl-defmethod flex-compiler-conf-read ((this flex-conf-choice-description-prop))
-  (with-slots (history methods) this
-    (if (= 1 (length methods))
-	(cadr methods)
-      (let* ((default (flex-compiler-conf-default-input this))
-	     (prompt (flex-compiler-conf-prompt this))
-	     (choices (mapcar 'first methods))
-	     (method (choice-program-complete
-		      prompt choices t t nil history default)))
-	(cdr (assoc method methods))))))
+  (with-slots (history ignore-case) this
+    (let ((choices (flex-compiler-choices this)))
+     (if (= 1 (length choices))
+	 (cadr choices)
+       (let* ((default (flex-compiler-conf-default-input this))
+	      (prompt (flex-compiler-conf-prompt this))
+	      (choices (mapcar 'first choices))
+	      (completion-ignore-case ignore-case)
+	      (method (choice-program-complete
+		       prompt choices t t nil history default)))
+	 (cdr (assoc method choices)))))))
 
 
 (defclass flex-conf-file-prop (flex-conf-prop)
@@ -218,7 +237,12 @@ The major mode to use to validate/select `config-file` buffers.")))
 	  :documentation "The list of metadata configurations")
    (last-selection :initarg :last-selection))
   :abstract true
-  :documentation "A property based configurable compiler.")
+  :documentation "A property based configurable compiler.
+All properties are added in each sub class's `initialize-instance' method as
+the :props plist argument in ARGS.
+
+Important: Extend from this class _last_ so that it captures all proprties
+since this class sets :pslots in the `config-persistent' subclass.")
 
 (cl-defmethod initialize-instance ((this conf-flex-compiler) &optional args)
   (let* ((props (plist-get args :props))
@@ -275,10 +299,6 @@ The major mode to use to validate/select `config-file` buffers.")))
 
 (cl-defmethod flex-compiler-configure ((this conf-flex-compiler)
 				       config-options)
-  "Configure the compiler.
-
-CONFIG-OPTIONS is the numeric argument (if any) passed in the iteractive mode
-with \\[universal-argument]."
   (let (prop val)
     (cond ((null config-options)
 	   (with-slots (props last-selection) this
@@ -302,7 +322,7 @@ with \\[universal-argument]."
   (dolist (prop (flex-compiler-conf-prop-by-order this))
     (let* ((name (slot-value prop 'name))
 	   (val (slot-value this name))
-	   ;; protect completing-read
+	   ;; minibuffer reading has odd behavior when this isn't nil
 	   (display-buffer-alist nil))
       (when (and (null val) (slot-value prop 'required))
 	(setq val (flex-compiler-conf-read prop))

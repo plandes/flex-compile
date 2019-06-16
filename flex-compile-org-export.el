@@ -38,23 +38,23 @@
 
 ;;; func file compiler
 (defclass org-export-flex-compiler (conf-file-flex-compiler)
-  ((method :initarg :methods
-	   :initform org-twbs-export-to-html
-	   :type function
-	   :documentation "The Org mode export function."))
+  ((export-fn :initarg :export-fn
+	      :initform org-twbs-export-to-html
+	      :type function
+	      :documentation "The Org mode export function."))
   :documentation "Convenience compiler that exports an Org buffer to a file.")
 
 (cl-defmethod initialize-instance ((this org-export-flex-compiler)
 				   &optional args)
   (let* ((fn '(lambda (this compiler default prompt history)
 		(split-string (read-string prompt nil history default))))
-	 (methods '(("Plain HTML" . org-html-export-to-html)
+	 (choices '(("Plain HTML" . org-html-export-to-html)
 		    ("Bootstrap HTML" . org-twbs-export-to-html)))
 	 (props (list (flex-conf-choice-description-prop
-		       :name 'method
-		       :prompt "Method"
+		       :name 'export-fn
+		       :prompt "Export format"
 		       :compiler this
-		       :methods methods
+		       :choices choices
 		       :required t
 		       :input-type 'toggle))))
     (setq args (plist-put args :name "org-export")
@@ -71,9 +71,9 @@
   (flex-compiler-set-required this)
   (if nil
       (shell-command "osascript -e 'tell application \"Emacs\" to activate'"))
-  (with-slots (method config-file) this
+  (with-slots (export-fn config-file) this
     (with-current-buffer (flex-compiler-conf-file-buffer this)
-      (org-open-file (funcall method)))))
+      (org-open-file (funcall export-fn)))))
 
 (cl-defmethod flex-compiler-clean ((this org-export-flex-compiler))
   (flex-compiler-set-required this)

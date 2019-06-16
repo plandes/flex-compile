@@ -39,8 +39,8 @@
 (require 'eieio)
 (require 'flex-compile-config)
 
-(defclass repl-flex-compiler
-  (conf-file-flex-compiler single-buffer-flex-compiler)
+(defclass repl-flex-compiler (single-buffer-flex-compiler
+			      conf-file-flex-compiler)
   ((repl-buffer-regexp :initarg :repl-buffer-regexp
 		       :type string
 		       :documentation "\
