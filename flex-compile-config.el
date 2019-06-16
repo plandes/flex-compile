@@ -43,7 +43,7 @@
   :method-invocation-order :c3
   :documentation "A property based configurable compiler.
 All properties are added in each sub class's `initialize-instance' method as
-the :props plist argument in ARGS.
+the :props plist argument in SLOTS.
 
 Important: Extend from this class _last_ so that it captures all proprties
 since this class sets :pslots in the `config-persistent' subclass.")
@@ -75,10 +75,10 @@ this when the compile starts"))
   :documentation "A configurable compiler with a configuration file.")
 
 (cl-defmethod initialize-instance ((this conf-file-flex-compiler)
-				   &optional args)
-  (let* ((modes (plist-get args :validate-modes))
-	 (desc (plist-get args :description))
-	 (name (plist-get args :object-name))
+				   &optional slots)
+  (let* ((modes (plist-get slots :validate-modes))
+	 (desc (plist-get slots :description))
+	 (name (plist-get slots :object-name))
 	 (prompt (format "%s file" (or desc (capitalize name))))
 	 (props (list (config-directory-prop :object-name 'start-directory
 					     :prop-entry this
@@ -91,10 +91,10 @@ this when the compile starts"))
 					:input-type 'last
 					:required t
 					:order 0))))
-    (setq args (plist-put args :props
-			  (append (plist-get args :props) props))))
-  (cl-remf args :validate-modes)
-  (cl-call-next-method this args))
+    (setq slots (plist-put slots :props
+			   (append (plist-get slots :props) props))))
+  (cl-remf slots :validate-modes)
+  (cl-call-next-method this slots))
 
 (cl-defmethod object-print ((this conf-file-flex-compiler) &rest strings)
   (apply #'cl-call-next-method this

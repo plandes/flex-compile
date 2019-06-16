@@ -74,7 +74,7 @@ The history variable for the eval form history."))
   :method-invocation-order :c3
   :documentation "Compiles by evaluating expressions in the REPL.")
 
-(cl-defmethod initialize-instance ((this repl-flex-compiler) &optional args)
+(cl-defmethod initialize-instance ((this repl-flex-compiler) &optional slots)
   (let* ((fn '(lambda (this default prmopt history)
 		(split-string (read-string prompt nil history default))))
 	 (props (list (config-choice-prop :object-name 'output-clear
@@ -82,8 +82,9 @@ The history variable for the eval form history."))
 					  :prompt "Clear output on compile"
 					  :choices '(yes no)
 					  :input-type 'toggle))))
-    (setq args (plist-put args :props (append (plist-get args :props) props))))
-  (cl-call-next-method this args))
+    (setq slots (plist-put slots
+			   :props (append (plist-get slots :props) props))))
+  (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-repl-start ((this repl-flex-compiler))
   "Start the REPL."

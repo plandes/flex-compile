@@ -47,7 +47,7 @@ This compiler exports [Org mode](https://orgmode.org) to external formats and
 then shows the output in the browser.  Only HTML is currently supported.")
 
 (cl-defmethod initialize-instance ((this org-export-flex-compiler)
-				   &optional args)
+				   &optional slots)
   (let* ((fn '(lambda (this compiler default prompt history)
 		(split-string (read-string prompt nil history default))))
 	 (choices '(("Plain HTML" . org-html-export-to-html)
@@ -59,11 +59,12 @@ then shows the output in the browser.  Only HTML is currently supported.")
 		       :choices choices
 		       :required t
 		       :input-type 'toggle))))
-    (setq args (plist-put args :object-name "org-export")
-	  args (plist-put args :description "Org mode")
-	  args (plist-put args :validate-modes '(org-mode))
-	  args (plist-put args :props (append (plist-get args :props) props))))
-  (cl-call-next-method this args))
+    (setq slots (plist-put slots :object-name "org-export")
+	  slots (plist-put slots :description "Org mode")
+	  slots (plist-put slots :validate-modes '(org-mode))
+	  slots (plist-put slots :props
+			   (append (plist-get slots :props) props))))
+  (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-load-libraries ((this org-export-flex-compiler))
   (require 'ox-twbs)

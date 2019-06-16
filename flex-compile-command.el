@@ -36,6 +36,10 @@
   ()
   :documentation "Property that prompts for a selection of a list of choices.")
 
+(cl-defmethod initialize-instance ((this config-sexp-prop) &optional slots)
+  (setq slots (plist-put slots :transient t))
+  (cl-call-next-method this slots))
+
 (cl-defmethod config-prop-read ((this config-sexp-prop))
   (list
    (cl-flet ((read-sexp
@@ -70,14 +74,15 @@ This \"compiler\" is more of a convenience to invoke an Emacs Lisp function or
 form.  This is handy for functions that you end up invoking over and over with
 `M-x` (i.e. `cider-test-run-ns-tests`).  See [motivation](#motivation).")
 
-(cl-defmethod initialize-instance ((this command-flex-compiler) &optional args)
+(cl-defmethod initialize-instance ((this command-flex-compiler) &optional slots)
   (let ((props (list (config-sexp-prop :object-name 'sexp
 				       :prop-entry this
 				       :prompt "Expression"
 				       :input-type 'last))))
-    (setq args (plist-put args :object-name "command")
-	  args (plist-put args :props (append (plist-get args :props) props))))
-  (cl-call-next-method this args))
+    (setq slots (plist-put slots :object-name "command")
+	  slots (plist-put slots
+			   :props (append (plist-get slots :props) props))))
+  (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-display-buffer-alist ((this command-flex-compiler))
   "Return a do-nothing configuration to allow the function to display bufferes."

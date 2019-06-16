@@ -38,11 +38,11 @@
   :documentation "A schema file property")
 
 (cl-defmethod initialize-instance ((this config-schema-file-prop)
-				   &optional args)
-  (setq args (plist-put args :prompt "Schema file")
-	args (plist-put args :validate-modes '(nxml-mode))
-	args (plist-put args :input-type 'last))
-  (cl-call-next-method this args))
+				   &optional slots)
+  (setq slots (plist-put slots :prompt "Schema file")
+	slots (plist-put slots :validate-modes '(nxml-mode))
+	slots (plist-put slots :input-type 'last))
+  (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-guess-schema-file ((this config-schema-file-prop))
   "Try to determine where the XSD is by the location "
@@ -83,17 +83,17 @@ Implementation compiler for XML validation using command line
 \[xmllint](http://xmlsoft.org/xmllint.html) command line tool.")
 
 (cl-defmethod initialize-instance ((this xml-validate-flex-compiler)
-				   &optional args)
+				   &optional slots)
   (let ((props (list (config-schema-file-prop :object-name 'schema-file
 					      :prop-entry this
 					      :required t
 					      :order 1))))
-    (setq args (plist-put args :object-name "xml-validate")
-	  args (plist-put args :description "XML")
-	  args (plist-put args :validate-modes '(nxml-mode))
-	  args (plist-put args :buffer-name "XML Validation")
-	  args (plist-put args :props (append (plist-get args :props) props))))
-  (cl-call-next-method this args))
+    (setq slots (plist-put slots :object-name "xml-validate")
+	  slots (plist-put slots :description "XML")
+	  slots (plist-put slots :validate-modes '(nxml-mode))
+	  slots (plist-put slots :buffer-name "XML Validation")
+	  slots (plist-put slots :props (append (plist-get slots :props) props))))
+  (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-load-libraries ((this xml-validate-flex-compiler))
   (require 'xml))

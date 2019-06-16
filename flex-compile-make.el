@@ -52,8 +52,8 @@ The first target, `run' target, and `clean' target are invoked
 respectfully with *compile*, *run* and *clean* Emacs
 commands (see [usage](#usage)).")
 
-(cl-defmethod initialize-instance ((this make-flex-compiler) &optional args)
-  (let* ((fn #'(lambda (this compiler &rest args)
+(cl-defmethod initialize-instance ((this make-flex-compiler) &optional slots)
+  (let* ((fn #'(lambda (this compiler &rest slots)
 		 (flex-compiler-makefile-read compiler this)))
 	 (props (list (config-eval-prop :object-name 'target
 					:prompt "Target"
@@ -61,13 +61,14 @@ commands (see [usage](#usage)).")
 					:prop-entry this
 					:input-type 'last
 					:order 1))))
-    (setq args (plist-put args :object-name "make")
-	  args (plist-put args :description "Make")
-	  args (plist-put args :validate-modes '(makefile-gmake-mode))
-	  args (plist-put args :buffer-name "compilation")
-	  ;args (plist-put args :kill-buffer-clean 2)
-	  args (plist-put args :props (append (plist-get args :props) props))))
-  (cl-call-next-method this args))
+    (setq slots (plist-put slots :object-name "make")
+	  slots (plist-put slots :description "Make")
+	  slots (plist-put slots :validate-modes '(makefile-gmake-mode))
+	  slots (plist-put slots :buffer-name "compilation")
+	  slots (plist-put slots :kill-buffer-clean nil)
+	  slots (plist-put slots
+			   :props (append (plist-get slots :props) props))))
+  (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-load-libraries ((this make-flex-compiler))
   (require 'compile))

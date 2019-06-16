@@ -48,11 +48,11 @@
 Instances of this class are also persistable and their state is stored in a
 configuration file.")
 
-(cl-defmethod initialize-instance ((this flex-compiler) &optional args)
-  (if (null (plist-get args :description))
-      (setq args (plist-put args :description
-			    (capitalize (plist-get args :object-name)))))
-  (cl-call-next-method this args))
+(cl-defmethod initialize-instance ((this flex-compiler) &optional slots)
+  (if (null (plist-get slots :description))
+      (setq slots (plist-put slots :description
+			    (capitalize (plist-get slots :object-name)))))
+  (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-load-libraries ((this flex-compiler))
   "Call back for to load and require libraries needed by the compiler.")
@@ -124,10 +124,10 @@ a `flex-compiler' can explictly control buffer display with
   ()
   :documentation "A no-op compiler for the disabled state.")
 
-(cl-defmethod initialize-instance ((this no-op-flex-compiler) &optional args)
-  (setq args (plist-put args :object-name "disable")
-	args (plist-put args :description "Do nothing"))
-  (cl-call-next-method this args))
+(cl-defmethod initialize-instance ((this no-op-flex-compiler) &optional slots)
+  (setq slots (plist-put slots :object-name "disable")
+	slots (plist-put slots :description "Do nothing"))
+  (cl-call-next-method this slots))
 
 (cl-defmethod config-persistent--unimplemented ((this no-op-flex-compiler)
 						method)

@@ -71,6 +71,23 @@ frames, otherwise display the buffer.
   (delete-dups (list flex-compile-display-buffer-exists-mode 'never))
   "History variable for `flex-compiler-set-buffer-exists-mode'.")
 
+
+(defclass config-timeout-prop (config-prop)
+  ()
+  :documentation "\
+A time out property that represents number of seconds to wait for something.
+No time out \(nil) means to wait indefinitly.")
+
+(cl-defmethod config-prop-read ((this config-timeout-prop))
+  (with-slots (history description prompt) this
+    (let* ((prompt (format "%s or RET for none: " prompt))
+	   (default (config-prop-default-input this))
+	   (timeout (read-string prompt default history)))
+      (if (= 0 (length timeout))
+	  nil
+	(string-to-number timeout)))))
+
+
 (defclass single-buffer-flex-compiler (flex-compiler)
   ((buffer-new-mode :initarg :buffer-new-mode
 		    :initform 'global
@@ -100,7 +117,7 @@ If this is an integer, wait the value in seconds and then kill."))
   :documentation "A flex compiler that has a single buffer.")
 
 (cl-defmethod initialize-instance ((this single-buffer-flex-compiler)
-				   &optional args)
+				   &optional slots)
   (let* ((choices (->> (cdr flex-compile-display-mode-options)
 		       (-map #'(lambda (elt)
 				 `(,(nth 2 elt) . ,(car (last elt)))))
@@ -118,9 +135,16 @@ If this is an integer, wait the value in seconds and then kill."))
 		       :prompt "New buffer mode"
 		       :choices choices
 		       :order 11
-		       :input-type 'toggle))))
-    (setq args (plist-put args :props (append (plist-get args :props) props))))
-  (cl-call-next-method this args))
+		       :input-type 'toggle)
+		      (config-timeout-prop
+		       :object-name 'kill-buffer-clean
+		       :prop-entry this
+		       :prompt "Clean buffer time out"
+		       :order 50
+		       :input-type 'last))))
+    (setq slots (plist-put slots
+			   :props (append (plist-get slots :props) props))))
+  (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-buffer-name ((this single-buffer-flex-compiler))
   "Return the name of the single buffer."

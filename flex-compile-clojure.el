@@ -73,18 +73,19 @@ switch betwee these two methods with the [given keybindings](#key-bindings):
 See documetation with `M-h f flex-compiler-query-eval' method for more
 inforamtion (and current binding).")
 
-(cl-defmethod initialize-instance ((this clojure-flex-compiler) &optional args)
+(cl-defmethod initialize-instance ((this clojure-flex-compiler) &optional slots)
   (let ((props (list (config-choice-prop :object-name 'connect-mode
 					 :prop-entry this
 					 :prompt "Connection mode"
 					 :choices '(jack-in connect)
 					 :input-type 'toggle))))
-    (setq args (plist-put args :object-name "clojure")
-	  args (plist-put args :validate-modes '(clojure-mode))
-	  args (plist-put args :repl-buffer-regexp "^\\*cider-repl ")
-	  args (plist-put args :repl-buffer-start-timeout 0)
-	  args (plist-put args :props (append (plist-get args :props) props))))
-  (cl-call-next-method this args))
+    (setq slots (plist-put slots :object-name "clojure")
+	  slots (plist-put slots :validate-modes '(clojure-mode))
+	  slots (plist-put slots :repl-buffer-regexp "^\\*cider-repl ")
+	  slots (plist-put slots :repl-buffer-start-timeout 0)
+	  slots (plist-put slots
+			   :props (append (plist-get slots :props) props))))
+  (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-load-libraries ((this clojure-flex-compiler))
   (require 'cider)

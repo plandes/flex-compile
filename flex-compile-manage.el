@@ -49,10 +49,10 @@
   ()
   :documentation "Manages flexible compiler instances.")
 
-(cl-defmethod initialize-instance ((this flex-compile-manager) &optional args)
+(cl-defmethod initialize-instance ((this flex-compile-manager) &optional slots)
   (with-slots (entries) this
     (setq entries (list (no-op-flex-compiler nil))))
-  (cl-call-next-method this args))
+  (cl-call-next-method this slots))
 
 (cl-defmethod config-persistable-load ((this flex-compile-manager))
   (with-slots (entries) this

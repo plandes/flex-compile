@@ -42,7 +42,7 @@
 This compiler runs a script with optional arguments in an async buffer.
 See [motivation](#motivation).")
 
-(cl-defmethod initialize-instance ((this script-flex-compiler) &optional args)
+(cl-defmethod initialize-instance ((this script-flex-compiler) &optional slots)
   (let* ((fn '(lambda (this compiler default prompt history)
 		(split-string (read-string prompt nil history default))))
 	 (props (list (config-eval-prop :object-name 'arguments
@@ -50,15 +50,15 @@ See [motivation](#motivation).")
 					:func fn
 					:prop-entry this
 					:input-type 'last))))
-    (setq args (plist-put args :object-name "script")
-	  args (plist-put args :description "Script")
-	  args (plist-put args :validate-modes
+    (setq slots (plist-put slots :object-name "script")
+	  slots (plist-put slots :description "Script")
+	  slots (plist-put slots :validate-modes
 			  '(sh-mode cperl-mode python-mode))
-	  args (plist-put args :buffer-name "Script Compile")
-	  args (plist-put args :kill-buffer-clean t)
-	  args (plist-put args :props
-			  (append (plist-get args :props) props))))
-  (cl-call-next-method this args))
+	  slots (plist-put slots :buffer-name "Script Compile")
+	  slots (plist-put slots :kill-buffer-clean t)
+	  slots (plist-put slots :props
+			   (append (plist-get slots :props) props))))
+  (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-load-libraries ((this script-flex-compiler))
   (require 'compile)

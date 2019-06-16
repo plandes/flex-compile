@@ -48,7 +48,7 @@
 Prompt and more easily invoke choice/action based programs using the
 \[Choice Program](https://github.com/plandes/choice-program) Emacs library.")
 
-(cl-defmethod initialize-instance ((this choice-prog-flex-compiler) &optional args)
+(cl-defmethod initialize-instance ((this choice-prog-flex-compiler) &optional slots)
   (let* ((read-prog '(lambda (this compiler default prompt history)
 		       (flex-compiler-choice-prog-read-program
 			compiler default prompt history)))
@@ -69,12 +69,13 @@ Prompt and more easily invoke choice/action based programs using the
 					:required t
 					:order 1
 					:input-type 'last))))
-    (setq args (plist-put args :object-name "choice-program")
-	  args (plist-put args :description "Choice program")
-	  args (plist-put args :buffer-name "Choice Program")
-	  args (plist-put args :kill-buffer-clean t)
-	  args (plist-put args :props (append (plist-get args :props) props))))
-  (cl-call-next-method this args))
+    (setq slots (plist-put slots :object-name "choice-program")
+	  slots (plist-put slots :description "Choice program")
+	  slots (plist-put slots :buffer-name "Choice Program")
+	  slots (plist-put slots :kill-buffer-clean t)
+	  slots (plist-put slots
+			   :props (append (plist-get slots :props) props))))
+  (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-load-libraries ((this choice-prog-flex-compiler))
   (require 'choice-program))
