@@ -69,14 +69,18 @@
 
 
 
-(defclass xml-validate-flex-compiler (conf-file-flex-compiler
-				      single-buffer-flex-compiler)
+(defclass xml-validate-flex-compiler (single-buffer-flex-compiler
+				      conf-file-flex-compiler)
   ((xmllint-program :initarg :xmllint-program
 		    :initform "xmllint")
    (schema-file :initarg :schema-file
 		:initform nil
 		:documentation "\
-Location of the schema file to validate against.")))
+Location of the schema file to validate against."))
+  :method-invocation-order :c3
+  :documentation "\
+Implementation compiler for XML validation using command line
+\[xmllint](http://xmlsoft.org/xmllint.html) command line tool.")
 
 (cl-defmethod initialize-instance ((this xml-validate-flex-compiler)
 				   &optional args)

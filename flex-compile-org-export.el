@@ -42,7 +42,9 @@
 	      :initform org-twbs-export-to-html
 	      :type function
 	      :documentation "The Org mode export function."))
-  :documentation "Convenience compiler that exports an Org buffer to a file.")
+  :documentation "\
+This compiler exports [Org mode](https://orgmode.org) to external formats and
+then shows the output in the browser.  Only HTML is currently supported.")
 
 (cl-defmethod initialize-instance ((this org-export-flex-compiler)
 				   &optional args)

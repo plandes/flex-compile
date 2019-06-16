@@ -125,6 +125,14 @@ This is done by simply re-instantiating all current registered compilers."
 	   funcall
 	   (flex-compile-manager-register this)))))
 
+(cl-defmethod flex-compile-doc ((this flex-compile-manager) level)
+  "Create markdown documentation on all compilers and their meta data.
+STREAM is where the output of the documentation goes."
+  (insert (format "%s Compilers\n" (make-string level ?#)))
+  (dolist (compiler (config-manager--entries this nil nil 'lexical))
+    (unless (equal (slot-value compiler 'name) "disable")
+      (flex-compile-doc compiler (1+ level)))))
+
 
 
 ;; library configuration
@@ -315,6 +323,17 @@ FORM is the form to evaluate \(if implemented).  If called with
       (cl-no-applicable-method
        (message "Compiler %s has no ability to clean"
 		(config-entry-name active))))))
+
+(defun flex-compile-doc-show ()
+  "Create markdown documentation on all compilers and their meta data."
+  (interactive)
+  (let ((buf (get-buffer-create "*Compiler Documentation*")))
+    (with-current-buffer buf
+      (erase-buffer)
+      (flex-compile-doc the-flex-compile-manager 2)
+      (and (fboundp 'markdown-mode) (markdown-mode)))
+    (display-buffer buf)
+    buf))
 
 ;;;###autoload
 (defun flex-compile-show-configuration ()

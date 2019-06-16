@@ -42,6 +42,7 @@
 (defclass flex-compiler (config-entry)
   ()
   :abstract true
+  :method-invocation-order :c3
   :documentation "Base class for compilation executors (do the work).
 Instances of this class are also persistable and their state is stored in a
 configuration file.")
@@ -112,6 +113,24 @@ a `flex-compiler' can explictly control buffer display with
   ;; `list' takes any number of arguments and has no side effects
   '((list . (list))))
 
+(cl-defmethod flex-compile-doc ((this flex-compiler) level)
+  "Write compiler documentation to the current buffer."
+  (with-slots (name description) this
+    (let ((doc (-> (eieio-object-class this)
+		   cl--find-class
+		   cl--class-docstring)))
+      (setq doc
+	    (if (not doc)
+		""
+	      (setq doc
+		    (with-temp-buffer
+		      (insert doc)
+		      (goto-char (point-min))
+		      (while (search-forward-regexp "`\\(.+?\\)'" nil t)
+			(replace-match "`\\1`"))
+		      (buffer-string)))
+	 (insert (format "\n\n%s %s\n\n%s\n" (make-string level ?#)
+			 description doc)))))))
 
 
 (defclass no-op-flex-compiler (flex-compiler)
@@ -125,6 +144,26 @@ a `flex-compiler' can explictly control buffer display with
 
 (cl-defmethod flex-compiler--unimplemented ((this no-op-flex-compiler) method)
   (message "Compiler is disabled"))
+
+
+
+;; helper functions
+(defun flex-compile-slots (class)
+  "Return an alist of slots for EIEIO CLASS.
+
+This is a helper function and probably shouldn't be trusted to work long term
+since it uses code ripped off from EIEIO guts."
+  (let ((slots (-> (cl--find-class class)
+		   eieio--class-slots)))
+    (mapcar #'(lambda (i)
+		(let* ((sd (aref slots i))
+		       (doc (alist-get :documentation
+				       (cl--slot-descriptor-props sd))))
+		  `(,(cl--slot-descriptor-name sd) .
+		    ((init . ,(cl--slot-descriptor-initform sd))
+		     (documentation . ,doc)
+		     (type . ,(cl--slot-descriptor-type sd))))))
+	    (number-sequence 0 (1- (length slots))))))
 
 (provide 'flex-compile-base)
 

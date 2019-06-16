@@ -36,7 +36,10 @@
 
 (defclass ess-flex-compiler (repl-flex-compiler)
   ()
-  :documentation "An Emacs Speaks Statisics compiler.")
+  :method-invocation-order :c3
+  :documentation "\
+This is a REPL based compiler to evaluate R code with
+[Emacs Speaks Statistics](https://ess.r-project.org) .")
 
 (cl-defmethod initialize-instance ((this ess-flex-compiler) &optional args)
   (setq args (plist-put args :name "ess")

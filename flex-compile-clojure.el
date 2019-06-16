@@ -57,7 +57,21 @@
 The conection mode, which is either:
 - 'jack-in local mode, which invokes `cider-jack-in'
 - 'connect remote mode, which invokes `cider-connect' using slots:
-  `repl-host' and `repl-port'")))
+  `repl-host' and `repl-port'"))
+  :method-invocation-order :c3
+  :documentation "\
+This is a REPL based compiler that allows for evaluation Clojure
+buffers, expressions and starting the REPL using
+\[Cider](https://github.com/clojure-emacs/cider).
+
+The Clojure compiler connects using two Cider modes: the default `jack-in'
+mode or connecting to a host and port remotely with `cider-connect'.  You can
+switch betwee these two methods with the [given keybindings](#key-bindings):
+
+  `M-x 1 C-u C-x C-u'
+  
+See documetation with `M-h f flex-compiler-query-eval' method for more
+inforamtion (and current binding).")
 
 (cl-defmethod initialize-instance ((this clojure-flex-compiler) &optional args)
   (let ((props (list (flex-conf-choice-prop :name 'connect-mode

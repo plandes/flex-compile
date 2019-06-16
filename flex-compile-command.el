@@ -49,8 +49,14 @@
 		  (t))
 		(read (read-string prompt sexp history)))))
      (with-slots (history choices prompt) this
-       (let ((cmd (read-command (format "%s (or RET for sexp): " prompt)))
-	     (sexp-prompt (format "%s: " prompt)))
+       (let* (
+	      ;; (def (save-mark-and-excursion
+	      ;; 	     (mark-sexp)
+	      ;; 	     (buffer-substring-no-properties
+	      ;; 	      (region-beginning) (region-end))))
+	      (prompt (format "%s (or RET for sexp): " prompt))
+	      (cmd (read-command prompt))
+	      (sexp-prompt (format "%s: " prompt)))
 	 (if (eq '## cmd)
 	     (let ((func (read-sexp sexp-prompt history nil)))
 	       (eval `(defun flex-compiler-function-invoke-command ()
@@ -62,8 +68,12 @@
 ;;; func file compiler
 (defclass command-flex-compiler (conf-flex-compiler)
   ((sexp :initarg :sexp
-	 :initform nil))
-  :documentation "Convenience compiler that evaluates Emacs Lisp.")
+	 :initform nil
+	 :documentation "The symbol expression to evaluate."))
+  :documentation "\
+This \"compiler\" is more of a convenience to invoke an Emacs Lisp function or
+form.  This is handy for functions that you end up invoking over and over with
+`M-x` (i.e. `cider-test-run-ns-tests`).  See [motivation](#motivation).")
 
 (cl-defmethod initialize-instance ((this command-flex-compiler) &optional args)
   (let ((props (list (flex-conf-sexp-prop :name 'sexp
@@ -73,6 +83,10 @@
     (setq args (plist-put args :name "command")
 	  args (plist-put args :props (append (plist-get args :props) props))))
   (cl-call-next-method this args))
+
+(cl-defmethod flex-compiler-display-buffer-alist ((this command-flex-compiler))
+  "Return a do-nothing configuration to allow the function to display bufferes."
+  nil)
 
 (cl-defmethod flex-compiler-compile ((this command-flex-compiler))
   (unless (slot-value this 'sexp)

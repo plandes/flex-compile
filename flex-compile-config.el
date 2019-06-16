@@ -113,6 +113,39 @@ The default reads a string using `flex-compiler-conf-default' and
   (with-slots (history) this
     (setq (symbol-value history) nil)))
 
+(cl-defmethod flex-compile-description ((this flex-conf-prop))
+  (with-slots (name) this
+    (with-temp-buffer
+      (insert (symbol-name name))
+      (goto-char (point-min))
+      (while (search-forward "-" nil t)
+	(replace-match " " t t))
+      (capitalize-region (point-min) (point-max))
+      (buffer-string))))
+
+(cl-defmethod flex-compile-doc ((this flex-conf-prop) level)
+  (let ((desc (flex-compile-description this))
+	(doc (->> (slot-value this 'compiler)
+		  eieio-object-class
+		  flex-compile-slots
+		  (assq (slot-value this 'name))
+		  (assq 'documentation)
+		  cdr)))
+    (setq doc
+	  (if (null doc)
+	      ""
+	    (with-temp-buffer
+	      (insert " ")
+	      (insert doc)
+	      (goto-char (point-min))
+	      (if (search-forward "." nil t)
+		  (delete-region (point) (point-max)))
+	      (goto-char (point-min))
+	      (while (search-forward-regexp "'" nil t)
+		(replace-match "`"))
+	      (buffer-string))))
+    (insert (format "  * %s:%s\n" desc doc))))
+
 
 
 ;; properties
@@ -234,6 +267,7 @@ The major mode to use to validate/select `config-file` buffers.")))
 	  :documentation "The list of metadata configurations")
    (last-selection :initarg :last-selection))
   :abstract true
+  :method-invocation-order :c3
   :documentation "A property based configurable compiler.
 All properties are added in each sub class's `initialize-instance' method as
 the :props plist argument in ARGS.
@@ -353,6 +387,16 @@ with \\[universal-argument]."
       (display-buffer (current-buffer))
       (current-buffer))))
 
+(cl-defmethod flex-compile-doc ((this conf-flex-compiler) level)
+  "Return the compiler level documentation.
+See the :compiler-doc slot."
+  (cl-call-next-method this level)
+  (let ((props (flex-compiler-conf-prop-by-order this)))
+    (when props
+      (insert (format "\nProperties:\n"))
+      (dolist (prop props)
+	(flex-compile-doc prop (1+ level))))))
+
 
 
 ;; configuration based compiler
@@ -361,7 +405,7 @@ with \\[universal-argument]."
 		:initform nil
 		:type (or null string)
 		:documentation "\
-The file to use for `configuring' the compiler.")
+The file to use for *configuring* the compiler.")
    (start-directory :initarg :start-directory
 		    :initform nil
 		    :type (or null string)
@@ -369,6 +413,7 @@ The file to use for `configuring' the compiler.")
 The directory for starting the compilation.  The `default-directory' is set to
 this when the compile starts"))
   :abstract true
+  :method-invocation-order :c3
   :documentation "A configurable compiler with a configuration file.")
 
 (cl-defmethod initialize-instance ((this conf-file-flex-compiler)

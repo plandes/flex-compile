@@ -71,6 +71,7 @@ Whether or not to clear comint buffer after a compilation.")
 		 :type symbol
 		 :documentation "\
 The history variable for the eval form history."))
+  :method-invocation-order :c3
   :documentation "Compiles by evaluating expressions in the REPL.")
 
 (cl-defmethod initialize-instance ((this repl-flex-compiler) &optional args)

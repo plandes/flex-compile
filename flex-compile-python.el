@@ -50,7 +50,10 @@
 
 (defclass python-flex-compiler (repl-flex-compiler)
   ()
-  :documentation "A Python REPL compiler.")
+  :method-invocation-order :c3
+  :documentation "\
+This is a REPL based compiler that allows for evaluation Python buffers and
+expressions using [python mode](https://github.com/fgallina/python.el).")
 
 (cl-defmethod initialize-instance ((this python-flex-compiler) &optional args)
   (setq args (plist-put args :name "python")

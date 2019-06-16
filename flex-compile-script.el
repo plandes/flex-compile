@@ -36,7 +36,11 @@
 				conf-file-flex-compiler)
   ((arguments :initarg :arguments
 	      :initform nil
-	      :documentation "The arguments to give to the script.")))
+	      :documentation "The arguments to give to the script."))
+  :method-invocation-order :c3
+  :documentation "\
+This compiler runs a script with optional arguments in an async buffer.
+See [motivation](#motivation).")
 
 (cl-defmethod initialize-instance ((this script-flex-compiler) &optional args)
   (let* ((fn '(lambda (this compiler default prompt history)

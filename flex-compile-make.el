@@ -37,20 +37,24 @@
 (require 'flex-compile-manage)
 (require 'choice-program-complete)
 
-(defvar flex-compile-make-target-history nil
-  "History for makefile targets on compile.")
-
 ;;; make file compiler
 (defclass make-flex-compiler (single-buffer-flex-compiler
 			      conf-file-flex-compiler)
   ((target :initarg :target
 	   :initform nil
-	   :type (or null string)))
-  :documentation "Invoke make on a configured makefile.")
+	   :type (or null string)
+	   :documentation "The make file target to satisfy."))
+  ;; see `flex-compiler::flex-compile-doc'
+  :method-invocation-order :c3
+  :documentation "\
+This compiler invokes make as an asynchronous process in a buffer.
+The first target, `run' target, and `clean' target are invoked
+respectfully with *compile*, *run* and *clean* Emacs
+commands (see [usage](#usage)).")
 
 (cl-defmethod initialize-instance ((this make-flex-compiler) &optional args)
   (let* ((fn #'(lambda (this compiler &rest args)
-		 (flex-compiler-makefile-read compiler)))
+		 (flex-compiler-makefile-read compiler this)))
 	 (props (list (flex-conf-eval-prop :name 'target
 					   :prompt "Target"
 					   :func fn
@@ -101,14 +105,13 @@ This is done by creating a command with `make' found in the executable path."
 	 (cl-remove-if #'(lambda (elt)
 			   (member elt '("run" "clean")))))))
 
-(cl-defmethod flex-compiler-makefile-read ((this make-flex-compiler))
+(cl-defmethod flex-compiler-makefile-read ((this make-flex-compiler) prop)
   (flex-compiler-set-required this)
   (let ((targets (flex-compiler-makefile-targets this))
+	(history (slot-value prop 'history))
 	(none "<none>"))
-    (->> (choice-program-complete "Target" targets t nil nil
-				  'flex-compile-make-target-history
-				  none
-				  nil nil t)
+    (->> (choice-program-complete
+	  "Target" targets t nil nil history none nil nil t)
 	 (funcall #'(lambda (elt)
 		      (if (equal none elt) nil elt))))))
 

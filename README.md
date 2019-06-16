@@ -23,7 +23,6 @@ started.
 - [Compilers](#compilers)
     - [Make](#make)
     - [Command](#command)
-    - [Beanshell](#beanshell)
     - [Script](#script)
     - [Clojure](#clojure)
     - [Python](#python)
@@ -121,7 +120,6 @@ The top level library `flex-compile` library provides a plugin architecture for
 add-on libraries, which include:
 * [flex-compile-make]
 * [flex-compile-command]
-* [flex-compile-beanshell]
 * [flex-compile-script]
 * [flex-compile-clojure]
 * [flex-compile-python]
@@ -146,10 +144,6 @@ target, `run` target, and `clean` target are invoked respectfully with
 This "compiler" is more of a convenience to invoke an Emacs Lisp function or
 form.  This is handy for functions that you end up invoking over and over with
 `M-x` (i.e. `cider-test-run-ns-tests`).  See [motivation](#motivation).
-
-### Beanshell
-
-Compiler and environment for evaluting and running [Beanshell].
 
 
 ### Script
@@ -218,21 +212,12 @@ GNU Lesser General Public License, Version 2.0
 <!-- links -->
 [flex-compile-make]: #make
 [flex-compile-command]: #command
-[flex-compile-beanshell]: #beanshell
 [flex-compile-script]: #script
-[flex-compile-maven]: #maven
 [flex-compile-clojure]: #clojure
 [flex-compile-python]: #python
 [flex-compile-ess]: #ess
 [flex-compile-xml-validate]: #xml-validation
 [flex-compile-choice-program]: #choice-program
-
-[Beanshell]: http://www.beanshell.org
-[Cider]: https://github.com/clojure-emacs/cider
-[python mode]: https://github.com/fgallina/python.el
-[Emacs Speaks Statistics]: https://ess.r-project.org
-[Choice Program]: https://github.com/plandes/choice-program
-[xmllint]: http://xmlsoft.org/xmllint.html
 
 [melpa-link]: https://melpa.org/#/flex-compile
 [melpa-stable-link]: https://stable.melpa.org/#/flex-compile

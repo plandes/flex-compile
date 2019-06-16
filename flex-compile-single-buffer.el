@@ -97,6 +97,7 @@ of `flex-compile-display-buffer-exists-mode'")
 If non-nil kill the buffer on clean.
 If this is an integer, wait the value in seconds and then kill."))
   :abstract t
+  :method-invocation-order :c3
   :documentation "A flex compiler that has a single buffer.")
 
 (cl-defmethod initialize-instance ((this single-buffer-flex-compiler)

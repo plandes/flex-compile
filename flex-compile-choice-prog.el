@@ -44,7 +44,9 @@
    (action :initarg :action
 	   :initform nil
 	   :documentation "The action to invoke on the program."))
-  :documentation "Invoke choice-prog on a configured choice-program.")
+  :documentation "\
+Prompt and more easily invoke choice/action based programs using the
+\[Choice Program](https://github.com/plandes/choice-program) Emacs library.")
 
 (cl-defmethod initialize-instance ((this choice-prog-flex-compiler) &optional args)
   (let* ((read-prog '(lambda (this compiler default prompt history)
