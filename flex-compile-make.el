@@ -116,9 +116,9 @@ This is done by creating a command with `make' found in the executable path."
 	 (funcall #'(lambda (elt)
 		      (if (equal none elt) nil elt))))))
 
-(cl-defmethod config-prop-set-prop ((this make-flex-compiler) prop val)
+(cl-defmethod config-prop-set ((this make-flex-compiler) prop val)
   ;; reset the target when changing the file
-  (when (eq (slot-value prop 'object-name) 'config-file)
+  (when (eq (config-prop-name prop) 'config-file)
     (setf (slot-value this 'target) nil))
   (cl-call-next-method this prop val))
 

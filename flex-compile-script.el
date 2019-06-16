@@ -64,7 +64,7 @@ See [motivation](#motivation).")
   (require 'compile)
   (require 'choice-program))
 
-(cl-defmethod config-prop-set-prop ((this script-flex-compiler)
+(cl-defmethod config-prop-set ((this script-flex-compiler)
 					   prop val)
   (setf (slot-value this 'arguments) nil)
   (cl-call-next-method this prop val))

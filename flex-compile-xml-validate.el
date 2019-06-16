@@ -98,7 +98,7 @@ Implementation compiler for XML validation using command line
 (cl-defmethod flex-compiler-load-libraries ((this xml-validate-flex-compiler))
   (require 'xml))
 
-(cl-defmethod config-prop-set-prop ((this xml-validate-flex-compiler)
+(cl-defmethod config-prop-set ((this xml-validate-flex-compiler)
 				    prop val)
   (setf (slot-value this 'schema-file) nil)
   (cl-call-next-method this prop val))

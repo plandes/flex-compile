@@ -109,9 +109,9 @@ the `flex-compile' framework."
 	  (error "No such program: `%S'" program))
 	ret))))
 
-(cl-defmethod config-prop-set-prop ((this choice-prog-flex-compiler)
+(cl-defmethod config-prop-set ((this choice-prog-flex-compiler)
 				    prop val)
-  (when (eq (slot-value prop 'object-name) 'program)
+  (when (eq (config-prop-name prop) 'program)
     (setf (slot-value this 'action) nil)
     (config-persistent-reset (config-prop-by-name this 'action)))
   (cl-call-next-method this prop val))
