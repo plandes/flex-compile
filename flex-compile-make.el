@@ -116,16 +116,19 @@ This is done by creating a command with `make' found in the executable path."
 	 (funcall #'(lambda (elt)
 		      (if (equal none elt) nil elt))))))
 
-(cl-defmethod config-prop-set-prop ((this make-flex-compiler)
-				    prop val)
-  (setf (slot-value this 'target) nil)
+(cl-defmethod config-prop-set-prop ((this make-flex-compiler) prop val)
+  ;; reset the target when changing the file
+  (when (eq (slot-value prop 'object-name) 'config-file)
+    (setf (slot-value this 'target) nil))
   (cl-call-next-method this prop val))
 
 (cl-defmethod config-prop-entry-configure ((this make-flex-compiler)
 					   config-options)
-  (unless (eq config-options 'immediate)
-    (setq config-options '(prop-name target)))
-  (cl-call-next-method this config-options))
+  (->> (cond ((eq config-options -1) nil) ; unversal arg with 0
+	     ;; shortcut to setting the make target
+	     ((null config-options) '(prop-name target))
+	     (t config-options))
+       (cl-call-next-method this)))
 
 (cl-defmethod flex-compiler-start-buffer ((this make-flex-compiler)
 					  start-type)
