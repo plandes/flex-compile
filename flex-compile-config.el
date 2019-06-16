@@ -164,8 +164,7 @@ This is always used for `completion-ignore-case'."))
        (let ((default (flex-compiler-conf-default-input this))
 	     (prompt (flex-compiler-conf-prompt this))
 	     (completion-ignore-case ignore-case))
-	 (-> (choice-program-complete prompt choices t t nil history default)
-	     car))))))
+	 (choice-program-complete prompt choices t t nil history default))))))
 
 
 (defclass flex-conf-file-prop (flex-conf-prop)

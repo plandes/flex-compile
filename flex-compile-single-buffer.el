@@ -103,7 +103,7 @@ If this is an integer, wait the value in seconds and then kill."))
 				   &optional args)
   (let* ((choices (->> (cdr flex-compile-display-mode-options)
 		       (-map #'(lambda (elt)
-				 `(,(nth 2 elt) . ,(last elt))))
+				 `(,(nth 2 elt) . ,(car (last elt)))))
 		       (append '(("Global" . global)))))
 	 (props (list (flex-conf-choice-description-prop
 		       :name 'buffer-exists-mode
@@ -178,7 +178,7 @@ MODE is either `flex-compile-display-buffer-new-mode' or
 					  ((inhibit-switch-frame . t)))))))))
       (cl-case mode
 	(never void-fn)
-	(switch 'pop-to-buffer)
+	(switch #'switch-to-buffer)
 	(display display-fn)
 	(next-frame-switch (display-nf 'pop-to-buffer nil))
 	(next-frame-display (display-nf display-fn nil))

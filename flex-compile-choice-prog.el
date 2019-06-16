@@ -108,8 +108,9 @@ the `flex-compile' framework."
 
 (cl-defmethod flex-compiler-conf-set-prop ((this choice-prog-flex-compiler)
 					   prop val)
-  (setf (slot-value this 'action) nil)
-  (flex-compile-clear (flex-compiler-conf-prop-by-name this 'action))
+  (when (eq (slot-value prop 'name) 'program)
+    (setf (slot-value this 'action) nil)
+    (flex-compile-clear (flex-compiler-conf-prop-by-name this 'action)))
   (cl-call-next-method this prop val))
 
 (cl-defmethod flex-compiler-buffer-name ((this choice-prog-flex-compiler))
