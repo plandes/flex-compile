@@ -86,6 +86,19 @@ There are the operations (also included are the [given](#key-bindings) key
 bindings):
 * **Choose a Compiler** (`C-x C-p` or `M-x flex-compiler-activate`):
   select/activate a flex compiler.
+* **Set Configuration** (`C-u C-x C-u` or `C-u M-x flex-compile-compile`): This
+  allows the configuration of the compiler.  In most compilers the first step
+  is to select the property, then the configuration for that property is
+  prompted.  In some cases a specific property is set, like the [Make](#make)
+  compiler jumps to the target.  All
+  properties are always available for configuration with `C-u 0 C-x C-u`.  
+* **Set File** (`C-u 1 C-x C-u` or `C-u 1 M-x flex-compile-compile`): This the
+  file the compiler will use.  For the [script](#script) mode it will run
+  selected script file and display the output on compile.  For REPL compilers
+  (i.e. [Python](#python)) the starting directory can also be set.
+* **Go to Config File** (`C-u C-x C-i` or `C-u M-x
+  flex-compile-run-or-set-config`): This pops the *config* file/buffer to the
+  current buffer.
 * **Compile** (`C-x C-u` or `M-x flex-compile-compile`): This is the default
   *make something* command.  For make it invokes the first target, for REPL
   languages like Clojure and ESS it evaluates a `.clj` or `.r` file.
@@ -100,14 +113,6 @@ bindings):
   the `Makefile`, `.clj`, `.r`, `.sh` file etc. *compile*, run or interpret.
   Note that the prefix `C-u` isn't needed for some compilers like the `script`
   compiler.
-* **Set Starting Directory** (`C-u 1 C-x C-u`): This sets the starting
-  directory for most compilers that take arguments (one exception is
-  the [Make](#make) compiler).  This is useful for [Script](#script) and the
-  REPL compilers (i.e. [Python](#python)) where relative paths won't work if
-  the compilation isn't started in a project directory.
-* **Go to Config File** (`C-u C-x C-i` or `C-u M-x
-  flex-compile-run-or-set-config`): This pops the *config* file/buffer to the
-  current buffer.
 
 Each compiler also has configuration setting ability, which is invoked with the
 `C-u` universal argument to the compile `C-x C-u` invocation per the
@@ -116,27 +121,49 @@ aforementioned `flex-compile-run-or-set-config`.
 
 ## Compilers
 
-The top level library `flex-compile` library provides a plugin architecture for
-add-on libraries, which include:
-* [flex-compile-make]
-* [flex-compile-command]
-* [flex-compile-script]
-* [flex-compile-clojure]
-* [flex-compile-python]
-* [flex-compile-org-export]
-* [flex-compile-ess]
-* [flex-compile-xml-validate]
-* [flex-compile-choice-program]
-
-You can write your own compilers as add-on plugins.  However, there are many
-that come with this package.
+Concrete instances of *flexible* compilers that provide a common interface.
+Each is an implementation of glue code to the respective compilation method.
 
 
-### Make
+### Choice program
 
-This compiler invokes make as an asynchronous process in a buffer.  The first
-target, `run` target, and `clean` target are invoked respectfully with
-*compile*, *run* and *clean* Emacs commands (see [usage](#usage)).
+Prompt and more easily invoke choice/action based programs using the
+[Choice Program](https://github.com/plandes/choice-program) Emacs library.
+
+Properties:
+  * Program: An instance of `choice-prog`.
+  * Action: The action to invoke on the program.
+  * Buffer Exists Mode: Compiler instance of `flex-compile-display-buffer-exists-mode`.
+  * Buffer New Mode: Compiler instance of `flex-compile-display-buffer-new-mode`.
+  * Kill Buffer Clean: If non-nil kill the buffer on clean.
+
+
+### Clojure
+
+This is a REPL based compiler that allows for evaluation Clojure
+buffers, expressions and starting the REPL using
+[Cider](https://github.com/clojure-emacs/cider).
+
+The Clojure compiler connects using two Cider modes: the default `jack-in`
+mode or connecting to a host and port remotely with `cider-connect`.  You can
+switch betwee these two methods with the [given keybindings](#key-bindings):
+
+  `M-x 1 C-u C-x C-u`
+
+See documetation with `M-h f flex-compiler-query-eval` method for more
+inforamtion (and current binding).
+
+Properties:
+  * Config File: The file to use for *configuring* the compiler.
+  * Buffer Exists Mode: Compiler instance of `flex-compile-display-buffer-exists-mode`.
+  * Buffer New Mode: Compiler instance of `flex-compile-display-buffer-new-mode`.
+  * Kill Buffer Clean: If non-nil kill the buffer on clean.
+  * Connect Mode: The conection mode, which is either:
+- `jack-in local mode, which invokes `cider-jack-in`
+- `connect remote mode, which invokes `cider-connect` using slots:
+  `repl-host` and `repl-port`
+  * Output Clear: Whether or not to clear comint buffer after a compilation.
+  * Start Directory: The directory for starting the compilation.
 
 
 ### Command
@@ -145,56 +172,91 @@ This "compiler" is more of a convenience to invoke an Emacs Lisp function or
 form.  This is handy for functions that you end up invoking over and over with
 `M-x` (i.e. `cider-test-run-ns-tests`).  See [motivation](#motivation).
 
+Properties:
+  * Sexp: The symbol expression to evaluate.
+
+
+### Emacs speaks statistics
+
+This is a REPL based compiler to evaluate R code with
+[Emacs Speaks Statistics](https://ess.r-project.org) .
+
+Properties:
+  * Config File: The file to use for *configuring* the compiler.
+  * Buffer Exists Mode: Compiler instance of `flex-compile-display-buffer-exists-mode`.
+  * Buffer New Mode: Compiler instance of `flex-compile-display-buffer-new-mode`.
+  * Kill Buffer Clean: If non-nil kill the buffer on clean.
+  * Output Clear: Whether or not to clear comint buffer after a compilation.
+  * Start Directory: The directory for starting the compilation.
+
+
+### Make
+
+This compiler invokes make as an asynchronous process in a buffer.
+The first target, `run` target, and `clean` target are invoked
+respectfully with *compile*, *run* and *clean* Emacs
+commands (see [usage](#usage)).
+
+Properties:
+  * Config File: The file to use for *configuring* the compiler.
+  * Target: The make file target to satisfy.
+  * Buffer Exists Mode: Compiler instance of `flex-compile-display-buffer-exists-mode`.
+  * Buffer New Mode: Compiler instance of `flex-compile-display-buffer-new-mode`.
+  * Kill Buffer Clean: If non-nil kill the buffer on clean.
+  * Start Directory: The directory for starting the compilation.
+
+
+### Org mode
+
+This compiler exports [Org mode](https://orgmode.org) to external formats and
+then shows the output in the browser.  Only HTML is currently supported.
+
+Properties:
+  * Config File: The file to use for *configuring* the compiler.
+  * Export Fn: The Org mode export function.
+  * Start Directory: The directory for starting the compilation.
+
+
+### Python
+
+This is a REPL based compiler that allows for evaluation Python buffers and
+expressions using [python mode](https://github.com/fgallina/python.el).
+
+Properties:
+  * Config File: The file to use for *configuring* the compiler.
+  * Buffer Exists Mode: Compiler instance of `flex-compile-display-buffer-exists-mode`.
+  * Buffer New Mode: Compiler instance of `flex-compile-display-buffer-new-mode`.
+  * Kill Buffer Clean: If non-nil kill the buffer on clean.
+  * Output Clear: Whether or not to clear comint buffer after a compilation.
+  * Start Directory: The directory for starting the compilation.
+
 
 ### Script
 
 This compiler runs a script with optional arguments in an async buffer.
 See [motivation](#motivation).
 
-
-### Clojure
-
-This is a REPL based compiler that allows for evaluation Clojure buffers,
-expressions and starting the REPL using [Cider].
-
-The Clojure compiler connects using two [Cider] modes: the default `jack-in`
-mode or connecting to a host and port remotely with `cider-connect`.  You can
-switch betwee these two methods with the [given keybindings](#key-bindings):
-
-  `M-x 1 C-u C-x C-u`
-  
-See documetation with  `M-h f flex-compiler-query-eval` method for more
-inforamtion (and current binding).
+Properties:
+  * Config File: The file to use for *configuring* the compiler.
+  * Buffer Exists Mode: Compiler instance of `flex-compile-display-buffer-exists-mode`.
+  * Buffer New Mode: Compiler instance of `flex-compile-display-buffer-new-mode`.
+  * Kill Buffer Clean: If non-nil kill the buffer on clean.
+  * Arguments: The arguments to give to the script.
+  * Start Directory: The directory for starting the compilation.
 
 
-### Python
+### XML
 
-This is a REPL based compiler that allows for evaluation Python buffers and
-expressions using [python mode].
+Implementation compiler for XML validation using command line
+[xmllint](http://xmlsoft.org/xmllint.html) command line tool.
 
-
-### Org Mode Export
-
-This compiler exports [Org mode](https://orgmode.org) to external formats and
-then shows the output in the browser.  Only HTML is currently supported.
-
-
-### Ess
-
-This is a REPL based compiler to evaluate R code with [Emacs Speaks
-Statistics].
-
-
-### XML Validation
-
-Implementation compiler for XML validation using command line [xmllint] command
-line tool.
-
-
-### Choice Program
-
-Prompt and more easily invoke choice/action based programs using the
-[Choice Program] Emacs library.
+Properties:
+  * Config File: The file to use for *configuring* the compiler.
+  * Schema File: Location of the schema file to validate against.
+  * Buffer Exists Mode: Compiler instance of `flex-compile-display-buffer-exists-mode`.
+  * Buffer New Mode: Compiler instance of `flex-compile-display-buffer-new-mode`.
+  * Kill Buffer Clean: If non-nil kill the buffer on clean.
+  * Start Directory: The directory for starting the compilation.
 
 
 ## Changelog
