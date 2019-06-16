@@ -93,9 +93,10 @@ bindings):
   compiler jumps to the target.  All
   properties are always available for configuration with `C-u 0 C-x C-u`.  
 * **Set File** (`C-u 1 C-x C-u` or `C-u 1 M-x flex-compile-compile`): This the
-  file the compiler will use.  For the [script](#script) mode it will run
-  selected script file and display the output on compile.  For REPL compilers
-  (i.e. [Python](#python)) the starting directory can also be set.
+  file the compiler will use.  For example, the [Script](#script) compiler will
+  run selected script file and display the output on compile.  For REPL
+  compilers, like the [Python](#python) copiler, the starting directory can
+  also be set (see **Set Configuration**)..
 * **Go to Config File** (`C-u C-x C-i` or `C-u M-x
   flex-compile-run-or-set-config`): This pops the *config* file/buffer to the
   current buffer.
