@@ -161,13 +161,11 @@ This is always used for `completion-ignore-case'."))
     (let ((choices (flex-compiler-choices this)))
      (if (= 1 (length choices))
 	 (cadr choices)
-       (let* ((default (flex-compiler-conf-default-input this))
-	      (prompt (flex-compiler-conf-prompt this))
-	      (choices (mapcar 'first choices))
-	      (completion-ignore-case ignore-case)
-	      (method (choice-program-complete
-		       prompt choices t t nil history default)))
-	 (cdr (assoc method choices)))))))
+       (let ((default (flex-compiler-conf-default-input this))
+	     (prompt (flex-compiler-conf-prompt this))
+	     (completion-ignore-case ignore-case))
+	 (-> (choice-program-complete prompt choices t t nil history default)
+	     car))))))
 
 
 (defclass flex-conf-file-prop (flex-conf-prop)
