@@ -95,13 +95,6 @@ This implementation sets all slots to nil."
   "Invoke the clean functionality of the compiler."
   (flex-compiler--unimplemented this "clean"))
 
-(cl-defmethod flex-compiler-configure ((this flex-compiler) config-options)
-  "Configure the compiler.
-
-CONFIG-OPTIONS is the numeric argument (if any) passed in the iteractive mode
-with \\[universal-argument]."
-  (flex-compiler--unimplemented this "configure"))
-
 (cl-defmethod flex-compiler-display-buffer ((this flex-compiler)
 					    &optional compile-def)
   "Called to display the compilation buffer \(if any).

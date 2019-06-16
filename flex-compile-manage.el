@@ -233,7 +233,11 @@ to invoke this command with full configuration support."
 		 (flex-compiler-display-buffer-alist active)))
 	    (setq comp-def (flex-compiler-compile active)))
 	  (flex-compiler-display-buffer active comp-def))
-      (flex-compiler-configure active config-options))))
+      (condition-case nil
+	  (flex-compiler-configure active config-options)
+	(cl-no-applicable-method
+	 (message "Compiler %s is not configurable"
+		  (slot-value active 'name)))))))
 
 ;;;###autoload
 (defun flex-compile-run-or-set-config (action)

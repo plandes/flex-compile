@@ -299,6 +299,10 @@ since this class sets :pslots in the `config-persistent' subclass.")
 
 (cl-defmethod flex-compiler-configure ((this conf-flex-compiler)
 				       config-options)
+  "Configure the compiler.
+
+CONFIG-OPTIONS is the numeric argument (if any) passed in the iteractive mode
+with \\[universal-argument]."
   (let (prop val)
     (cond ((null config-options)
 	   (with-slots (props last-selection) this
