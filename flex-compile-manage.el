@@ -284,8 +284,12 @@ This invokes the `flex-compiler-query-read-form method' on the
 currently activated compiler."
   (let* ((mgr the-flex-compile-manager)
 	 (this (flex-compile-manager-active mgr)))
-    (flex-compile-manager-assert-ready mgr)
-    (flex-compiler-query-read-form this no-input-p)))
+    (if (not (child-of-class-p (eieio-object-class this)
+			       'repl-flex-compiler))
+	(error "Compiler `%s' has no ability evaluation expressions"
+	       (config-entry-name this))
+      (flex-compile-manager-assert-ready mgr)
+      (flex-compiler-query-read-form this no-input-p))))
 
 ;;;###autoload
 (defun flex-compile-eval (&optional form)
@@ -317,16 +321,17 @@ FORM is the form to evaluate \(if implemented).  If called with
 	     (setq compile-def (flex-compiler-clean active)))
 	   (flex-compiler-display-buffer active compile-def)))
       (cl-no-applicable-method
-       (message "Compiler %s has no ability to clean"
+       (message "Compiler `%s' has no ability to clean"
 		(config-entry-name active))))))
 
+;;;###autoload
 (defun flex-compile-doc-show ()
   "Create markdown documentation on all compilers and their meta data."
   (interactive)
   (config-persistent-doc the-flex-compile-manager))
 
 ;;;###autoload
-(defun flex-compile-show-configuration ()
+(defun flex-compiler-show-configuration ()
   "Create a buffer with the configuration of the current compiler."
   (interactive)
   (let* ((this the-flex-compile-manager)

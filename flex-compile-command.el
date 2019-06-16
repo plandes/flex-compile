@@ -34,6 +34,7 @@
 
 (defclass config-sexp-prop (config-prop)
   ()
+  :method-invocation-order :c3
   :documentation "Property that prompts for a selection of a list of choices.")
 
 (cl-defmethod initialize-instance ((this config-sexp-prop) &optional slots)
@@ -69,6 +70,7 @@
   ((sexp :initarg :sexp
 	 :initform nil
 	 :documentation "The symbol expression to evaluate."))
+  :method-invocation-order :c3
   :documentation "\
 This \"compiler\" is more of a convenience to invoke an Emacs Lisp function or
 form.  This is handy for functions that you end up invoking over and over with

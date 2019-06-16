@@ -35,6 +35,7 @@
 
 (defclass config-schema-file-prop (config-file-prop)
   ()
+  :method-invocation-order :c3
   :documentation "A schema file property")
 
 (cl-defmethod initialize-instance ((this config-schema-file-prop)

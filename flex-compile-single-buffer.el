@@ -74,6 +74,7 @@ frames, otherwise display the buffer.
 
 (defclass config-timeout-prop (config-prop)
   ()
+  :method-invocation-order :c3
   :documentation "\
 A time out property that represents number of seconds to wait for something.
 No time out \(nil) means to wait indefinitly.")

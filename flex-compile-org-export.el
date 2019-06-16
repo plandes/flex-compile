@@ -42,6 +42,7 @@
 	      :initform org-twbs-export-to-html
 	      :type function
 	      :documentation "The Org mode export function."))
+  :method-invocation-order :c3
   :documentation "\
 This compiler exports [Org mode](https://orgmode.org) to external formats and
 then shows the output in the browser.  Only HTML is currently supported.")

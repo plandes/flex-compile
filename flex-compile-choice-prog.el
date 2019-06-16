@@ -44,6 +44,7 @@
    (action :initarg :action
 	   :initform nil
 	   :documentation "The action to invoke on the program."))
+  :method-invocation-order :c3
   :documentation "\
 Prompt and more easily invoke choice/action based programs using the
 \[Choice Program](https://github.com/plandes/choice-program) Emacs library.")
