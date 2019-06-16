@@ -268,7 +268,7 @@ Properties:
 Writing your own flexible compiler is pretty easy if you know how to write
 Emacs object oriented programs.  Even if you don't, you should be able to find
 a compiler already written that follows your use case amoung those concerete
-(see [compilers](#compiler)) that are already given in this package.  You can
+(see [compilers](#compilers)) that are already given in this package.  You can
 also submit an issue (see the [contributing instructions](CONTRIBUTING.md)).
 
 
