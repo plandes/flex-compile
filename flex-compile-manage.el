@@ -47,7 +47,9 @@
 ;;; compiler manager/orchestration
 (defclass flex-compile-manager (config-manager config-persistable)
   ()
-  :documentation "Manages flexible compiler instances.")
+  :documentation "\
+Concrete instances of *flexible* compilers that provide a common interface.
+Each is an implementation of glue code to the respective compilation method.")
 
 (cl-defmethod initialize-instance ((this flex-compile-manager) &optional slots)
   (with-slots (entries) this
@@ -125,19 +127,11 @@ This is done by simply re-instantiating all current registered compilers."
 	   funcall
 	   (flex-compile-manager-register this)))))
 
-(cl-defmethod config-persistent-doc ((this flex-compile-manager) level)
-  "Create markdown documentation on all compilers and their meta data.
-STREAM is where the output of the documentation goes."
-  (insert (format "%s Compilers\n" (make-string level ?#)))
-  (dolist (compiler (config-manager--entries this nil nil 'lexical))
-    (unless (equal (config-entry-name compiler) "disable")
-      (config-persistent-doc compiler (1+ level)))))
-
 
 
 ;; library configuration
 (defvar the-flex-compile-manager
-  (flex-compile-manager)
+  (flex-compile-manager :object-name "compiler")
   "The singleton manager instance.")
 
 (defcustom flex-compile-persistency-file-name
@@ -173,7 +167,9 @@ STREAM is where the output of the documentation goes."
 (defun flex-compiler-list ()
   "Display the flex compiler list."
   (interactive)
-  (config-manager-list-entries-buffer the-flex-compile-manager))
+  (let ((this the-flex-compile-manager))
+    (->> (format "*%s*" (capitalize (config-manager-name this)))
+	 (config-manager-list-entries-buffer this))))
 
 (defun flex-compiler-reset-configuration ()
   "Reset every compiler's configuration."
@@ -327,13 +323,7 @@ FORM is the form to evaluate \(if implemented).  If called with
 (defun flex-compile-doc-show ()
   "Create markdown documentation on all compilers and their meta data."
   (interactive)
-  (let ((buf (get-buffer-create "*Compiler Documentation*")))
-    (with-current-buffer buf
-      (erase-buffer)
-      (config-persistent-doc the-flex-compile-manager 2)
-      (and (fboundp 'markdown-mode) (markdown-mode)))
-    (display-buffer buf)
-    buf))
+  (config-persistent-doc the-flex-compile-manager))
 
 ;;;###autoload
 (defun flex-compile-show-configuration ()

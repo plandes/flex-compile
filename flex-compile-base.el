@@ -133,26 +133,6 @@ a `flex-compiler' can explictly control buffer display with
 						method)
   (message "Compiler is disabled for %S" method))
 
-
-
-;; helper functions
-(defun flex-compile-slots (class)
-  "Return an alist of slots for EIEIO CLASS.
-
-This is a helper function and probably shouldn't be trusted to work long term
-since it uses code ripped off from EIEIO guts."
-  (let ((slots (-> (cl--find-class class)
-		   eieio--class-slots)))
-    (mapcar #'(lambda (i)
-		(let* ((sd (aref slots i))
-		       (doc (alist-get :documentation
-				       (cl--slot-descriptor-props sd))))
-		  `(,(cl--slot-descriptor-name sd) .
-		    ((init . ,(cl--slot-descriptor-initform sd))
-		     (documentation . ,doc)
-		     (type . ,(cl--slot-descriptor-type sd))))))
-	    (number-sequence 0 (1- (length slots))))))
-
 (provide 'flex-compile-base)
 
 ;;; flex-compile-base.el ends here
