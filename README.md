@@ -20,6 +20,7 @@ started.
 - [Configuration](#configuration)
     - [Key Bindings](#key-bindings)
 - [Usage](#usage)
+- [Compiler Configuration](#compiler-configuration)
 - [Compilers](#compilers)
     - [Choice program](#choice-program)
     - [Clojure](#clojure)
