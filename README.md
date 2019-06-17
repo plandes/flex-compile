@@ -98,11 +98,15 @@ bindings):
   list of available compilers that are selectable with RET or provide
   documentation and configuration with `?`.  In addition, `e` configures the
   compiler.
-* **Set File** (`C-u 1 C-x C-u` or `C-u 1 M-x flex-compile-compile`): This the
-  file the compiler will use.  For example, the [Script](#script) compiler will
-  run selected script file and display the output on compile.  For REPL
-  compilers, like the [Python](#python) copiler, the starting directory can
-  also be set (see **Set Configuration**)..
+* **Prompt for Config File** (`C-u 1 C-x C-u` or `C-u 1 M-x
+  flex-compile-compile`): This the file the compiler will use.  For example,
+  the [Script](#script) compiler will run selected script file and display the
+  output on compile.  For REPL compilers, like the [Python](#python) copiler,
+  the starting directory can also be set (see **Set Configuration**)..
+* **Set Config File** (`C-u 1 C-x C-i` or `C-u 1
+  flex-compile-run-or-set-config`): This sets the *config* file to compile, run
+  or interpret.  The term *config* is a nomenclature and examples include
+  `Makefile`, `.clj`, `.r`, `.sh` files.
 * **Go to Config File** (`C-u C-x C-i` or `C-u M-x
   flex-compile-run-or-set-config`): This pops the *config* file/buffer to the
   current buffer.
@@ -116,10 +120,6 @@ bindings):
   evaluates the current form and stores the result in the kill buffer.
 * **Clean** (`C-x C-y` or `M-x flex-compile-clean`): This invokes the `clean`
   target for make and kills the REPL for REPL based compilers.
-* **Set Config File** (`C-u 1 C-x C-i`): This sets the *config* file, which is
-  the `Makefile`, `.clj`, `.r`, `.sh` file etc. *compile*, run or interpret.
-  Note that the prefix `C-u` isn't needed for some compilers like the `script`
-  compiler.
 * **Generate Compiler Docs** (`M-x flex-compile-doc-show`): this generates the
   documentation given in the [compilers](#compilers) section (verbatim).
 
