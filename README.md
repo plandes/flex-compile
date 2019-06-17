@@ -93,6 +93,9 @@ bindings):
   prompted.  In some cases a specific property is set, like the [Make](#make)
   compiler jumps to the target.  All
   properties are always available for configuration with `C-u 0 C-x C-u`.  
+* **Select or Get Information** (`M-x flex-compiler-list`): This displays a
+  list of available compilers that are selectable with RET or provide
+  documentation and configuration with `?`.
 * **Set File** (`C-u 1 C-x C-u` or `C-u 1 M-x flex-compile-compile`): This the
   file the compiler will use.  For example, the [Script](#script) compiler will
   run selected script file and display the output on compile.  For REPL
