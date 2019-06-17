@@ -294,7 +294,7 @@ An extensive changelog is available [here](CHANGELOG.md).
 
 ## License
 
-Copyright © 2017-2018 Paul Landes
+Copyright © 2017-2019 Paul Landes
 
 GNU Lesser General Public License, Version 2.0
 
