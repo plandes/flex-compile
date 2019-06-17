@@ -7,12 +7,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
-## [0.5] - 2019-06-17
+## [0.4] - 2019-06-17
 ### Added
 - New configuration system that moves the responsibility out of the specific
   compilers for configuration.  Configuration meta data has been added to
   [Buffer Manage] and *flex compile* extends that frame work to configure each
   compiler.
+
 
 ## [0.3] - 2019-06-15
 ### Added
@@ -36,6 +37,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - Fixed `buffer-manage` clobbering with compile warning issues.
 
+
+## [0.1] - 2017
 
 ### Added
 - Choice program compiler.
