@@ -132,11 +132,12 @@ This is done by creating a command with `make' found in the executable path."
 
 (cl-defmethod flex-compiler-start-buffer ((this make-flex-compiler)
 					  start-type)
-  (with-slots (target) this
-    (cl-case start-type
-      (compile (flex-compiler-run-make this target))
-      (run (flex-compiler-run-make this "run"))
-      (clean (flex-compiler-run-make this "clean")))))
+  (with-slots (target start-directory) this
+    (let ((default-directory start-directory))
+      (cl-case start-type
+	(compile (flex-compiler-run-make this target))
+	(run (flex-compiler-run-make this "run"))
+	(clean (flex-compiler-run-make this "clean"))))))
 
 ;; register the compiler
 (flex-compile-manager-register the-flex-compile-manager (make-flex-compiler))
