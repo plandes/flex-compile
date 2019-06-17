@@ -118,6 +118,10 @@ a `flex-compiler' can explictly control buffer display with
 						method)
   (message "Compiler is disabled for %S" method))
 
+(cl-defmethod config-prop-entry-configure ((this no-op-flex-compiler)
+					   config-options)
+  (config-persistent--unimplemented this "configure"))
+
 (provide 'flex-compile-base)
 
 ;;; flex-compile-base.el ends here
