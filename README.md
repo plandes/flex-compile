@@ -126,6 +126,16 @@ Each compiler also has configuration setting ability, which is invoked with the
 aforementioned `flex-compile-run-or-set-config`.
 
 
+## Compiler Configuration
+
+This package usees a configuration system that moves the responsibility out of
+the specific compilers for configuration.
+This package extends from the `config-manage` framework in the [buffer manage]
+library by extending and building configuration meta data.  For example, the
+`M-x flex-compiler-list` lists available compiler with `?` providing
+information and `e` configuring the compiler.
+
+
 ## Compilers
 
 Concrete instances of *flexible* compilers that provide a common interface.
@@ -303,3 +313,5 @@ GNU Lesser General Public License, Version 2.0
 [melpa-stable-badge]: https://stable.melpa.org/packages/flex-compile-badge.svg
 [travis-link]: https://travis-ci.org/plandes/flex-compile
 [travis-badge]: https://travis-ci.org/plandes/flex-compile.svg?branch=master
+
+[buffer manage]: https://github.com/plandes/buffer-manage
