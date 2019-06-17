@@ -44,7 +44,7 @@
 	   :initform nil
 	   :type (or null string)
 	   :documentation "The make file target to satisfy."))
-  ;; see `flex-compiler::flex-compile-doc'
+  ;; see `flex-compiler::config-persistent-doc'
   :method-invocation-order :c3
   :documentation "\
 This compiler invokes make as an asynchronous process in a buffer.

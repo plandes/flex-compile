@@ -104,25 +104,6 @@ a `flex-compiler' can explictly control buffer display with
   ;; `list' takes any number of arguments and has no side effects
   '((list . (list))))
 
-(cl-defmethod flex-compile-doc ((this flex-compiler) level)
-  "Write compiler documentation to the current buffer."
-  (with-slots (name description) this
-    (let ((doc (-> (eieio-object-class this)
-		   cl--find-class
-		   cl--class-docstring)))
-      (setq doc
-	    (if (not doc)
-		""
-	      (setq doc
-		    (with-temp-buffer
-		      (insert doc)
-		      (goto-char (point-min))
-		      (while (search-forward-regexp "`\\(.+?\\)'" nil t)
-			(replace-match "`\\1`"))
-		      (buffer-string)))
-	 (insert (format "\n\n%s %s\n\n%s\n" (make-string level ?#)
-			 description doc)))))))
-
 
 (defclass no-op-flex-compiler (flex-compiler)
   ()
