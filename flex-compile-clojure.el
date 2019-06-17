@@ -54,7 +54,8 @@
 		 :type symbol
 		 :initform 'jack-in
 		 :documentation "\
-The conection mode, which is either:
+Defines how to connect to a Clojure REPL.
+The connection modes include:
 - 'jack-in local mode, which invokes `cider-jack-in'
 - 'connect remote mode, which invokes `cider-connect' using slots:
   `repl-host' and `repl-port'"))
