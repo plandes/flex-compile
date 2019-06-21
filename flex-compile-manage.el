@@ -49,7 +49,12 @@
   ()
   :documentation "\
 Concrete instances of *flexible* compilers that provide a common interface.
-Each is an implementation of glue code to the respective compilation method.")
+Each is an implementation of glue code to the respective compilation method.
+
+Note that all compilers that extend from `conf-file-flex-compiler', which
+include `make', `script', `xml-validate', `org-mode', `python', `clojure', and
+`ess' have their `start-directory' property unset each time the `config-file'
+is set.")
 
 (cl-defmethod initialize-instance ((this flex-compile-manager) &optional slots)
   (with-slots (entries) this
@@ -132,7 +137,6 @@ This is done by simply re-instantiating all current registered compilers."
 	   (flex-compile-manager-register this)))))
 
 
-
 ;; library configuration
 (defvar the-flex-compile-manager
   (flex-compile-manager :object-name "compiler")
@@ -154,6 +158,10 @@ This is done by simply re-instantiating all current registered compilers."
 (defun flex-compiler-by-name (name)
   "Convenience function to get a compiler by it's NAME."
   (config-manager-entry the-flex-compile-manager name))
+
+(defun flex-compiler-active ()
+  "Return the currently activated compiler."
+  (flex-compile-manager-active the-flex-compile-manager))
 
 ;;;###autoload
 (defun flex-compiler-config-save ()

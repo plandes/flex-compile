@@ -24,7 +24,9 @@ started.
 - [Compilers](#compilers)
     - [Choice program](#choice-program)
     - [Clojure](#clojure)
+    - [Comint](#comint)
     - [Command](#command)
+    - [Do nothing](#do-nothing)
     - [Emacs speaks statistics](#emacs-speaks-statistics)
     - [Make](#make)
     - [Org mode](#org-mode)
@@ -177,11 +179,23 @@ Properties:
   * Buffer Exists Mode: Compiler instance of `flex-compile-display-buffer-exists-mode`.
   * Buffer New Mode: Compiler instance of `flex-compile-display-buffer-new-mode`.
   * Kill Buffer Clean: If non-nil kill the buffer on clean.
-  * Connect Mode: The conection mode, which is either:
-- `jack-in local mode, which invokes `cider-jack-in`
-- `connect remote mode, which invokes `cider-connect` using slots:
-  `repl-host` and `repl-port`
+  * Connect Mode: Defines how to connect to a Clojure REPL.
+  * Repl Port: The port running the REPL; default: 32345
   * Output Clear: Whether or not to clear comint buffer after a compilation.
+  * Prompt Kill Repl Buffer: If non-`nil` then prompt to kill a REPL buffer on clean.
+  * Start Directory: The directory for starting the compilation.
+
+
+### Comint
+
+Send text to any running `comint` buffer.
+This is useful for entering a command in a shell, SQL etc buffer that otherwise
+requires switching back and forth between buffers, which is a hassle.
+
+Properties:
+  * Config File: The file to use for *configuring* the compiler.
+  * Buffer:
+  * Content:
   * Start Directory: The directory for starting the compilation.
 
 
@@ -195,6 +209,11 @@ Properties:
   * Sexp: The symbol expression to evaluate.
 
 
+### Do nothing
+
+A no-op compiler for the disabled state.
+
+
 ### Emacs speaks statistics
 
 This is a REPL based compiler to evaluate R code with
@@ -206,15 +225,18 @@ Properties:
   * Buffer New Mode: Compiler instance of `flex-compile-display-buffer-new-mode`.
   * Kill Buffer Clean: If non-nil kill the buffer on clean.
   * Output Clear: Whether or not to clear comint buffer after a compilation.
+  * Prompt Kill Repl Buffer: If non-`nil` then prompt to kill a REPL buffer on clean.
   * Start Directory: The directory for starting the compilation.
 
 
 ### Make
 
-This compiler invokes make as an asynchronous process in a buffer.
-The first target, `run` target, and `clean` target are invoked
-respectfully with *compile*, *run* and *clean* Emacs
+This compiler invokes make as an asynchronous process in a
+buffer.  The first target, `run` target, and `clean` target are
+invoked respectfully with *compile*, *run* and *clean* Emacs
 commands (see [usage](#usage)).
+
+When setting the configuration file the target property is unset.
 
 Properties:
   * Config File: The file to use for *configuring* the compiler.
@@ -247,6 +269,7 @@ Properties:
   * Buffer New Mode: Compiler instance of `flex-compile-display-buffer-new-mode`.
   * Kill Buffer Clean: If non-nil kill the buffer on clean.
   * Output Clear: Whether or not to clear comint buffer after a compilation.
+  * Prompt Kill Repl Buffer: If non-`nil` then prompt to kill a REPL buffer on clean.
   * Start Directory: The directory for starting the compilation.
 
 

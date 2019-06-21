@@ -2,7 +2,7 @@
 (source gnu)
 (source melpa)
 
-(depends-on "buffer-manage" "0.9")
+(depends-on "buffer-manage" "0.10")
 (depends-on "dash" "2.13.0")
 
 (package-file "flex-compile.el")

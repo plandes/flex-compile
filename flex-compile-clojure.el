@@ -79,10 +79,15 @@ inforamtion (and current binding).")
 					 :prop-entry this
 					 :prompt "Connection mode"
 					 :choices '(jack-in connect)
-					 :input-type 'toggle))))
+					 :input-type 'toggle)
+		     (config-number-prop :object-name 'repl-port
+					 :prop-entry this
+					 :prompt "REPL port"
+					 :input-type 'last))))
     (setq slots (plist-put slots :object-name "clojure")
 	  slots (plist-put slots :validate-modes '(clojure-mode))
-	  slots (plist-put slots :repl-buffer-regexp "^\\*cider-repl ")
+	  slots (plist-put slots :repl-buffer-regexp
+			   "^\\(\\*cider-repl \\|nrepl-server\\)")
 	  slots (plist-put slots :repl-buffer-start-timeout 0)
 	  slots (plist-put slots
 			   :props (append (plist-get slots :props) props))))
@@ -119,18 +124,18 @@ inforamtion (and current binding).")
   (condition-case err
       (cider-quit t)
     (error "Warning: %S" err))
-  (sit-for 1)
-  (->> (process-list)
-       (-filter #'(lambda (elt)
-		    (string-match "^nrepl-server" (process-name elt))))
-       (-map #'kill-process))
   (cl-call-next-method this))
 
 (cl-defmethod flex-compiler-repl-start ((this clojure-flex-compiler))
   (with-slots (connect-mode repl-host repl-port) this
     (with-current-buffer (flex-compiler-conf-file-buffer this)
       (cl-case connect-mode
-	(connect (cider-connect (list :host repl-host :port repl-port)))
+	;; hack to fix some pathology with nrepl window management and custom
+	;; `display-buffer-alists' settings
+	(connect (let ((wc (current-window-configuration)))
+		   (save-excursion
+		     (cider-connect (list :host repl-host :port repl-port)))
+		   (set-window-configuration wc)))
 	(jack-in (cider-jack-in nil))
 	(t (error "No such connection mode supported: %S" connect-mode))))))
 

@@ -56,14 +56,14 @@ List of buffers for functions (like killing a buffer) when session ends.")
 			      :documentation "\
 Number of seconds to wait to start before giving up (and not displaying).
 If this is 0, don't wait or display the buffer when it comes up.")
-   (no-prompt-kill-repl-buffer :initarg :no-prompt-kill-repl-buffer
-			       :initform nil
-			       :type boolean
-			       :documentation "\
-If non-`nil' then don't prompt to kill a REPL buffer on clean.")
+   (prompt-kill-repl-buffer :initarg :prompt-kill-repl-buffer
+			    :initform t
+			    :type boolean
+			    :documentation "\
+If non-`nil' then prompt to kill a REPL buffer on clean.")
    (output-clear :initarg :output-clear
-		 :initform 'no
-		 :type symbol
+		 :initform nil
+		 :type boolean
 		 :documentation "\
 Whether or not to clear comint buffer after a compilation.")
    (form-history :initarg :form-history
@@ -77,11 +77,14 @@ The history variable for the eval form history."))
 (cl-defmethod initialize-instance ((this repl-flex-compiler) &optional slots)
   (let* ((fn '(lambda (this default prmopt history)
 		(split-string (read-string prompt nil history default))))
-	 (props (list (config-choice-prop :object-name 'output-clear
-					  :prop-entry this
-					  :prompt "Clear output on compile"
-					  :choices '(yes no)
-					  :input-type 'toggle))))
+	 (props (list (config-boolean-prop :object-name 'output-clear
+					   :prop-entry this
+					   :prompt "Clear output on compile"
+					   :input-type 'toggle)
+		      (config-boolean-prop :object-name 'prompt-kill-repl-buffer
+					   :prop-entry this
+					   :prompt "Confirm REPL buffer kills"
+					   :input-type 'toggle))))
     (setq slots (plist-put slots
 			   :props (append (plist-get slots :props) props))))
   (cl-call-next-method this slots))
@@ -171,16 +174,16 @@ The caller raises and error if it doesn't start in time."
 
 (cl-defmethod flex-compiler-kill-repl ((this repl-flex-compiler))
   "Kill the compiler's REPL."
-  (with-slots ( derived-buffer-names no-prompt-kill-repl-buffer) this
+  (with-slots (derived-buffer-names prompt-kill-repl-buffer) this
     (let ((bufs (append (mapcar 'get-buffer derived-buffer-names)
 			(cons (flex-compiler-buffer this) nil)))
 	  (count 0))
       (dolist (buf bufs)
 	(when (buffer-live-p buf)
 	  (let ((kill-buffer-query-functions
-		 (if no-prompt-kill-repl-buffer
-		     nil
-		   kill-buffer-query-functions)))
+		 (if prompt-kill-repl-buffer
+		     kill-buffer-query-functions
+		   nil)))
 	    (kill-buffer buf))
 	  (cl-incf count)))
       (message "%s killed %d buffer(s)"
@@ -196,7 +199,7 @@ The caller raises and error if it doesn't start in time."
 		     (flex-compiler-run this))
 		   (if (flex-compiler-repl-running-p this)
 		       (progn
-			 (when (eq output-clear 'yes)
+			 (when output-clear
 			   (with-current-buffer (flex-compiler-buffer this)
 			     (comint-clear-buffer)))
 			 (flex-compiler-repl-compile this config-file))

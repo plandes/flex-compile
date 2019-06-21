@@ -72,7 +72,11 @@ The directory for starting the compilation.  The `default-directory' is set to
 this when the compile starts"))
   :abstract true
   :method-invocation-order :c3
-  :documentation "A configurable compiler with a configuration file.")
+  :documentation "A configurable compiler with a configuration file.
+
+All subclass compilers have a confiugration file slot that determines what file
+is compiled, evaluated etc.  When this slot is set, the `start-directory' slot,
+which is used as the `default-directory', is unset.")
 
 (cl-defmethod initialize-instance ((this conf-file-flex-compiler)
 				   &optional slots)

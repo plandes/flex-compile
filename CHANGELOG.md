@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+
+## [0.5] - 2019-06-20
+### Added
+- New simple `comint' compiler.
+
+### Changed
+- Python and Clojure flex compiler bug fixes.
+
+
 ## [0.4] - 2019-06-17
 ### Added
 - New configuration system that moves the responsibility out of the specific
@@ -57,7 +66,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 First major release.
 
 
-[Unreleased]: https://github.com/plandes/flex-compile/compare/v0.4...HEAD
+[Unreleased]: https://github.com/plandes/flex-compile/compare/v0.5...HEAD
+[0.5]: https://github.com/plandes/flex-compile/compare/v0.4...v0.5
 [0.4]: https://github.com/plandes/flex-compile/compare/v0.3...v0.4
 [0.3]: https://github.com/plandes/flex-compile/compare/v0.2...v0.3
 [0.2]: https://github.com/plandes/flex-compile/compare/v0.1...v0.2

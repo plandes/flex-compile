@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2015 - 2019 Paul Landes
 
-;; Version: 0.4
+;; Version: 0.5
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
 ;; Keywords: compilation integration
@@ -48,6 +48,7 @@
 (require 'flex-compile-python)
 (require 'flex-compile-clojure)
 (require 'flex-compile-ess)
+(require 'flex-compile-comint)
 
 (defun flex-compile-init ()
   "Initialize the flex-compile system."

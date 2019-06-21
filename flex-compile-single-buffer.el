@@ -88,7 +88,7 @@ No time out \(nil) means to wait indefinitly.")
 	  nil
 	(string-to-number timeout)))))
 
-
+
 (defclass single-buffer-flex-compiler (flex-compiler)
   ((buffer-new-mode :initarg :buffer-new-mode
 		    :initform 'global
@@ -257,12 +257,12 @@ MODE is either `flex-compile-display-buffer-new-mode' or
 			 (let ((buf (flex-compiler-buffer ,this)))
 			   (when (buffer-live-p buf)
 			     (message "Cleaning up buffer %s" buf)
-			     (kill-buffer buf))))))
+			     (let ((kill-buffer-query-functions nil))
+			       (kill-buffer buf)))))))
 	  (if (numberp kill-buffer-clean)
 	      (run-at-time kill-buffer-clean nil killfn)
 	    (funcall killfn)))))
     compile-def))
-
 
 
 ;; functions

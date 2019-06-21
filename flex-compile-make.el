@@ -47,10 +47,12 @@
   ;; see `flex-compiler::config-persistent-doc'
   :method-invocation-order :c3
   :documentation "\
-This compiler invokes make as an asynchronous process in a buffer.
-The first target, `run' target, and `clean' target are invoked
-respectfully with *compile*, *run* and *clean* Emacs
-commands (see [usage](#usage)).")
+This compiler invokes make as an asynchronous process in a
+buffer.  The first target, `run' target, and `clean' target are
+invoked respectfully with *compile*, *run* and *clean* Emacs
+commands (see [usage](#usage)).
+
+When setting the configuration file the target property is unset.")
 
 (cl-defmethod initialize-instance ((this make-flex-compiler) &optional slots)
   (let* ((fn #'(lambda (this compiler &rest slots)
