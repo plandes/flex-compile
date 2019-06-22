@@ -19,6 +19,7 @@ started.
     - [Motivation](#motivation)
 - [Configuration](#configuration)
     - [Key Bindings](#key-bindings)
+    - [Revealing The Interactive Buffer](#revealing-the-interactive-buffer)
 - [Usage](#usage)
 - [Compiler Configuration](#compiler-configuration)
 - [Compilers](#compilers)
@@ -110,8 +111,11 @@ bindings):
   or interpret.  The term *config* is a nomenclature and examples include
   `Makefile`, `.clj`, `.r`, `.sh` files.
 * **Go to Config File** (`C-u C-x C-i` or `C-u M-x
-  flex-compile-run-or-set-config`): This pops the *config* file/buffer to the
-  current buffer.
+  flex-compile-run-or-set-config`): This displays the *config* file/buffer to
+  the current buffer.  For some compilers, this also displays the interactive
+  (i.e. REPL) buffer.  See the [reveal
+  buffer](#revealing-the-interactive-buffer) section for more information, and
+  specifically how to force show the buffer.
 * **Compile** (`C-x C-u` or `M-x flex-compile-compile`): This is the default
   *make something* command.  For make it invokes the first target, for REPL
   languages like Clojure and ESS it evaluates a `.clj` or `.r` file.
@@ -138,6 +142,55 @@ This package extends from the `config-manage` framework in the [buffer manage]
 library by extending and building configuration meta data.  For example, the
 `M-x flex-compiler-list` lists available compiler with `?` providing
 information and `e` configuring the compiler.
+
+
+### Revealing The Interactive Buffer
+
+One of the features of the *flex compiler* library is it provides specific
+behavior on example where and how to display buffers, which is a compiler
+configuration.  These buffers are usually interactive buffers, i.e. REPL
+buffers.  Any compiler that extends `single-buffer-flex-compiler` has this
+capability, which include the following:
+
+* [flex-compile-make]
+* [flex-compile-command]
+* [flex-compile-script]
+* [flex-compile-clojure]
+* [flex-compile-python]
+* [flex-compile-ess]
+* [flex-compile-xml-validate]
+* [flex-compile-choice-program]
+
+
+The two properties for these compilers include:
+
+* **Buffer New Mode**: used when the interactive buffer is created.
+* **Buffer Exists Mode**: used when the interactive buffer is already exists.
+
+
+These can be set to the *Global* settings, which means to take it from the
+customzied variables `flex-compile-display-buffer-new-mode` and
+`flex-compile-display-buffer-exists-mode`.  These variables and the compiler
+level properties can be set to one of:
+
+* **Switch to Buffer** means to first pop then switch to the buffer.
+* **Display Buffer** means to show the buffer in a different window.
+* **Next Frame Otherwise Switch** means to use the next frame if there are
+  multiple frames, otherwise pop and switch to the buffer.
+* **Next Frame Otherwise Display** means to use the next frame if there are
+  multiple frames, otherwise show buffer.
+* **Next Frame Skip Switch** means to do nothing there are multiple frames,
+  otherwise pop and switch to the buffer.
+* **Next Frame Skip Display** means to do nothing there are multiple frames,
+  otherwise display the buffer.
+* **Never** means to never show the buffer.
+
+
+The decision of where to show a buffer (or not) happens either when the
+interative buffer is created or during a compilation.  In many cases you might
+not want to ever show the buffer, so you could set both buffer `new` and
+`exist` properties to *never*.  In this case, you still force the interactive
+buffer with `C-u 2 C-x C-i` or `C-u 2 M-x flex-compile-run-or-set-config`.
 
 
 ## Compilers

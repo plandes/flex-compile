@@ -262,6 +262,7 @@ to invoke this command with full configuration support."
 ACTION is the interactive argument given by the read function."
   (interactive
    (list (cond ((null current-prefix-arg) 'run)
+	       ((eq 2 current-prefix-arg) 'force-show)
 	       ;; universal arg
 	       ((equal '(4) current-prefix-arg) 'find)
 	       ((eq 1 current-prefix-arg) 'set-config)
@@ -271,11 +272,17 @@ ACTION is the interactive argument given by the read function."
     (flex-compile-manager-assert-ready this)
     (condition-case err
 	(cl-case action
-	  (run (let (buf)
+	  (run (let (compile-def)
 		 (let ((display-buffer-alist
 			(flex-compiler-display-buffer-alist active)))
-		   (setq buf (flex-compiler-run active)))
-		 (flex-compiler-display-buffer active buf)))
+		   (setq compile-def (flex-compiler-run active)))
+		 (flex-compiler-display-buffer active compile-def)))
+	  (force-show (let (compile-def)
+			(let ((display-buffer-alist
+			       (flex-compiler-display-buffer-alist active)))
+			  (setq compile-def (append (flex-compiler-run active)
+						    '((force-show . t)))))
+		 (flex-compiler-display-buffer active compile-def)))
 	  (find (if (child-of-class-p (eieio-object-class active)
 				      'conf-file-flex-compiler)
 		    (flex-compiler-conf-file-display active)))

@@ -219,7 +219,10 @@ MODE is either `flex-compile-display-buffer-new-mode' or
 	    (flex-compiler-single-buffer--flex-comp-def this 'compile nil)))
   (if (not (consp compile-def))
       (error "Unknown compile-def: %S" compile-def))
-  (let* ((modes (flex-compiler-display-modes this))
+  (let* ((modes (if (assq 'force-show compile-def)
+		    '((new . switch)
+		      (exists . switch))
+		  (flex-compiler-display-modes this)))
 	 (fn (flex-compiler-display-function
 	      (if (cdr (assq 'newp compile-def))
 		  (cdr (assq 'new modes))
@@ -228,7 +231,8 @@ MODE is either `flex-compile-display-buffer-new-mode' or
     (unless (eq buf 'killed-buffer)
       (if (and buf (not (bufferp buf)))
 	  (error "Unknown buffer object: %S" buf))
-      (and fn (buffer-live-p buf) (funcall fn buf)))))
+      (if (and fn (buffer-live-p buf))
+	  (funcall fn buf)))))
 
 (cl-defmethod flex-compiler-single-buffer--flex-comp-def
   ((this single-buffer-flex-compiler) start-type startp)

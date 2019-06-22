@@ -79,19 +79,22 @@ requires switching back and forth between buffers, which is a hassle.")
   (comint-send-input))
 
 (cl-defmethod flex-compiler-compile ((this comint-flex-compiler))
-  (config-prop-entry-set-required this)
-  (with-slots (config-file buffer content) this
-    (if (and (null config-file) (null content))
-	(error "Either property `config-file' or `content' needs to be set"))
-    (let ((contents (->> (or content
-			     (with-temp-buffer
-			       (insert-file-contents config-file)
-			       (buffer-string)))
-			 string-trim)))
-      (with-current-buffer buffer
-	(goto-char (point-max))
-	(insert contents)
-	(comint-send-input)))))
+  (with-slots (buffer) this
+    (when (not (buffer-live-p buffer))
+      (setq buffer nil))
+    (config-prop-entry-set-required this)
+    (with-slots (config-file content) this
+      (if (and (null config-file) (null content))
+	  (error "Either property `config-file' or `content' needs to be set"))
+      (let ((contents (->> (or content
+			       (with-temp-buffer
+				 (insert-file-contents config-file)
+				 (buffer-string)))
+			   string-trim)))
+	(with-current-buffer buffer
+	  (goto-char (point-max))
+	  (insert contents)
+	  (comint-send-input))))))
 
 (flex-compile-manager-register the-flex-compile-manager (comint-flex-compiler))
 

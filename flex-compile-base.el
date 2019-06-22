@@ -91,16 +91,19 @@ This implementation sets all slots to nil."
 					    &optional compile-def)
   "Called to display the compilation buffer \(if any).
 
-COMPILE-DEF is the compilation defition, which is usually an alist of having
-an alist with `newp' indicating if the buffer is new and `buffer' of the buffer
-just created.  This is also called for clean invocations, in which case the
-value is nil.  The value (when non-nil) is dependent on the flex-compiler.")
+COMPILE-DEF is the compilation definition, which is usually an
+alist of having an alist with `newp' indicating if the buffer is
+new and `buffer' of the buffer just created.  This is also called
+for clean invocations, in which case the value is nil.  The
+value (when non-nil) is dependent on the flex-compiler.")
 
 (cl-defmethod flex-compiler-display-buffer-alist ((this flex-compiler))
-  "Return a value that will be bound to `display-buffer-alist', which suggests
-to Emacs libraries to not display buffers (via `display-buffer').  This is so
-a `flex-compiler' can explictly control buffer display with
-`flex-compiler-display-buffer' \(if it chooses).."
+  "Return a value that will be bound to `display-buffer-alist'.
+
+This suggests to Emacs libraries to not display buffers via
+`display-buffer'.  This is so a `flex-compiler' can explictly
+control buffer display with `flex-compiler-display-buffer' \(if
+it chooses).."
   ;; `list' takes any number of arguments and has no side effects
   '((list . (list))))
 
