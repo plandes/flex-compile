@@ -40,7 +40,6 @@
 (defclass org-export-flex-compiler (conf-file-flex-compiler)
   ((export-fn :initarg :export-fn
 	      :initform org-twbs-export-to-html
-	      :type function
 	      :documentation "The Org mode export function."))
   :method-invocation-order :c3
   :documentation "\
