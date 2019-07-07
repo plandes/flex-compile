@@ -4,7 +4,7 @@
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
-;; Keywords: interactive function command compile flexible
+;; Keywords: interactive function command compile flexible processes
 
 ;; This file is not part of GNU Emacs.
 
@@ -87,7 +87,7 @@ then shows the output in the browser.  Only HTML is currently supported.")
 	(delete-file html-file t)
 	(message "Deleted %s" html-file)))))
 
-(flex-compile-manager-register the-flex-compile-manager
+(flex-compile-manager-register flex-compile-manage-inst
 			       (org-export-flex-compiler))
 
 (provide 'flex-compile-org-export)

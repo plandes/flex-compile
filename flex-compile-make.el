@@ -4,7 +4,7 @@
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
-;; Keywords: make compile flexible
+;; Keywords: make compile flexible processes
 
 ;; This file is not part of GNU Emacs.
 
@@ -142,7 +142,7 @@ This is done by creating a command with `make' found in the executable path."
 	(clean (flex-compiler-run-make this "clean"))))))
 
 ;; register the compiler
-(flex-compile-manager-register the-flex-compile-manager (make-flex-compiler))
+(flex-compile-manager-register flex-compile-manage-inst (make-flex-compiler))
 
 (provide 'flex-compile-make)
 

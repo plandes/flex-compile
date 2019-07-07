@@ -4,7 +4,7 @@
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
-;; Keywords: clojure cider compilation
+;; Keywords: clojure cider compilation processes
 
 ;; This file is not part of GNU Emacs.
 
@@ -139,7 +139,7 @@ inforamtion (and current binding).")
 	(jack-in (cider-jack-in nil))
 	(t (error "No such connection mode supported: %S" connect-mode))))))
 
-(flex-compile-manager-register the-flex-compile-manager
+(flex-compile-manager-register flex-compile-manage-inst
 			       (clojure-flex-compiler))
 
 (provide 'flex-compile-clojure)

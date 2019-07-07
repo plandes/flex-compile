@@ -4,7 +4,7 @@
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
-;; Keywords: ess Emacs Speaks Statistics compilation
+;; Keywords: ess Emacs Speaks Statistics compilation processes
 
 ;; This file is not part of GNU Emacs.
 
@@ -61,7 +61,7 @@ This is a REPL based compiler to evaluate R code with
   (with-current-buffer (find-file-noselect file)
     (ess-eval-region (point-min) (point-max) nil)))
 
-(flex-compile-manager-register the-flex-compile-manager (ess-flex-compiler))
+(flex-compile-manager-register flex-compile-manage-inst (ess-flex-compiler))
 
 (provide 'flex-compile-ess)
 

@@ -4,7 +4,7 @@
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
-;; Keywords: compilation integration
+;; Keywords: compilation integration processes
 
 ;; This file is not part of GNU Emacs.
 
@@ -36,7 +36,7 @@
 (require 'eieio)
 (require 'flex-compile-base)
 
-(defconst flex-compile-display-mode-options
+(defconst flex-compile-single-buffer-display-mode-options
   '(choice (const :tag "This Window" switch)
 	   (const :tag "Other Window" display)
 	   (const :tag "Next Frame Otherwise Switch" next-frame-switch)
@@ -45,7 +45,8 @@
 	   (const :tag "Next Frame Skip Display" next-frame-skip-display)
 	   (const :tag "Never" never)))
 
-(defcustom flex-compile-display-buffer-new-mode 'next-frame-display
+(defcustom flex-compile-single-buffer-display-buffer-new-mode
+  'next-frame-display
   "How to show/switch a new \(not yet created) compilation buffer.
 `Switch to Buffer' means to first pop then switch to the buffer.
 `Display Buffer' means to show the buffer in a different
@@ -59,17 +60,19 @@ multiple frames, otherwise pop and switch to the buffer.
 `Next Frame Skip Display' means to do nothing there are multiple
 frames, otherwise display the buffer.
 `Never' means to never show the buffer."
-  :type flex-compile-display-mode-options
+  :type flex-compile-single-buffer-display-mode-options
   :group 'flex-compile)
 
-(defcustom flex-compile-display-buffer-exists-mode 'next-frame-skip-display
-  "Like `flex-compile-display-buffer-new-mode', but use when buffer exists."
-  :type flex-compile-display-mode-options
+(defcustom flex-compile-single-buffer-display-buffer-exists-mode
+  'next-frame-skip-display
+  "Like `flex-compile-single-buffer-display-buffer-new-mode' for existing buffers."
+  :type flex-compile-single-buffer-display-mode-options
   :group 'flex-compile)
 
-(defvar flex-compiler-set-buffer-exists
-  (delete-dups (list flex-compile-display-buffer-exists-mode 'never))
-  "History variable for `flex-compiler-set-buffer-exists-mode'.")
+(defvar flex-compile-single-buffer-set-buffer-exists
+  (delete-dups
+   (list flex-compile-single-buffer-display-buffer-exists-mode 'never))
+  "History variable for `flex-compile-single-buffer-set-buffer-exists-mode'.")
 
 
 (defclass config-timeout-prop (config-prop)
@@ -94,16 +97,18 @@ No time out \(nil) means to wait indefinitly.")
 		    :initform 'global
 		    :type symbol
 		    :documentation "\
-Compiler instance of `flex-compile-display-buffer-new-mode'.
-This is one of `flex-compile-display-mode-options' or `global' to use the value
-of `flex-compile-display-buffer-new-mode'")
+Compiler instance of `flex-compile-single-buffer-display-buffer-new-mode'.
+This is one of `flex-compile-single-buffer-display-mode-options'
+or `global' to use the value of
+`flex-compile-single-buffer-display-buffer-new-mode'")
    (buffer-exists-mode :initarg :buffer-exists-mode
 		       :initform 'global
 		       :type symbol
 		       :documentation "\
-Compiler instance of `flex-compile-display-buffer-exists-mode'.
-This is one of `flex-compile-display-mode-options' or `global' to use the value
-of `flex-compile-display-buffer-exists-mode'")
+Compiler instance of `flex-compile-single-buffer-display-buffer-exists-mode'.
+This is one of `flex-compile-single-buffer-display-mode-options'
+or `global' to use the value of
+`flex-compile-single-buffer-display-buffer-exists-mode'")
    (buffer-name :initarg :buffer-name
 		:type string
 		:documentation "The default name of the single buffer.")
@@ -119,7 +124,7 @@ If this is an integer, wait the value in seconds and then kill."))
 
 (cl-defmethod initialize-instance ((this single-buffer-flex-compiler)
 				   &optional slots)
-  (let* ((choices (->> (cdr flex-compile-display-mode-options)
+  (let* ((choices (->> (cdr flex-compile-single-buffer-display-mode-options)
 		       (-map #'(lambda (elt)
 				 `(,(nth 2 elt) . ,(car (last elt)))))
 		       (append '(("Global" . global)))))
@@ -164,22 +169,24 @@ if invoked by `flex-compiler-compile' or `flex-compiler-run'."
 
 (cl-defmethod flex-compiler-display-modes ((this single-buffer-flex-compiler))
   "Return an alist with keys `new' and `exists'.
-This implementation returns `flex-compile-display-buffer-new-mode' and
-`flex-compile-display-buffer-exists-mode' respectfully."
+This implementation returns
+`flex-compile-single-buffer-display-buffer-new-mode' and
+`flex-compile-single-buffer-display-buffer-exists-mode'
+respectfully."
   (with-slots (buffer-new-mode buffer-exists-mode) this
     (let ((new-mode (if (eq buffer-new-mode 'global)
-			flex-compile-display-buffer-new-mode
+			flex-compile-single-buffer-display-buffer-new-mode
 		      buffer-new-mode))
 	  (exists-mode (if (eq buffer-exists-mode 'global)
-			   flex-compile-display-buffer-exists-mode
+			   flex-compile-single-buffer-display-buffer-exists-mode
 			 buffer-exists-mode)))
       `((new . ,new-mode)
 	(exists . ,exists-mode)))))
 
-(defun flex-compiler-display-function (mode)
+(defun flex-compile-single-buffer-display-function (mode)
   "Return a function used for displaying a buffer using MODE.
-MODE is either `flex-compile-display-buffer-new-mode' or
-`flex-compile-display-buffer-exists-mode'."
+MODE is either `flex-compile-single-buffer-display-buffer-new-mode' or
+`flex-compile-single-buffer-display-buffer-exists-mode'."
   (cl-flet ((display-nf
 	     (single-frame-fn multi-frame-fn)
 	     (if (> (length (visible-frame-list)) 1)
@@ -223,7 +230,7 @@ MODE is either `flex-compile-display-buffer-new-mode' or
 		    '((new . switch)
 		      (exists . switch))
 		  (flex-compiler-display-modes this)))
-	 (fn (flex-compiler-display-function
+	 (fn (flex-compile-single-buffer-display-function
 	      (if (cdr (assq 'newp compile-def))
 		  (cdr (assq 'new modes))
 		(cdr (assq 'exists modes)))))
@@ -272,22 +279,22 @@ MODE is either `flex-compile-display-buffer-new-mode' or
 ;; functions
 
 ;;;###autoload
-(defun flex-compiler-set-buffer-exists-mode ()
+(defun flex-compile-single-buffer-set-buffer-exists-mode ()
   "Query and set the value for the display mode for existing buffers.
 This sets but doesn't configure
-`flex-compile-display-buffer-exists-mode'."
+`flex-compile-single-buffer-display-buffer-exists-mode'."
   (interactive)
-  (let ((choices (->> (cdr flex-compile-display-mode-options)
+  (let ((choices (->> (cdr flex-compile-single-buffer-display-mode-options)
 		      (-map 'last)
 		      (-map 'first)))
-	(def (or (cl-second flex-compiler-set-buffer-exists)
-		 (car flex-compiler-set-buffer-exists))))
-    (setq flex-compile-display-buffer-exists-mode
+	(def (or (cl-second flex-compile-single-buffer-set-buffer-exists)
+		 (car flex-compile-single-buffer-set-buffer-exists))))
+    (setq flex-compile-single-buffer-display-buffer-exists-mode
 	  (choice-program-complete "Buffer Exists Mode"
 				   choices
 				   nil t ; return string, require match
 				   nil	 ; initial
-				   'flex-compiler-set-buffer-exists ; history
+				   'flex-compile-single-buffer-set-buffer-exists ; history
 				   def				    ; def
 				   nil	; allow-empty
 				   t t))))

@@ -4,7 +4,7 @@
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
-;; Keywords: comint integration compilation
+;; Keywords: comint integration compilation processes
 
 ;; This file is not part of GNU Emacs.
 
@@ -96,7 +96,7 @@ requires switching back and forth between buffers, which is a hassle.")
 	  (insert contents)
 	  (comint-send-input))))))
 
-(flex-compile-manager-register the-flex-compile-manager (comint-flex-compiler))
+(flex-compile-manager-register flex-compile-manage-inst (comint-flex-compiler))
 
 (provide 'flex-compile-comint)
 

@@ -4,7 +4,7 @@
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
-;; Keywords: compilation integration
+;; Keywords: compilation integration processes
 
 ;; This file is not part of GNU Emacs.
 

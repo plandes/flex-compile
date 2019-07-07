@@ -4,7 +4,7 @@
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
-;; Keywords: script integration compilation
+;; Keywords: script integration compilation processes
 
 ;; This file is not part of GNU Emacs.
 
@@ -88,7 +88,7 @@ See [motivation](#motivation).")
 	  buf)))
      (run (error "No defined run action for scripts")))))
 
-(flex-compile-manager-register the-flex-compile-manager (script-flex-compiler))
+(flex-compile-manager-register flex-compile-manage-inst (script-flex-compiler))
 
 (provide 'flex-compile-script)
 

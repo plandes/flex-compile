@@ -4,7 +4,7 @@
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
-;; Keywords: compilation integration
+;; Keywords: compilation integration processes
 
 ;; This file is not part of GNU Emacs.
 
@@ -138,89 +138,92 @@ This is done by simply re-instantiating all current registered compilers."
 
 
 ;; library configuration
-(defvar the-flex-compile-manager
+(defvar flex-compile-manage-inst
   (flex-compile-manager :object-name "compiler")
   "The singleton manager instance.")
 
-(defcustom flex-compile-persistency-file-name
+(defcustom flex-compile-manage-persistency-file-name
   (expand-file-name "flex-compile" user-emacs-directory)
   "File containing the Flex compile configuration data."
   :type 'file
   :group 'flex-compile
   :set (lambda (sym val)
 	 (set-default sym val)
-	 (if (and (boundp 'the-flex-compile-manager)
-		  the-flex-compile-manager)
-	     (setf (slot-value the-flex-compile-manager 'file) val))))
+	 (if (and (boundp 'flex-compile-manage-inst)
+		  flex-compile-manage-inst)
+	     (setf (slot-value flex-compile-manage-inst 'file) val))))
 
 
 ;; functions
 (defun flex-compiler-by-name (name)
   "Convenience function to get a compiler by it's NAME."
-  (config-manager-entry the-flex-compile-manager name))
+  (config-manager-entry flex-compile-manage-inst name))
 
 (defun flex-compiler-active ()
   "Return the currently activated compiler."
-  (flex-compile-manager-active the-flex-compile-manager))
+  (flex-compile-manager-active flex-compile-manage-inst))
 
 ;;;###autoload
 (defun flex-compiler-config-save ()
   "Save all compiler and manager configuration."
   (interactive)
-  (config-persistable-save the-flex-compile-manager))
+  (config-persistable-save flex-compile-manage-inst))
 
 ;;;###autoload
 (defun flex-compiler-config-load ()
   "Load all compiler and manager configuration."
   (interactive)
-  (config-persistable-load the-flex-compile-manager))
+  (config-persistable-load flex-compile-manage-inst))
 
 ;;;###autoload
 (defun flex-compiler-list ()
   "Display the flex compiler list."
   (interactive)
-  (let ((this the-flex-compile-manager))
+  (let ((this flex-compile-manage-inst))
     (->> (format "*%s*" (capitalize (config-manager-name this)))
 	 (config-manager-list-entries-buffer this))))
 
+;;;###autoload
 (defun flex-compiler-reset-configuration ()
   "Reset every compiler's configuration."
   (interactive)
   (when (y-or-n-p "This will wipe all compiler configuration.  Are you sure? ")
-    (if (file-exists-p flex-compile-persistency-file-name)
-	(delete-file flex-compile-persistency-file-name))
-    (flex-compile-clear the-flex-compile-manager)
+    (if (file-exists-p flex-compile-manage-persistency-file-name)
+	(delete-file flex-compile-manage-persistency-file-name))
+    (flex-compile-clear flex-compile-manage-inst)
     (flex-compiler-config-save)
     (message "Configuration reset")))
 
 
 
 ;;; interactive functions
-(defvar flex-compiler-read-history nil)
+(defvar flex-compile-manage-compiler-read-history nil)
 
-(defun flex-compiler-read (last-compiler-p)
+(defun flex-compile-manage-compiler-read (last-compiler-p)
   "Read a flexible compiler to use.
 
 LAST-COMPILER-P, if non-nil, use the last chosen compiler."
   (or (if last-compiler-p
-	  (let ((arg (cl-second flex-compiler-read-history)))
-	    (setq flex-compiler-read-history
-		  (append (cons arg nil) flex-compiler-read-history))
+	  (let ((arg (cl-second flex-compile-manage-compiler-read-history)))
+	    (setq flex-compile-manage-compiler-read-history
+		  (append (cons arg nil)
+			  flex-compile-manage-compiler-read-history))
 	    arg))
-      (let* ((this the-flex-compile-manager)
+      (let* ((this flex-compile-manage-inst)
 	     (names (config-manager-entry-names this)))
-	(choice-program-complete "Compiler" names t t nil
-				 'flex-compiler-read-history
-				 (cl-second flex-compiler-read-history)
-				 nil t t))))
+	(choice-program-complete
+	 "Compiler" names t t nil
+	 'flex-compile-manage-compiler-read-history
+	 (cl-second flex-compile-manage-compiler-read-history)
+	 nil t t))))
 
 ;;;###autoload
 (defun flex-compiler-activate (compiler-name)
   "Activate/select a compiler.
 
 COMPILER-NAME the name of the compiler to activate."
-  (interactive (list (flex-compiler-read current-prefix-arg)))
-  (let ((this the-flex-compile-manager))
+  (interactive (list (flex-compile-manage-compiler-read current-prefix-arg)))
+  (let ((this flex-compile-manage-inst))
     (config-manager-activate this compiler-name)))
 
 ;;;###autoload
@@ -240,7 +243,7 @@ to invoke this command with full configuration support."
 	       ;; universal arg
 	       ((equal '(4) current-prefix-arg) nil)
 	       (t (1- current-prefix-arg)))))
-  (let* ((this the-flex-compile-manager)
+  (let* ((this flex-compile-manage-inst)
 	 (active (flex-compile-manager-active this)))
     (flex-compile-manager-assert-ready this)
     (if (eq config-options 'compile)
@@ -267,7 +270,7 @@ ACTION is the interactive argument given by the read function."
 	       ((equal '(4) current-prefix-arg) 'find)
 	       ((eq 1 current-prefix-arg) 'set-config)
 	       (t (error "Unknown prefix state: %s" current-prefix-arg)))))
-  (let* ((this the-flex-compile-manager)
+  (let* ((this flex-compile-manage-inst)
 	 (active (flex-compile-manager-active this)))
     (flex-compile-manager-assert-ready this)
     (condition-case err
@@ -294,14 +297,14 @@ ACTION is the interactive argument given by the read function."
 		(config-entry-name active)
 		(cl-second err))))))
 
-(defun flex-compile-read-form (no-input-p)
+(defun flex-compile-manage-read-form (no-input-p)
   "Read the compilation query form from the user.
 
 If NO-INPUT-P is t, use the default witout getting it from the user.
 
 This invokes the `flex-compiler-query-read-form method' on the
 currently activated compiler."
-  (let* ((mgr the-flex-compile-manager)
+  (let* ((mgr flex-compile-manage-inst)
 	 (this (flex-compile-manager-active mgr)))
     (if (not (child-of-class-p (eieio-object-class this)
 			       'repl-flex-compiler))
@@ -315,8 +318,8 @@ currently activated compiler."
   "Evaluate the current form for the \(usually REPL based compiler).
 FORM is the form to evaluate \(if implemented).  If called with
 \\[universal-argument] then prompt the user with the from to evaluation."
-  (interactive (list (flex-compile-read-form (not current-prefix-arg))))
-  (let* ((mgr the-flex-compile-manager)
+  (interactive (list (flex-compile-manage-read-form (not current-prefix-arg))))
+  (let* ((mgr flex-compile-manage-inst)
 	 (this (flex-compile-manager-active mgr)))
     (flex-compile-manager-assert-ready mgr)
     (let ((res (flex-compiler-evaluate-form this form)))
@@ -329,7 +332,7 @@ FORM is the form to evaluate \(if implemented).  If called with
 (defun flex-compile-clean ()
   "Invoke the clean functionality of the compiler."
   (interactive)
-  (let* ((this the-flex-compile-manager)
+  (let* ((this flex-compile-manage-inst)
 	 (active (flex-compile-manager-active this)))
     (condition-case nil
 	(progn
@@ -347,13 +350,13 @@ FORM is the form to evaluate \(if implemented).  If called with
 (defun flex-compile-doc-show ()
   "Create markdown documentation on all compilers and their meta data."
   (interactive)
-  (config-persistent-doc the-flex-compile-manager))
+  (config-persistent-doc flex-compile-manage-inst))
 
 ;;;###autoload
 (defun flex-compiler-show-configuration ()
   "Create a buffer with the configuration of the current compiler."
   (interactive)
-  (let* ((this the-flex-compile-manager)
+  (let* ((this flex-compile-manage-inst)
 	 (active (flex-compile-manager-active this)))
     (config-prop-entry-show-configuration active)))
 

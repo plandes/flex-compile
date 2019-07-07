@@ -4,7 +4,7 @@
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
-;; Keywords: interactive function command compile flexible
+;; Keywords: interactive function command compile flexible processes
 
 ;; This file is not part of GNU Emacs.
 
@@ -98,7 +98,7 @@ form.  This is handy for functions that you end up invoking over and over with
       (message "%S "res)
       res)))
 
-(flex-compile-manager-register the-flex-compile-manager
+(flex-compile-manager-register flex-compile-manage-inst
 			       (command-flex-compiler))
 
 (provide 'flex-compile-command)

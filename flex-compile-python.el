@@ -4,7 +4,7 @@
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
-;; Keywords: python integration compilation
+;; Keywords: python integration compilation processes
 
 ;; This file is not part of GNU Emacs.
 
@@ -113,7 +113,7 @@ expressions using [python mode](https://github.com/fgallina/python.el).")
 	  (run-python (python-shell-calculate-command) nil 4))
       (setenv "PYTHONPATH" old-path))))
 
-(flex-compile-manager-register the-flex-compile-manager (python-flex-compiler))
+(flex-compile-manager-register flex-compile-manage-inst (python-flex-compiler))
 
 (provide 'flex-compile-python)
 

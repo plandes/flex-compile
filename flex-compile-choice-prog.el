@@ -4,7 +4,7 @@
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
-;; Keywords: choice-prog compile flexible
+;; Keywords: choice-prog compile flexible processes
 
 ;; This file is not part of GNU Emacs.
 
@@ -132,7 +132,7 @@ the `flex-compile' framework."
     (run (config-prop-entry-show-configuration this))))
 
 ;; register the compiler
-(flex-compile-manager-register the-flex-compile-manager
+(flex-compile-manager-register flex-compile-manage-inst
 			       (choice-prog-flex-compiler))
 
 (provide 'flex-compile-choice-prog)

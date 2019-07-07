@@ -4,7 +4,7 @@
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
-;; Keywords: xml validation compilation
+;; Keywords: xml validation compilation processes
 
 ;; This file is not part of GNU Emacs.
 
@@ -115,7 +115,7 @@ Implementation compiler for XML validation using command line
       (compilation-start cmd nil #'(lambda (mode-name)
 				     buffer-name)))))
 
-(flex-compile-manager-register the-flex-compile-manager
+(flex-compile-manager-register flex-compile-manage-inst
 			       (xml-validate-flex-compiler))
 
 (provide 'flex-compile-xml-validate)
