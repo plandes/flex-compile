@@ -12,7 +12,7 @@
 
 (ert-deftest test-manager-instance ()
   "Test successful evaluation of flex-compile"
-  (let ((this the-flex-compile-manager))
+  (let ((this flex-compile-manage-inst))
     (should (eq t (eieio-object-p this)))
     (should (eq 'flex-compile-manager (eieio-object-class this)))))
 
@@ -20,7 +20,7 @@
   "Test registration of compilers."
   (should (equal '("choice-program" "clojure" "comint" "command" "disable"
 		   "ess" "make" "org-export" "python" "script" "xml-validate")
-		 (->> (slot-value the-flex-compile-manager 'entries)
+		 (->> (slot-value flex-compile-manage-inst 'entries)
 		      (-map 'config-entry-name)
 		      (funcall #'(lambda (elt) (sort elt 'string<)))))))
 
