@@ -18,10 +18,9 @@ started.
 - [Introduction](#introduction)
     - [Motivation](#motivation)
 - [Configuration](#configuration)
-    - [Key Bindings](#key-bindings)
-    - [Revealing The Interactive Buffer](#revealing-the-interactive-buffer)
 - [Usage](#usage)
 - [Compiler Configuration](#compiler-configuration)
+    - [Revealing The Interactive Buffer](#revealing-the-interactive-buffer)
 - [Compilers](#compilers)
     - [Choice program](#choice-program)
     - [Clojure](#clojure)
@@ -64,22 +63,10 @@ Add the following to your `~/.emacs` file:
 ```emacs-lisp
 (require 'flex-compile)
 (flex-compile-init)
+;; recommended to bind functions globally but not necessary
+(flex-compile-key-bindings)
 ```
 This loads the library and creates global key bindings.
-
-
-### Key Bindings
-
-The recommmended key bindings that you can add to your `~/.emacs` file are:
-```emacs-lisp
-;; switch compiler; clobbers `mark-page'
-(global-set-key "\C-x\C-p" 'flex-compiler-activate)
-(global-set-key "\C-x\C-u" 'flex-compile-compile)
-(global-set-key "\C-x\C-y" 'flex-compile-clean)
-(global-set-key "\C-x\C-i" 'flex-compile-run-or-set-config)
-;; clobbers `delete-blank-lines'
-(global-set-key "\C-x\C-o" 'flex-compile-eval)
-```
 
 
 ## Usage
@@ -89,49 +76,49 @@ specific source file called the *config* file.
 
 There are the operations (also included are the [given](#key-bindings) key
 bindings):
-* **Choose a Compiler** (`C-x C-p` or `M-x flex-compiler-activate`):
+* **Choose a Compiler** (`C-x C-p` or `M-x flex-compiler-do-activate`):
   select/activate a flex compiler.
-* **Set Configuration** (`C-u C-x C-u` or `C-u M-x flex-compile-compile`): This
-  allows the configuration of the compiler.  In most compilers the first step
-  is to select the property, then the configuration for that property is
+* **Set Configuration** (`C-u C-x C-u` or `C-u M-x flex-compiler-do-compile`):
+  This allows the configuration of the compiler.  In most compilers the first
+  step is to select the property, then the configuration for that property is
   prompted.  In some cases a specific property is set, like the [Make](#make)
   compiler jumps to the target.  All
   properties are always available for configuration with `C-u 0 C-x C-u`.  
-* **Select or Get Information** (`M-x flex-compiler-list`): This displays a
+* **Select or Get Information** (`M-x flex-compiler-do-list`): This displays a
   list of available compilers that are selectable with RET or provide
   documentation and configuration with `?`.  In addition, `e` configures the
   compiler.
 * **Prompt for Config File** (`C-u 1 C-x C-u` or `C-u 1 M-x
-  flex-compile-compile`): This the file the compiler will use.  For example,
+  flex-compiler-do-compile`): This the file the compiler will use.  For example,
   the [Script](#script) compiler will run selected script file and display the
   output on compile.  For REPL compilers, like the [Python](#python) copiler,
   the starting directory can also be set (see **Set Configuration**)..
 * **Set Config File** (`C-u 1 C-x C-i` or `C-u 1
-  flex-compile-run-or-set-config`): This sets the *config* file to compile, run
+  flex-compiler-do-run-or-set-config`): This sets the *config* file to compile, run
   or interpret.  The term *config* is a nomenclature and examples include
   `Makefile`, `.clj`, `.r`, `.sh` files.
 * **Go to Config File** (`C-u C-x C-i` or `C-u M-x
-  flex-compile-run-or-set-config`): This displays the *config* file/buffer to
+  flex-compiler-do-run-or-set-config`): This displays the *config* file/buffer to
   the current buffer.  For some compilers, this also displays the interactive
   (i.e. REPL) buffer.  See the [reveal
   buffer](#revealing-the-interactive-buffer) section for more information, and
   specifically how to force show the buffer.
-* **Compile** (`C-x C-u` or `M-x flex-compile-compile`): This is the default
+* **Compile** (`C-x C-u` or `M-x flex-compiler-do-compile`): This is the default
   *make something* command.  For make it invokes the first target, for REPL
   languages like Clojure and ESS it evaluates a `.clj` or `.r` file.
-* **Run** (`C-x C-i` or `M-x flex-compile-run-or-set-config`): This starts
+* **Run** (`C-x C-i` or `M-x flex-compiler-do-run-or-set-config`): This starts
   invokes a `run` target for make, starts the REPL for REPL type languages.
-* **Evaluate** (`C-x C-o` or `M-x flex-compile-eval`): This invokes the
+* **Evaluate** (`C-x C-o` or `M-x flex-compiler-do-eval`): This invokes the
   compiler's evaluation functionality.  For REPL based languages, this
   evaluates the current form and stores the result in the kill buffer.
-* **Clean** (`C-x C-y` or `M-x flex-compile-clean`): This invokes the `clean`
+* **Clean** (`C-x C-y` or `M-x flex-compiler-do-clean`): This invokes the `clean`
   target for make and kills the REPL for REPL based compilers.
-* **Generate Compiler Docs** (`M-x flex-compile-doc-show`): this generates the
+* **Generate Compiler Docs** (`M-x flex-compiler-doc-show`): this generates the
   documentation given in the [compilers](#compilers) section (verbatim).
 
 Each compiler also has configuration setting ability, which is invoked with the
 `C-u` universal argument to the compile `C-x C-u` invocation per the
-aforementioned `flex-compile-run-or-set-config`.
+aforementioned `flex-compiler-do-run-or-set-config`.
 
 
 ## Compiler Configuration
@@ -169,9 +156,9 @@ The two properties for these compilers include:
 
 
 These can be set to the *Global* settings, which means to take it from the
-customzied variables `flex-compile-display-buffer-new-mode` and
-`flex-compile-display-buffer-exists-mode`.  These variables and the compiler
-level properties can be set to one of:
+customzied variables `flex-compile-single-buffer-display-buffer-new-mode` and
+`flex-compile-single-buffer-display-buffer-exists-mode`.  These variables and
+the compiler level properties can be set to one of:
 
 * **Switch to Buffer** means to first pop then switch to the buffer.
 * **Display Buffer** means to show the buffer in a different window.
@@ -190,7 +177,7 @@ The decision of where to show a buffer (or not) happens either when the
 interative buffer is created or during a compilation.  In many cases you might
 not want to ever show the buffer, so you could set both buffer `new` and
 `exist` properties to *never*.  In this case, you still force the interactive
-buffer with `C-u 2 C-x C-i` or `C-u 2 M-x flex-compile-run-or-set-config`.
+buffer with `C-u 2 C-x C-i` or `C-u 2 M-x flex-compiler-run-or-set-config`.
 
 
 ## Compilers
@@ -207,8 +194,8 @@ Prompt and more easily invoke choice/action based programs using the
 Properties:
   * Program: An instance of `choice-prog`.
   * Action: The action to invoke on the program.
-  * Buffer Exists Mode: Compiler instance of `flex-compile-display-buffer-exists-mode`.
-  * Buffer New Mode: Compiler instance of `flex-compile-display-buffer-new-mode`.
+  * Buffer Exists Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-exists-mode`.
+  * Buffer New Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-new-mode`.
   * Kill Buffer Clean: If non-nil kill the buffer on clean.
 
 
@@ -229,8 +216,8 @@ inforamtion (and current binding).
 
 Properties:
   * Config File: The file to use for *configuring* the compiler.
-  * Buffer Exists Mode: Compiler instance of `flex-compile-display-buffer-exists-mode`.
-  * Buffer New Mode: Compiler instance of `flex-compile-display-buffer-new-mode`.
+  * Buffer Exists Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-exists-mode`.
+  * Buffer New Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-new-mode`.
   * Kill Buffer Clean: If non-nil kill the buffer on clean.
   * Connect Mode: Defines how to connect to a Clojure REPL.
   * Repl Port: The port running the REPL; default: 32345
@@ -274,8 +261,8 @@ This is a REPL based compiler to evaluate R code with
 
 Properties:
   * Config File: The file to use for *configuring* the compiler.
-  * Buffer Exists Mode: Compiler instance of `flex-compile-display-buffer-exists-mode`.
-  * Buffer New Mode: Compiler instance of `flex-compile-display-buffer-new-mode`.
+  * Buffer Exists Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-exists-mode`.
+  * Buffer New Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-new-mode`.
   * Kill Buffer Clean: If non-nil kill the buffer on clean.
   * Output Clear: Whether or not to clear comint buffer after a compilation.
   * Prompt Kill Repl Buffer: If non-`nil` then prompt to kill a REPL buffer on clean.
@@ -294,8 +281,8 @@ When setting the configuration file the target property is unset.
 Properties:
   * Config File: The file to use for *configuring* the compiler.
   * Target: The make file target to satisfy.
-  * Buffer Exists Mode: Compiler instance of `flex-compile-display-buffer-exists-mode`.
-  * Buffer New Mode: Compiler instance of `flex-compile-display-buffer-new-mode`.
+  * Buffer Exists Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-exists-mode`.
+  * Buffer New Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-new-mode`.
   * Kill Buffer Clean: If non-nil kill the buffer on clean.
   * Start Directory: The directory for starting the compilation.
 
@@ -318,8 +305,8 @@ expressions using [python mode](https://github.com/fgallina/python.el).
 
 Properties:
   * Config File: The file to use for *configuring* the compiler.
-  * Buffer Exists Mode: Compiler instance of `flex-compile-display-buffer-exists-mode`.
-  * Buffer New Mode: Compiler instance of `flex-compile-display-buffer-new-mode`.
+  * Buffer Exists Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-exists-mode`.
+  * Buffer New Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-new-mode`.
   * Kill Buffer Clean: If non-nil kill the buffer on clean.
   * Output Clear: Whether or not to clear comint buffer after a compilation.
   * Prompt Kill Repl Buffer: If non-`nil` then prompt to kill a REPL buffer on clean.
@@ -333,8 +320,8 @@ See [motivation](#motivation).
 
 Properties:
   * Config File: The file to use for *configuring* the compiler.
-  * Buffer Exists Mode: Compiler instance of `flex-compile-display-buffer-exists-mode`.
-  * Buffer New Mode: Compiler instance of `flex-compile-display-buffer-new-mode`.
+  * Buffer Exists Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-exists-mode`.
+  * Buffer New Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-new-mode`.
   * Kill Buffer Clean: If non-nil kill the buffer on clean.
   * Arguments: The arguments to give to the script.
   * Start Directory: The directory for starting the compilation.
@@ -348,8 +335,8 @@ Implementation compiler for XML validation using command line
 Properties:
   * Config File: The file to use for *configuring* the compiler.
   * Schema File: Location of the schema file to validate against.
-  * Buffer Exists Mode: Compiler instance of `flex-compile-display-buffer-exists-mode`.
-  * Buffer New Mode: Compiler instance of `flex-compile-display-buffer-new-mode`.
+  * Buffer Exists Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-exists-mode`.
+  * Buffer New Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-new-mode`.
   * Kill Buffer Clean: If non-nil kill the buffer on clean.
   * Start Directory: The directory for starting the compilation.
 

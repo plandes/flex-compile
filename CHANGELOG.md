@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Adding [zenbuild].
+### Changed
+- Clear up `package-lint` warnings.
+- Rename top level interactive functions to include `flex-compiler-do` as part
+  of effort to reduce warnings.
+### Warnings
+- Check `custom.el` for old names and use `flex-compile-key-bindings` to bind
+  keys to the correct functions.  See the `README.md` for more information.
 
 ## [0.5] - 2019-06-20
 ### Added
@@ -76,3 +85,4 @@ First major release.
 <!-- links -->
 [Choice Program]: https://github.com/plandes/choice-program
 [Buffer Manage]: https://github.com/plandes/buffer-manage
+[zenbuild]: https://github.com/plandes/zenbuild

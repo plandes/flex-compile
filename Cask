@@ -4,6 +4,7 @@
 
 (depends-on "buffer-manage" "0.10")
 (depends-on "dash" "2.13.0")
+(depends-on "package-lint")
 
 (package-file "flex-compile.el")
 

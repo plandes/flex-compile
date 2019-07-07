@@ -49,11 +49,33 @@
 (require 'flex-compile-clojure)
 (require 'flex-compile-ess)
 (require 'flex-compile-comint)
+(require 'flex-compiler)
+
+(defun flex-compile-key-bindings ()
+  "Bind keys globally to flex compiler actions.
+
+Note: this clobbers the following bindings:
+  `mark-page'
+  `delete-blank-lines'.
+
+This binds the following:
+  - C-x C-p: `flex-compiler-do-activate'
+  - C-x C-u: `flex-compiler-do-compile'
+  - C-x C-y: `flex-compiler-do-clean'
+  - C-x C-i: `flex-compiler-do-run-or-set-config'
+  - C-x C-o: `flex-compiler-do-eval'"
+  ;; switch compiler; clobbers `mark-page'
+  (global-set-key "\C-x\C-p" 'flex-compiler-do-activate)
+  (global-set-key "\C-x\C-u" 'flex-compiler-do-compile)
+  (global-set-key "\C-x\C-y" 'flex-compiler-do-clean)
+  (global-set-key "\C-x\C-i" 'flex-compiler-do-run-or-set-config)
+  ;; clobbers `delete-blank-lines'
+  (global-set-key "\C-x\C-o" 'flex-compiler-do-eval))
 
 (defun flex-compile-init ()
   "Initialize the flex-compile system."
   (flex-compiler-config-load)
-  (flex-compiler-activate "disable"))
+  (flex-compiler-do-activate "disable"))
 
 (flex-compile-init)
 
