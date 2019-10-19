@@ -110,13 +110,14 @@ The caller raises and error if it doesn't start in time."
   (with-slots (repl-buffer-start-timeout) this
     (let ((count-down repl-buffer-start-timeout)
 	  buf)
-      (dotimes (i count-down)
-	(setq buf (flex-compiler-buffer this))
-	(if buf
-	    (cl-return buf)
-	  (message "Waiting for buffer to start... (%d)"
-		   (- count-down i))
-	  (sit-for 1))))))
+      (cl-block wfb
+       (dotimes (i count-down)
+	 (setq buf (flex-compiler-buffer this))
+	 (if buf
+	     (cl-return-from wfb buf)
+	   (message "Waiting for buffer to start... (%d)"
+		    (- count-down i))
+	   (sit-for 1)))))))
 
 (cl-defmethod flex-compiler-repl-running-p ((this repl-flex-compiler))
   "Return whether or not the REPL is currently running."
@@ -167,10 +168,11 @@ The caller raises and error if it doesn't start in time."
 (cl-defmethod flex-compiler-buffer ((this repl-flex-compiler))
   "Find the first REPL buffer found in the buffer list."
   (with-slots (repl-buffer-regexp) this
-    (dolist (buf (buffer-list))
-      (let ((buf-name (buffer-name buf)))
-	(when (string-match repl-buffer-regexp buf-name)
-	  (cl-return buf))))))
+    (cl-block found-buf
+      (dolist (buf (buffer-list))
+	(let ((buf-name (buffer-name buf)))
+	  (when (string-match repl-buffer-regexp buf-name)
+	    (cl-return-from found-buf buf)))))))
 
 (cl-defmethod flex-compiler-kill-repl ((this repl-flex-compiler))
   "Kill the compiler's REPL."
