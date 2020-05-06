@@ -43,7 +43,12 @@
   ((target :initarg :target
 	   :initform nil
 	   :type (or null string)
-	   :documentation "The make file target to satisfy."))
+	   :documentation "The make file target to satisfy.")
+   (run-target :initarg :run-target
+	       :initform nil
+	       :type (or null string)
+	       :documentation "\
+The target used to run or test as the secondary compilation functionality."))
   ;; see `flex-compiler::config-persistent-doc'
   :method-invocation-order :c3
   :documentation "\
@@ -51,6 +56,11 @@ This compiler invokes make as an asynchronous process in a
 buffer.  The first target, `run' target, and `clean' target are
 invoked respectfully with *compile*, *run* and *clean* Emacs
 commands (see [usage](#usage)).
+
+This is a special compiler in it's configuration.  Instead of
+setting properties, the default configuration mechanism is to set
+the make target instead.  If you want to set a flex compiler
+property, use `\\C-u 0 \\C-u'.
 
 When setting the configuration file the target property is unset.")
 
@@ -62,7 +72,13 @@ When setting the configuration file the target property is unset.")
 					:func fn
 					:prop-entry this
 					:input-type 'last
-					:order 1))))
+					:order 1)
+		      (config-eval-prop :object-name 'run-target
+					:prompt "Run target"
+					:func fn
+					:prop-entry this
+					:input-type 'last
+					:order 2))))
     (setq slots (plist-put slots :object-name "make")
 	  slots (plist-put slots :description "Make")
 	  slots (plist-put slots :validate-modes '(makefile-gmake-mode))
@@ -134,11 +150,11 @@ This is done by creating a command with `make' found in the executable path."
 
 (cl-defmethod flex-compiler-start-buffer ((this make-flex-compiler)
 					  start-type)
-  (with-slots (target start-directory) this
+  (with-slots (target run-target start-directory) this
     (let ((default-directory start-directory))
       (cl-case start-type
 	(compile (flex-compiler-run-make this target))
-	(run (flex-compiler-run-make this "run"))
+	(run (flex-compiler-run-make this (or run-target "run")))
 	(clean (flex-compiler-run-make this "clean"))))))
 
 ;; register the compiler

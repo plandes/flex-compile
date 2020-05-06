@@ -19,6 +19,7 @@ started.
     - [Motivation](#motivation)
 - [Configuration](#configuration)
 - [Usage](#usage)
+    - [Special Cases](#special-cases)
 - [Compiler Configuration](#compiler-configuration)
     - [Revealing The Interactive Buffer](#revealing-the-interactive-buffer)
 - [Compilers](#compilers)
@@ -121,14 +122,22 @@ Each compiler also has configuration setting ability, which is invoked with the
 aforementioned `flex-compiler-do-run-or-set-config`.
 
 
+### Special Cases
+
+Some compilers are configured differently for the default configuration key
+binding.  For example the [make](#make) compiler sets the make target defined
+in the make file, and in this case uses `C-u 0 C-u` to set configuration
+properties.
+
+
 ## Compiler Configuration
 
-This package usees a configuration system that moves the responsibility out of
-the specific compilers for configuration.
-This package extends from the `config-manage` framework in the [buffer manage]
-library by extending and building configuration meta data.  For example, the
-`M-x flex-compiler-list` lists available compiler with `?` providing
-information and `e` configuring the compiler.
+This package uses a configuration system that moves the responsibility out of
+the specific compilers for configuration.  This package extends from the
+`config-manage` framework in the [buffer manage] library by extending and
+building configuration meta data.  For example, the `M-x flex-compiler-list`
+lists available compiler with `?` providing information and `e` configuring the
+compiler.
 
 
 ### Revealing The Interactive Buffer
@@ -275,6 +284,11 @@ This compiler invokes make as an asynchronous process in a
 buffer.  The first target, `run` target, and `clean` target are
 invoked respectfully with *compile*, *run* and *clean* Emacs
 commands (see [usage](#usage)).
+
+This is a special compiler in it's configuration.  Instead of
+setting properties, the default configuration mechanism is to set
+the make target instead.  If you want to set a flex compiler
+property, use `C-u 0 C-u`.
 
 When setting the configuration file the target property is unset.
 

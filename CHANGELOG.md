@@ -9,13 +9,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 - Adding [zenbuild].
+- Add secondary run target to the make compiler.
+
 ### Changed
 - Clear up `package-lint` warnings.
 - Rename top level interactive functions to include `flex-compiler-do` as part
   of effort to reduce warnings.
+
 ### Warnings
 - Check `custom.el` for old names and use `flex-compile-key-bindings` to bind
   keys to the correct functions.  See the `README.md` for more information.
+
 
 ## [0.5] - 2019-06-20
 ### Added
