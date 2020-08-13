@@ -111,8 +111,7 @@ which is used as the `default-directory', is unset.")
       (setq config-options (list 'prop-name 'config-file (buffer-file-name))))
   (cl-call-next-method this config-options))
 
-(cl-defmethod config-prop-set ((this conf-file-flex-compiler)
-					   prop val)
+(cl-defmethod config-prop-set ((this conf-file-flex-compiler) prop val)
   (if (eq (config-prop-name prop) 'config-file)
       (with-slots (start-directory) this
 	(config-prop-validate prop val)

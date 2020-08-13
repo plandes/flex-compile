@@ -40,7 +40,15 @@
 (defclass org-export-flex-compiler (conf-file-flex-compiler)
   ((export-fn :initarg :export-fn
 	      :initform org-twbs-export-to-html
-	      :documentation "The Org mode export function."))
+	      :documentation "The Org mode export function.")
+   (open-file :initarg :open-file
+	      :initform t
+	      :type boolean
+	      :documentation "Whether to open the file after exported.")
+   (output-directory :initarg :start-directory
+		     :initform nil
+		     :type (or null string)
+		     :documentation "The output directory."))
   :method-invocation-order :c3
   :documentation "\
 This compiler exports [Org mode](https://orgmode.org) to external formats and
@@ -58,7 +66,17 @@ then shows the output in the browser.  Only HTML is currently supported.")
 		       :prop-entry this
 		       :choices choices
 		       :required t
-		       :input-type 'toggle))))
+		       :input-type 'toggle)
+		      (config-boolean-prop
+		       :object-name 'open-file
+		       :prop-entry this
+		       :prompt "Open file after generated"
+		       :input-type 'toggle)
+		      (config-directory-prop
+		       :object-name 'output-directory
+		       :prop-entry this
+		       :prompt "Output directory"
+		       :input-type 'last))))
     (setq slots (plist-put slots :object-name "org-export")
 	  slots (plist-put slots :description "Org mode")
 	  slots (plist-put slots :validate-modes '(org-mode))
@@ -70,18 +88,48 @@ then shows the output in the browser.  Only HTML is currently supported.")
   (require 'ox-twbs)
   (require 'choice-program-complete))
 
+(cl-defmethod config-prop-set ((this org-export-flex-compiler) prop val)
+  (if (eq (config-prop-name prop) 'config-file)
+      ;; when the file configuration file (Org mode file) changes, we must
+      ;; mirror the output directory for default behavior; then allow the user
+      ;; to change the output directory to export some where elese
+      (with-slots (output-directory) this
+	(config-prop-validate prop val)
+	(setq output-directory (file-name-directory val))))
+  (cl-call-next-method this prop val))
+
+(cl-defmethod flex-compiler-org-export-source ((this org-export-flex-compiler))
+  "Return the generated target file by the Org system."
+  (with-slots (config-file) this
+    (replace-regexp-in-string "\.org$" ".html" config-file)))
+
+(cl-defmethod flex-compiler-org-export-dest ((this org-export-flex-compiler))
+  "Return the user desired location of the output file."
+  (with-slots (config-file output-directory) this
+    (let* ((src (flex-compiler-org-export-source this))
+	   (dst (file-name-nondirectory src)))
+      (concat (file-name-as-directory output-directory) dst))))
+
 (cl-defmethod flex-compiler-compile ((this org-export-flex-compiler))
   (config-prop-entry-set-required this)
   (if nil
       (shell-command "osascript -e 'tell application \"Emacs\" to activate'"))
-  (with-slots (export-fn config-file) this
+  (with-slots (export-fn config-file open-file) this
     (with-current-buffer (flex-compiler-conf-file-buffer this)
-      (org-open-file (funcall export-fn)))))
+      (let* ((open-fn (if open-file
+			 'org-open-file
+		       'identity))
+	     (src (funcall export-fn))
+	     (dst (flex-compiler-org-export-dest this)))
+	(rename-file src dst t)
+	(message "Exported file to %s" dst)
+	;; call the function to open the file if configured
+	(funcall open-fn dst)))))
 
 (cl-defmethod flex-compiler-clean ((this org-export-flex-compiler))
   (config-prop-entry-set-required this)
   (with-slots (config-file) this
-    (let ((html-file (replace-regexp-in-string "\.org$" ".html" config-file)))
+    (let ((html-file (flex-compiler-org-export-dest this)))
       (if (not (file-exists-p html-file))
 	  (message "File %s doesn't exist" html-file)
 	(delete-file html-file t)
