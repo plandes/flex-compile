@@ -96,6 +96,21 @@ requires switching back and forth between buffers, which is a hassle.")
 	  (insert contents)
 	  (comint-send-input))))))
 
+;; show buffer methods (maybe this should extend single-buffer-flex-compiler
+;; since customized global settings aren't considered
+(cl-defmethod flex-compiler-run ((this comint-flex-compiler))
+  (with-slots (buffer) this
+    `((newp . nil)
+      (buffer . ,buffer))))
+
+(cl-defmethod flex-compiler-display-buffer ((this comint-flex-compiler)
+					    &optional compile-def)
+  (let ((buf (cdr (assq 'buffer compile-def))))
+    (when (not (buffer-live-p buf))
+      (error "Buffer not active"))
+    (display-buffer buf)
+    (message "Displayed buffer %S" buf)))
+
 (flex-compile-manager-register flex-compile-manage-inst (comint-flex-compiler))
 
 (provide 'flex-compile-comint)
