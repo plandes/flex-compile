@@ -1,6 +1,6 @@
 ;;; flex-compile-script.el --- script compile functions
 
-;; Copyright (C) 2015 - 2019 Paul Landes
+;; Copyright (C) 2015 - 2020 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes

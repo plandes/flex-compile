@@ -1,6 +1,6 @@
 ;;; flex-compiler.el --- user interactive interface to compilers
 
-;; Copyright (C) 2015 - 2019 Paul Landes
+;; Copyright (C) 2015 - 2020 Paul Landes
 
 ;; Version: 0.5
 ;; Author: Paul Landes

@@ -1,6 +1,6 @@
 ;;; flex-compile-command.el --- convenience compiler that evaluates Emacs Lisp
 
-;; Copyright (C) 2015 - 2019 Paul Landes
+;; Copyright (C) 2015 - 2020 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
