@@ -42,7 +42,7 @@
 (require 'flex-compile-script)
 (require 'flex-compile-make)
 (require 'flex-compile-command)
-(require 'flex-compile-choice-prog)
+(require 'flex-compile-choice-program)
 (require 'flex-compile-org-export)
 (require 'flex-compile-xml-validate)
 (require 'flex-compile-python)

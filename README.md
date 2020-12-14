@@ -201,7 +201,7 @@ Prompt and more easily invoke choice/action based programs using the
 [Choice Program](https://github.com/plandes/choice-program) Emacs library.
 
 Properties:
-  * Program: An instance of `choice-prog`.
+  * Program: An instance of `choice-program`.
   * Action: The action to invoke on the program.
   * Buffer Exists Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-exists-mode`.
   * Buffer New Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-new-mode`.

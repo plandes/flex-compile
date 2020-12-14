@@ -1,10 +1,10 @@
-;;; flex-compile-choice-prog.el --- compile functions
+;;; flex-compile-choice-program.el --- compile functions
 
 ;; Copyright (C) 2015 - 2019 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
-;; Keywords: choice-prog compile flexible processes
+;; Keywords: choice-program compile flexible processes
 
 ;; This file is not part of GNU Emacs.
 
@@ -35,12 +35,12 @@
 (require 'choice-program-complete)
 (require 'flex-compile-manage)
 
-;;; choice-prog file compiler
-(defclass choice-prog-flex-compiler (single-buffer-flex-compiler
+;;; choice-program file compiler
+(defclass choice-program-flex-compiler (single-buffer-flex-compiler
 				     conf-flex-compiler)
   ((program :initarg :program
 	    :initform nil
-	    :documentation "An instance of `choice-prog'.")
+	    :documentation "An instance of `choice-program'.")
    (action :initarg :action
 	   :initform nil
 	   :documentation "The action to invoke on the program."))
@@ -49,13 +49,13 @@
 Prompt and more easily invoke choice/action based programs using the
 \[Choice Program](https://github.com/plandes/choice-program) Emacs library.")
 
-(cl-defmethod initialize-instance ((this choice-prog-flex-compiler) &optional slots)
+(cl-defmethod initialize-instance ((this choice-program-flex-compiler) &optional slots)
   (let* ((read-prog '(lambda (this compiler default prompt history)
-		       (flex-compiler-choice-prog-read-program
+		       (flex-compiler-choice-program-read-program
 			compiler default prompt history)))
 	 (read-action '(lambda (this compiler default prompt history)
-			 (-> (flex-compiler-choice-prog-program compiler t)
-			     (choice-prog-read-option default history))))
+			 (-> (flex-compiler-choice-program-program compiler t)
+			     (choice-program-read-option default history))))
 	 (props (list (config-eval-prop :object-name 'program
 					:prompt "Program"
 					:func read-prog
@@ -78,63 +78,63 @@ Prompt and more easily invoke choice/action based programs using the
 			   :props (append (plist-get slots :props) props))))
   (cl-call-next-method this slots))
 
-(cl-defmethod flex-compiler-load-libraries ((this choice-prog-flex-compiler))
+(cl-defmethod flex-compiler-load-libraries ((this choice-program-flex-compiler))
   (require 'choice-program))
 
-(cl-defmethod flex-compiler-choice-prog-map ((this choice-prog-flex-compiler))
-  (->> (choice-prog-instances)
+(cl-defmethod flex-compiler-choice-program-map ((this choice-program-flex-compiler))
+  (->> (choice-program-instances)
        (-map '(lambda (this)
-		(cons (choice-prog-name this) this)))))
+		(cons (choice-program-name this) this)))))
 
-(cl-defmethod flex-compiler-choice-prog-read-program ((this choice-prog-flex-compiler)
+(cl-defmethod flex-compiler-choice-program-read-program ((this choice-program-flex-compiler)
 						      default prompt history)
-  "Read a `choice-prog' from the user.
+  "Read a `choice-program' from the user.
 DEFAULT, PROMPT and HISTORY are used for user input and come from
 the `flex-compile' framework."
-  (let ((choices (->> (flex-compiler-choice-prog-map this)
+  (let ((choices (->> (flex-compiler-choice-program-map this)
 		      (-map #'car)
 		      (-map #'intern))))
     (choice-program-complete prompt choices t t nil history default)))
 
-(cl-defmethod flex-compiler-choice-prog-program ((this choice-prog-flex-compiler)
+(cl-defmethod flex-compiler-choice-program-program ((this choice-program-flex-compiler)
 						 &optional expectp)
-  "Read an action for the \(already) selected `choice-prog'"
+  "Read an action for the \(already) selected `choice-program'"
   (with-slots (program) this
     (if (and (null program) expectp)
 	(error "No program set"))
     (when program
-      (let ((ret (->> (flex-compiler-choice-prog-map this)
+      (let ((ret (->> (flex-compiler-choice-program-map this)
 		      (assoc program)
 		      cdr)))
 	(unless ret
 	  (error "No such program: `%S'" program))
 	ret))))
 
-(cl-defmethod config-prop-set ((this choice-prog-flex-compiler)
+(cl-defmethod config-prop-set ((this choice-program-flex-compiler)
 				    prop val)
   (when (eq (config-prop-name prop) 'program)
     (setf (slot-value this 'action) nil)
     (config-persistent-reset (config-prop-by-name this 'action)))
   (cl-call-next-method this prop val))
 
-(cl-defmethod flex-compiler-buffer-name ((this choice-prog-flex-compiler))
-  (let ((prog (flex-compiler-choice-prog-program this)))
+(cl-defmethod flex-compiler-buffer-name ((this choice-program-flex-compiler))
+  (let ((prog (flex-compiler-choice-program-program this)))
     (if prog
 	(slot-value prog 'buffer-name)
       (cl-call-next-method this))))
 
-(cl-defmethod flex-compiler-start-buffer ((this choice-prog-flex-compiler)
+(cl-defmethod flex-compiler-start-buffer ((this choice-program-flex-compiler)
 					  start-type)
   (cl-case start-type
-    (compile (let ((prog (flex-compiler-choice-prog-program this))
+    (compile (let ((prog (flex-compiler-choice-program-program this))
 		   (action (slot-value this 'action)))
-	       (choice-prog-exec prog action)))
+	       (choice-program-exec prog action)))
     (run (config-prop-entry-show-configuration this))))
 
 ;; register the compiler
 (flex-compile-manager-register flex-compile-manage-inst
-			       (choice-prog-flex-compiler))
+			       (choice-program-flex-compiler))
 
-(provide 'flex-compile-choice-prog)
+(provide 'flex-compile-choice-program)
 
-;;; flex-compile-choice-prog.el ends here
+;;; flex-compile-choice-program.el ends here
