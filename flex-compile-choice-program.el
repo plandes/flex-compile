@@ -37,7 +37,7 @@
 
 ;;; choice-program file compiler
 (defclass choice-program-flex-compiler (single-buffer-flex-compiler
-				     conf-flex-compiler)
+					conf-flex-compiler)
   ((program :initarg :program
 	    :initform nil
 	    :documentation "An instance of `choice-program'.")
@@ -49,7 +49,8 @@
 Prompt and more easily invoke choice/action based programs using the
 \[Choice Program](https://github.com/plandes/choice-program) Emacs library.")
 
-(cl-defmethod initialize-instance ((this choice-program-flex-compiler) &optional slots)
+(cl-defmethod initialize-instance ((this choice-program-flex-compiler)
+				   &optional slots)
   (let* ((read-prog '(lambda (this compiler default prompt history)
 		       (flex-compiler-choice-program-read-program
 			compiler default prompt history)))
@@ -87,7 +88,7 @@ Prompt and more easily invoke choice/action based programs using the
 		(cons (choice-program-name this) this)))))
 
 (cl-defmethod flex-compiler-choice-program-read-program ((this choice-program-flex-compiler)
-						      default prompt history)
+							 default prompt history)
   "Read a `choice-program' from the user.
 DEFAULT, PROMPT and HISTORY are used for user input and come from
 the `flex-compile' framework."
@@ -97,7 +98,7 @@ the `flex-compile' framework."
     (choice-program-complete prompt choices t t nil history default)))
 
 (cl-defmethod flex-compiler-choice-program-program ((this choice-program-flex-compiler)
-						 &optional expectp)
+						    &optional expectp)
   "Read an action for the \(already) selected `choice-program'"
   (with-slots (program) this
     (if (and (null program) expectp)
@@ -111,7 +112,7 @@ the `flex-compile' framework."
 	ret))))
 
 (cl-defmethod config-prop-set ((this choice-program-flex-compiler)
-				    prop val)
+			       prop val)
   (when (eq (config-prop-name prop) 'program)
     (setf (slot-value this 'action) nil)
     (config-persistent-reset (config-prop-by-name this 'action)))
