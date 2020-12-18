@@ -1,10 +1,13 @@
-;;; flex-compile-config.el --- configuration based compiler for flex-compile  -*- lexical-binding: t; -*-
+;;; flex-compile-config.el --- Configuration based compiler for flex-compile  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
 ;; Keywords: compilation integration processes
+;; URL: https://github.com/plandes/flex-compile
+;; Package-Requires: ((emacs "26.1"))
+;; Package-Version: 0
 
 ;; This file is not part of GNU Emacs.
 
@@ -49,7 +52,7 @@ Important: Extend from this class _last_ so that it captures all proprties
 since this class sets :pslots in the `config-persistent' subclass.")
 
 (cl-defmethod flex-compile-clear ((this conf-flex-compiler))
-  "Wipe all values for the compiler."
+  "Wipe all values for THIS compiler."
   (dolist (prop (config-prop-by-order this))
     (config-prop-set this prop nil))
   (dolist (prop (config-prop-by-order this))
@@ -80,6 +83,7 @@ which is used as the `default-directory', is unset.")
 
 (cl-defmethod initialize-instance ((this conf-file-flex-compiler)
 				   &optional slots)
+  "Initialize instance THIS with arguments SLOTS."
   (let* ((modes (plist-get slots :validate-modes))
 	 (desc (plist-get slots :description))
 	 (name (plist-get slots :object-name))
@@ -107,11 +111,15 @@ which is used as the `default-directory', is unset.")
 
 (cl-defmethod config-prop-entry-configure ((this conf-file-flex-compiler)
 					   config-options)
+  "Configure the prop-entry of THIS instance with CONFIG-OPTIONS.
+
+See `config-manage-prop' class's method documentation."
   (if (eq config-options 'immediate)
       (setq config-options (list 'prop-name 'config-file (buffer-file-name))))
   (cl-call-next-method this config-options))
 
 (cl-defmethod config-prop-set ((this conf-file-flex-compiler) prop val)
+  "Set property PROP to VAL on THIS compiler."
   (if (eq (config-prop-name prop) 'config-file)
       (with-slots (start-directory) this
 	(config-prop-validate prop val)
@@ -119,12 +127,12 @@ which is used as the `default-directory', is unset.")
   (cl-call-next-method this prop val))
 
 (cl-defmethod flex-compiler-conf-file-buffer ((this conf-file-flex-compiler))
-  "Return a (new) buffer of the configuration file."
+  "Return a new buffer of the configuration file for THIS compiler."
   (config-prop-entry-set-required this)
   (find-file-noselect (slot-value this 'config-file)))
 
 (cl-defmethod flex-compiler-conf-file-display ((this conf-file-flex-compiler))
-  "Pop the configuration file buffer to the current buffer/window."
+  "Pop THIS compilers' configuration file buffer to the current buffer/window."
   (pop-to-buffer (flex-compiler-conf-file-buffer this)))
 
 

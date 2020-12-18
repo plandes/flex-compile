@@ -1,10 +1,13 @@
-;;; flex-compile-python.el --- python compile functions  -*- lexical-binding: t; -*-
+;;; flex-compile-python.el --- Python compile functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
 ;; Keywords: python integration compilation processes
+;; URL: https://github.com/plandes/flex-compile
+;; Package-Requires: ((emacs "26.1"))
+;; Package-Version: 0
 
 ;; This file is not part of GNU Emacs.
 
@@ -57,6 +60,7 @@ This is a REPL based compiler that allows for evaluation Python buffers and
 expressions using [python mode](https://github.com/fgallina/python.el).")
 
 (cl-defmethod initialize-instance ((this python-flex-compiler) &optional slots)
+  "Initialize instance THIS with arguments SLOTS."
   (setq slots (plist-put slots :object-name "python")
 	slots (plist-put slots :validate-modes '(python-mode))
 	slots (plist-put slots :repl-buffer-regexp "^\\*Python\\*$")
@@ -64,13 +68,20 @@ expressions using [python mode](https://github.com/fgallina/python.el).")
   (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-load-libraries ((this python-flex-compiler))
+  "Load the `python' library for THIS compiler."
+  (ignore this)
   (require 'python))
 
 (cl-defmethod flex-compiler-eval-form-impl ((this python-flex-compiler) form)
+  "Evaluate the FORM and return the response of the REPL for THIS compiler."
+  (ignore this)
   (python-shell-send-string form))
 
 (cl-defmethod flex-compiler-start-buffer ((this python-flex-compiler)
 					  start-type)
+  "Return a new buffer for THIS compiler with a processing compilation.
+START-TYPE is either symbols `compile', `run', `clean' depending
+if invoked by `flex-compiler-compile' or `flex-compiler-run'."
   (let (ret)
     (if (eq start-type 'compile)
 	(if (flex-compiler-repl-running-p this)
@@ -83,11 +94,15 @@ expressions using [python mode](https://github.com/fgallina/python.el).")
     (or ret (cl-call-next-method this start-type))))
 
 (cl-defmethod flex-compiler-repl-compile ((this python-flex-compiler) file)
+  "Send the contents of source code FILE to the REPL buffer of THIS compiler."
+  (ignore this)
   (let ((buf (find-file-noselect file)))
     (with-current-buffer buf
       (python-shell-send-buffer))))
 
 (cl-defmethod flex-compiler-eval-initial-at-point ((this python-flex-compiler))
+  "Return the Python form at the current point to the REPL for THIS compiler."
+  (ignore this)
   (let ((forward-fn #'python-nav-forward-statement)
 	(backward-fn #'python-nav-backward-statement))
     (save-excursion
@@ -106,6 +121,8 @@ expressions using [python mode](https://github.com/fgallina/python.el).")
 	   string-trim))))
 
 (cl-defmethod flex-compiler-repl-start ((this python-flex-compiler))
+  "Start the REPL using THIS compiler."
+  (ignore this)
   (let ((old-path (getenv "PYTHONPATH")))
     (unwind-protect
 	(let ((new-path (flex-compile-python-path)))

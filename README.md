@@ -2,6 +2,7 @@
 
 [![MELPA badge][melpa-badge]][melpa-link]
 [![MELPA stable badge][melpa-stable-badge]][melpa-stable-link]
+[![Build Status][build-badge]][build-link]
 
 
 Run, evaluate and compile functionality for a variety of different languages

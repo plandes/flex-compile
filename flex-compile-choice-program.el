@@ -1,10 +1,13 @@
-;;; flex-compile-choice-program.el --- compile functions  -*- lexical-binding: t; -*-
+;;; flex-compile-choice-program.el --- Compile functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
 ;; Keywords: choice-program compile flexible processes
+;; URL: https://github.com/plandes/flex-compile
+;; Package-Requires: ((emacs "26.1"))
+;; Package-Version: 0
 
 ;; This file is not part of GNU Emacs.
 
@@ -82,14 +85,15 @@ Prompt and more easily invoke choice/action based programs using the
 
 (cl-defmethod flex-compiler-load-libraries
   ((this choice-program-flex-compiler))
-  "Load the `choice-program' library.
-THIS is the instance."
+  "Load the `choice-program' library for THIS compiler."
+  (ignore this)
   (require 'choice-program))
 
 (cl-defmethod flex-compiler-choice-program-map
   ((this choice-program-flex-compiler))
   "Return an alist of name to registered to `choice-program' instances.
 THIS is the instance."
+  (ignore this)
   (->> (choice-program-instances)
        (-map '(lambda (this)
 		(cons (choice-program-name this) this)))))
@@ -121,14 +125,24 @@ EXPECTP, if non-nil, raise an exception if the program slot is nil."
 	  (error "No such program: `%S'" program))
 	ret))))
 
-(cl-defmethod config-prop-set ((this choice-program-flex-compiler)
-			       prop val)
+(cl-defmethod config-prop-set ((this choice-program-flex-compiler) prop val)
+  "Set property PROP to VAL for THIS compiler.
+
+This also resets the `action' property when setting the `program' property."
   (when (eq (config-prop-name prop) 'program)
     (setf (slot-value this 'action) nil)
+    ;; we need to some how be able to nil out the history when changing the
+    ;; program as currently the history carries forward to other programs
+    ;(config-persistent-reset (config-prop-by-name this 'mnemonic))
     (config-persistent-reset (config-prop-by-name this 'action)))
   (cl-call-next-method this prop val))
 
 (cl-defmethod flex-compiler-buffer-name ((this choice-program-flex-compiler))
+  "Return the buffer name of THIS compiler.
+
+Use the `buffer-name' slot of the `flex-compiler-choice-program-program' if
+non-nil, otherwise use the default `buffer-name' with syntax of the super
+class."
   (let ((prog (flex-compiler-choice-program-program this)))
     (if prog
 	(slot-value prog 'buffer-name)
@@ -136,6 +150,9 @@ EXPECTP, if non-nil, raise an exception if the program slot is nil."
 
 (cl-defmethod flex-compiler-start-buffer ((this choice-program-flex-compiler)
 					  start-type)
+  "Return a new buffer for THIS compiler with a processing compilation.
+See the `single-buffer-flex-compiler' implementation of
+`flex-compiler-start-buffer' for more information and START-TYPE."
   (cl-case start-type
     (compile (let ((prog (flex-compiler-choice-program-program this))
 		   (action (slot-value this 'action)))

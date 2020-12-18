@@ -1,10 +1,13 @@
-;;; flex-compile-comint.el --- comint compile functions  -*- lexical-binding: t; -*-
+;;; flex-compile-comint.el --- Comint compile functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
 ;; Keywords: comint integration compilation processes
+;; URL: https://github.com/plandes/flex-compile
+;; Package-Requires: ((emacs "26.1"))
+;; Package-Version: 0
 
 ;; This file is not part of GNU Emacs.
 
@@ -50,6 +53,7 @@ This is useful for entering a command in a shell, SQL etc buffer that otherwise
 requires switching back and forth between buffers, which is a hassle.")
 
 (cl-defmethod initialize-instance ((this comint-flex-compiler) &optional slots)
+  "Initialize THIS instance using SLOTS as initial values."
   (let ((props (list (config-buffer-prop :object-name 'buffer
 					 :prop-entry this
 					 :required t
@@ -71,14 +75,21 @@ requires switching back and forth between buffers, which is a hassle.")
 	    (slot-value prop 'required) nil))))
 
 (cl-defmethod flex-compiler-load-libraries ((this comint-flex-compiler))
+  "Load the `comint' library for THIS compiler."
+  (ignore this)
   (require 'comint))
 
 (cl-defmethod flex-compiler-eval-form-impl ((this comint-flex-compiler) form)
+  "Evaluate the FORM and return the response of the REPL for THIS compiler."
+  (ignore this)
   (goto-char (point-max))
   (insert form)
   (comint-send-input))
 
 (cl-defmethod flex-compiler-compile ((this comint-flex-compiler))
+  "Insert the `content' slot value set on THIS compiler in comint buffer.
+
+After the value is set, use `comint-send-input' to have `comint' process it."
   (with-slots (buffer) this
     (when (not (buffer-live-p buffer))
       (setq buffer nil))
@@ -96,15 +107,21 @@ requires switching back and forth between buffers, which is a hassle.")
 	  (insert contents)
 	  (comint-send-input))))))
 
-;; show buffer methods (maybe this should extend single-buffer-flex-compiler
-;; since customized global settings aren't considered
 (cl-defmethod flex-compiler-run ((this comint-flex-compiler))
+  "Show the comint buffer set in THIS compiler.
+
+See `flex-compiler-display-buffer', which does the work to show the buffer."
   (with-slots (buffer) this
     `((newp . nil)
       (buffer . ,buffer))))
 
 (cl-defmethod flex-compiler-display-buffer ((this comint-flex-compiler)
 					    &optional compile-def)
+  "Display the comint buffer using `display-buffer' for THIS compiler.
+
+See the `single-buffer-flex-compiler' implementation of
+`flex-compiler-display-buffer' for COMPILE-DEF and more information."
+  (ignore this)
   (let ((buf (cdr (assq 'buffer compile-def))))
     (when (not (buffer-live-p buf))
       (error "Buffer not active"))

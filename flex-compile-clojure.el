@@ -1,10 +1,13 @@
-;;; flex-compile-clojure.el --- clojure compile functions  -*- lexical-binding: t; -*-
+;;; flex-compile-clojure.el --- Clojure compile functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
 ;; Keywords: clojure cider compilation processes
+;; URL: https://github.com/plandes/flex-compile
+;; Package-Requires: ((emacs "26.1"))
+;; Package-Version: 0
 
 ;; This file is not part of GNU Emacs.
 
@@ -72,9 +75,13 @@ switch betwee these two methods with the [given keybindings](#key-bindings):
   `M-x 1 C-u C-x C-u'
 
 See documetation with `M-h f flex-compiler-query-eval' method for more
-inforamtion (and current binding).")
+inforamtion (and current binding).
+
+Todo: support multiple Cider buffers as this implementation currently does
+not.")
 
 (cl-defmethod initialize-instance ((this clojure-flex-compiler) &optional slots)
+  "Initialize THIS instance using SLOTS as initial values."
   (let ((props (list (config-choice-prop :object-name 'connect-mode
 					 :prop-entry this
 					 :prompt "Connection mode"
@@ -94,17 +101,25 @@ inforamtion (and current binding).")
   (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-load-libraries ((this clojure-flex-compiler))
+  "Load the `cider' library for THIS compiler.
+
+This also sets `cider-repl-display-in-current-window' to nil"
+  (ignore this)
   (require 'cider)
   ;; allow flex-compile to manage windows and frame
   (setq cider-repl-display-in-current-window nil))
 
 (cl-defmethod flex-compiler-send-input ((this clojure-flex-compiler)
 					&optional command)
+  "Send a COMMAND (input) to THIS compiler’s Cider REPL."
+  (ignore this)
   (goto-char (point-max))
   (insert command)
   (cider-repl-return))
 
 (cl-defmethod flex-compiler-eval-form-impl ((this clojure-flex-compiler) form)
+  "Evaluate the FORM and return the Cider REPL's response for THIS compiler."
+  (ignore this)
   (let* ((res (nrepl-sync-request:eval
 	       form
 	       (cider-current-connection)
@@ -113,20 +128,27 @@ inforamtion (and current binding).")
 	(nrepl-dict-get res "value"))))
 
 (cl-defmethod flex-compiler-repl-compile ((this repl-flex-compiler) file)
+  "Send the contents of FILE to the Cider REPL buffer of THIS compiler."
+  (ignore this)
   (save-excursion
     (apply #'set-buffer (list (find-file-noselect file)))
     (cider-load-file file)))
 
-(cl-defmethod flex-compiler-eval-initial-at-point ((this clojure-flex-compiler))
+(cl-defmethod flex-compiler-eval-initial-at-point
+  ((this clojure-flex-compiler))
+  "Return the Clojure form at the current point to the REPL for THIS compiler."
+  (ignore this)
   (cider-last-sexp))
 
 (cl-defmethod flex-compiler-kill-repl ((this clojure-flex-compiler))
+  "Use `cider-quit' to stop the Cider REPL for THIS compiler."
   (condition-case err
       (cider-quit t)
     (error "Warning: %S" err))
   (cl-call-next-method this))
 
 (cl-defmethod flex-compiler-repl-start ((this clojure-flex-compiler))
+  "Start the Cider REPL using THIS compiler."
   (with-slots (connect-mode repl-host repl-port) this
     (with-current-buffer (flex-compiler-conf-file-buffer this)
       (cl-case connect-mode

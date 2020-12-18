@@ -1,10 +1,13 @@
-;;; flex-compile-xml-validate.el --- xml validation  -*- lexical-binding: t; -*-
+;;; flex-compile-xml-validate.el --- XML validation  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
 ;; Keywords: xml validation compilation processes
+;; URL: https://github.com/plandes/flex-compile
+;; Package-Requires: ((emacs "26.1"))
+;; Package-Version: 0
 
 ;; This file is not part of GNU Emacs.
 
@@ -40,13 +43,14 @@
 
 (cl-defmethod initialize-instance ((this config-schema-file-prop)
 				   &optional slots)
+  "Initialize THIS instance using SLOTS as initial values."
   (setq slots (plist-put slots :prompt "Schema file")
 	slots (plist-put slots :validate-modes '(nxml-mode))
 	slots (plist-put slots :input-type 'last))
   (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-guess-schema-file ((this config-schema-file-prop))
-  "Try to determine where the XSD is by the location "
+  "Try to determine where the XSD is by the location set in THIS property."
   (with-temp-buffer
     (-> (slot-value this 'prop-entry)
 	(slot-value 'config-file)
@@ -63,6 +67,7 @@
       (error))))
 
 (cl-defmethod config-prop-read ((this config-schema-file-prop))
+  "Read the schema XSD file location from the user and set in THIS property."
   (let* ((schema-guess (flex-compiler-guess-schema-file this))
 	 (initial (and schema-guess (file-name-nondirectory schema-guess)))
 	 (dir (and schema-guess (file-name-directory schema-guess))))
@@ -85,6 +90,7 @@ Implementation compiler for XML validation using command line
 
 (cl-defmethod initialize-instance ((this xml-validate-flex-compiler)
 				   &optional slots)
+  "Initialize THIS instance using SLOTS as initial values."
   (let ((props (list (config-schema-file-prop :object-name 'schema-file
 					      :prop-entry this
 					      :required t
@@ -97,23 +103,31 @@ Implementation compiler for XML validation using command line
   (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-load-libraries ((this xml-validate-flex-compiler))
+  "Load the `xml' library for THIS compiler."
+  (ignore this)
   (require 'xml))
 
-(cl-defmethod config-prop-set ((this xml-validate-flex-compiler)
-				    prop val)
+(cl-defmethod config-prop-set ((this xml-validate-flex-compiler) prop val)
+  "Set property PROP to VAL for THIS compiler.
+
+Also reset the `schema-file' slot since a setting any other value invalidates
+it."
   (setf (slot-value this 'schema-file) nil)
   (cl-call-next-method this prop val))
 
 (cl-defmethod flex-compiler-start-buffer ((this xml-validate-flex-compiler)
 					  start-type)
+  "Return a new buffer for THIS compiler with a processing compilation.
+This implementation runs the XML validation program.
+START-TYPE is ignored."
+  (ignore start-type)
   (with-slots (xmllint-program schema-file config-file) this
     (let* ((cmd (mapconcat #'identity
 			   `(,xmllint-program "--noout" "--schema"
 					      ,schema-file ,config-file)
 			   " "))
 	   (buffer-name (flex-compiler-buffer-name this)))
-      (compilation-start cmd nil #'(lambda (mode-name)
-				     buffer-name)))))
+      (compilation-start cmd nil #'(lambda (_) buffer-name)))))
 
 (flex-compile-manager-register flex-compile-manage-inst
 			       (xml-validate-flex-compiler))

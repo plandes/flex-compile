@@ -1,10 +1,13 @@
-;;; flex-compile-script.el --- script compile functions  -*- lexical-binding: t; -*-
+;;; flex-compile-script.el --- Script compile functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
 ;; Keywords: script integration compilation processes
+;; URL: https://github.com/plandes/flex-compile
+;; Package-Requires: ((emacs "26.1"))
+;; Package-Version: 0
 
 ;; This file is not part of GNU Emacs.
 
@@ -43,10 +46,13 @@ This compiler runs a script with optional arguments in an async buffer.
 See [motivation](#motivation).")
 
 (cl-defmethod initialize-instance ((this script-flex-compiler) &optional slots)
-  (let* ((fn '(lambda (this compiler default prompt history)
-		(split-string (read-string prompt nil history default))))
+  "Initialize THIS instance using SLOTS as initial values."
+  (let* ((fn #'(lambda (this compiler default prompt history)
+		 (ignore this prompt compiler)
+		 (let ((input (read-string prompt nil history default)))
+		   (and input (split-string input)))))
 	 (props (list (config-eval-prop :object-name 'arguments
-					:prompt "Arguments"
+					:prompt "Arguments (SPACE RET for none)"
 					:func fn
 					:prop-entry this
 					:input-type 'last))))
@@ -61,32 +67,35 @@ See [motivation](#motivation).")
   (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-load-libraries ((this script-flex-compiler))
+  "Load `compile' and `choice-program' libraries for THIS compiler."
+  (ignore this)
   (require 'compile)
   (require 'choice-program))
 
-(cl-defmethod config-prop-set ((this script-flex-compiler)
-					   prop val)
+(cl-defmethod config-prop-set ((this script-flex-compiler) prop val)
+  "Set property PROP to VAL on THIS compiler.
+In addition, set the `arguments' `config-prop' to nil."
   (setf (slot-value this 'arguments) nil)
   (cl-call-next-method this prop val))
 
 (cl-defmethod flex-compiler-start-buffer ((this script-flex-compiler)
 					  start-type)
-  (let ((a (config-prop-by-name this 'start-directory)))
-   (cl-case start-type
-     (compile
-      (with-slots (config-file start-directory arguments) this
-	(let ((default-directory start-directory)
-	      (buffer-name (flex-compiler-buffer-name this))
-	      (cmd (concat config-file " "
-			   (mapconcat #'identity arguments " ")))
-	      reset-target
-	      buf)
-	  (with-current-buffer
-	      (setq buf (compilation-start cmd nil
-					   #'(lambda (mode-name)
-					       buffer-name))))
-	  buf)))
-     (run (error "No defined run action for scripts")))))
+  "Return a new buffer for THIS compiler with a processing compilation.
+See the `single-buffer-flex-compiler' implementation of
+`flex-compiler-start-buffer' for more information and START-TYPE."
+  (cl-case start-type
+    (compile
+     (with-slots (config-file start-directory arguments) this
+       (let ((default-directory start-directory)
+	     (buffer-name (flex-compiler-buffer-name this))
+	     (cmd (concat config-file " "
+			  (mapconcat #'identity arguments " ")))
+	     buf)
+	 (with-current-buffer
+	     (setq buf
+		   (compilation-start cmd nil #'(lambda (_) buffer-name))))
+	 buf)))
+    (run (error "No defined run action for scripts"))))
 
 (flex-compile-manager-register flex-compile-manage-inst (script-flex-compiler))
 

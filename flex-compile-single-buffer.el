@@ -1,10 +1,13 @@
-;;; flex-compile-single-buffer.el --- compiler for single buffer management  -*- lexical-binding: t; -*-
+;;; flex-compile-single-buffer.el --- Compiler for single buffer management  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
 ;; Keywords: compilation integration processes
+;; URL: https://github.com/plandes/flex-compile
+;; Package-Requires: ((emacs "26.1"))
+;; Package-Version: 0
 
 ;; This file is not part of GNU Emacs.
 
@@ -43,22 +46,30 @@
 	   (const :tag "Next Frame Otherwise Display" next-frame-display)
 	   (const :tag "Next Frame Skip Switch" next-frame-skip-switch)
 	   (const :tag "Next Frame Skip Display" next-frame-skip-display)
-	   (const :tag "Never" never)))
+	   (const :tag "Never" never))
+  "Customize system's metadata for options displaying the single buffer.")
 
 (defcustom flex-compile-single-buffer-display-buffer-new-mode
   'next-frame-display
   "How to show/switch a new \(not yet created) compilation buffer.
+
 `Switch to Buffer' means to first pop then switch to the buffer.
+
 `Display Buffer' means to show the buffer in a different
 window (see `display-buffer').
+
 `Next Frame Otherwise Switch' means to use the next frame if
 there are multiple frames, otherwise pop and switch to the buffer.
+
 `Next Frame Otherwise Display' means to use the next frame if
 there are multiple frames, otherwise show buffer.
+
 `Next Frame Skip Switch' means to do nothing there are
 multiple frames, otherwise pop and switch to the buffer.
+
 `Next Frame Skip Display' means to do nothing there are multiple
 frames, otherwise display the buffer.
+
 `Never' means to never show the buffer."
   :type flex-compile-single-buffer-display-mode-options
   :group 'flex-compile)
@@ -83,6 +94,8 @@ A time out property that represents number of seconds to wait for something.
 No time out \(nil) means to wait indefinitly.")
 
 (cl-defmethod config-prop-read ((this config-timeout-prop))
+  "Read a number in seconds to wait for something to happen.
+THIS is the object instance."
   (with-slots (history description prompt) this
     (let* ((prompt (format "%s or RET for none: " prompt))
 	   (default (config-prop-default-input this))
@@ -124,6 +137,7 @@ If this is an integer, wait the value in seconds and then kill."))
 
 (cl-defmethod initialize-instance ((this single-buffer-flex-compiler)
 				   &optional slots)
+  "Initialize instance THIS with arguments SLOTS."
   (let* ((choices (->> (cdr flex-compile-single-buffer-display-mode-options)
 		       (-map #'(lambda (elt)
 				 `(,(nth 2 elt) . ,(car (last elt)))))
@@ -153,26 +167,30 @@ If this is an integer, wait the value in seconds and then kill."))
   (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-buffer-name ((this single-buffer-flex-compiler))
-  "Return the name of the single buffer."
+  "Return the name of the single buffer for THIS compiler."
   (format "*%s*" (slot-value this 'buffer-name)))
 
 (cl-defmethod flex-compiler-buffer ((this single-buffer-flex-compiler))
-  "Return non-nil if there exists buffer for this compiler and is live."
+  "Return non-nil if there exists a buffer for THIS compiler and is live."
   (get-buffer (flex-compiler-buffer-name this)))
 
 (cl-defmethod flex-compiler-start-buffer ((this single-buffer-flex-compiler)
 					  start-type)
-  "Return a new buffer with a processing compilation.
+  "Return a new buffer for THIS compiler with a processing compilation.
 START-TYPE is either symbols `compile', `run', `clean' depending
 if invoked by `flex-compiler-compile' or `flex-compiler-run'."
+  (ignore this start-type)
   (config-persistent--unimplemented this "start-buffer"))
 
 (cl-defmethod flex-compiler-display-modes ((this single-buffer-flex-compiler))
-  "Return an alist with keys `new' and `exists'.
-This implementation returns
-`flex-compile-single-buffer-display-buffer-new-mode' and
-`flex-compile-single-buffer-display-buffer-exists-mode'
-respectfully."
+  "Return an alist with keys `new' and `exists' for THIS compiler.
+
+This implementation returns:
+  - `flex-compile-single-buffer-display-buffer-new-mode', and
+  - `flex-compile-single-buffer-display-buffer-exists-mode'
+in the following form:
+  ((newp . <t if the buffer is new and jsut created, nil otherwise>
+   (buffer . <the of single buffer object>)))"
   (with-slots (buffer-new-mode buffer-exists-mode) this
     (let ((new-mode (if (eq buffer-new-mode 'global)
 			flex-compile-single-buffer-display-buffer-new-mode
@@ -220,7 +238,13 @@ MODE is either `flex-compile-single-buffer-display-buffer-new-mode' or
 
 (cl-defmethod flex-compiler-display-buffer ((this single-buffer-flex-compiler)
 					    &optional compile-def)
-  "Display buffer based on values returned from `flex-compiler-display-modes'."
+  "Display buffer based on values returned from `flex-compiler-display-modes'.
+
+COMPILE-DEF is an alias in the following form:
+  ((newp . <t if the buffer is new and jsut created, nil otherwise>
+   (buffer . <the of single buffer object>)))
+
+THIS is the object instance."
   (if (null compile-def)
       (setq compile-def
 	    (flex-compiler-single-buffer--flex-comp-def this 'compile nil)))
@@ -243,6 +267,16 @@ MODE is either `flex-compile-single-buffer-display-buffer-new-mode' or
 
 (cl-defmethod flex-compiler-single-buffer--flex-comp-def
   ((this single-buffer-flex-compiler) start-type startp)
+  "Return a default compilation definition for THIS compiler.
+
+START-TYPE is either symbols `compile', `run', `clean' depending
+  if invoked by `flex-compiler-compile' or `flex-compiler-run'.
+
+If STARTP is non-nil, start the buffer using `flex-compiler-start-buffer'.
+
+Return an alist in the following form:
+  ((newp . <t if the buffer is new and jsut created, nil otherwise>
+   (buffer . <the of single buffer object>)))"
   (let* ((has-buffer-p (flex-compiler-buffer this))
 	 (buf (flex-compiler-buffer this)))
     (when (or startp (null buf))
@@ -253,12 +287,15 @@ MODE is either `flex-compile-single-buffer-display-buffer-new-mode' or
       (buffer . ,buf))))
 
 (cl-defmethod flex-compiler-compile ((this single-buffer-flex-compiler))
+  "Invoke the compile functionality of THIS compiler."
   (flex-compiler-single-buffer--flex-comp-def this 'compile t))
 
 (cl-defmethod flex-compiler-run ((this single-buffer-flex-compiler))
+  "Invoke the run functionality of THIS compiler."
   (flex-compiler-single-buffer--flex-comp-def this 'run t))
 
 (cl-defmethod flex-compiler-clean ((this single-buffer-flex-compiler))
+  "Invoke the clean functionality of THIS compiler."
   (let ((compile-def
 	 (flex-compiler-single-buffer--flex-comp-def this 'clean t)))
     (with-slots (kill-buffer-clean) this

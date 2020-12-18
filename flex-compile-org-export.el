@@ -1,10 +1,13 @@
-;;; flex-compile-org-export.el --- convenience compiler that evaluates Emacs Lisp  -*- lexical-binding: t; -*-
+;;; flex-compile-org-export.el --- Convenience compiler that evaluates Emacs Lisp  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
 ;; Keywords: interactive function command compile flexible processes
+;; URL: https://github.com/plandes/flex-compile
+;; Package-Requires: ((emacs "26.1"))
+;; Package-Version: 0
 
 ;; This file is not part of GNU Emacs.
 
@@ -56,9 +59,8 @@ then shows the output in the browser.  Only HTML is currently supported.")
 
 (cl-defmethod initialize-instance ((this org-export-flex-compiler)
 				   &optional slots)
-  (let* ((fn '(lambda (this compiler default prompt history)
-		(split-string (read-string prompt nil history default))))
-	 (choices '(("Plain HTML" . org-html-export-to-html)
+  "Initialize instance THIS with arguments SLOTS."
+  (let* ((choices '(("Plain HTML" . org-html-export-to-html)
 		    ("Bootstrap HTML" . org-twbs-export-to-html)))
 	 (props (list (config-choice-description-prop
 		       :object-name 'export-fn
@@ -85,10 +87,13 @@ then shows the output in the browser.  Only HTML is currently supported.")
   (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-load-libraries ((this org-export-flex-compiler))
+  "Load `ox-twbs' and `choice-program-complete' libraries for THIS compiler."
+  (ignore this)
   (require 'ox-twbs)
   (require 'choice-program-complete))
 
 (cl-defmethod config-prop-set ((this org-export-flex-compiler) prop val)
+  "Set property PROP to VAL for THIS compiler."
   (if (eq (config-prop-name prop) 'config-file)
       ;; when the file configuration file (Org mode file) changes, we must
       ;; mirror the output directory for default behavior; then allow the user
@@ -99,18 +104,26 @@ then shows the output in the browser.  Only HTML is currently supported.")
   (cl-call-next-method this prop val))
 
 (cl-defmethod flex-compiler-org-export-source ((this org-export-flex-compiler))
-  "Return the generated target file by the Org system."
+  "Return the generated target file by the Org system for THIS compiler."
   (with-slots (config-file) this
     (replace-regexp-in-string "\.org$" ".html" config-file)))
 
 (cl-defmethod flex-compiler-org-export-dest ((this org-export-flex-compiler))
-  "Return the user desired location of the output file."
+  "Return the user desired location of the output file.
+THIS is the object instance."
   (with-slots (config-file output-directory) this
     (let* ((src (flex-compiler-org-export-source this))
 	   (dst (file-name-nondirectory src)))
       (concat (file-name-as-directory output-directory) dst))))
 
 (cl-defmethod flex-compiler-compile ((this org-export-flex-compiler))
+  "Export the Org mode file and open the resulting file in a browser.
+
+By default, this uses `org-twbs-export-to-html' set on the `export-fn' slot.
+
+Todo: make this OS independent as currently the browser only opens on OSX.
+
+THIS is the object instance."
   (config-prop-entry-set-required this)
   (if nil
       (shell-command "osascript -e 'tell application \"Emacs\" to activate'"))
@@ -127,6 +140,7 @@ then shows the output in the browser.  Only HTML is currently supported.")
 	(funcall open-fn dst)))))
 
 (cl-defmethod flex-compiler-clean ((this org-export-flex-compiler))
+  "Invoke the clean functionality of THIS compiler."
   (config-prop-entry-set-required this)
   (with-slots (config-file) this
     (let ((html-file (flex-compiler-org-export-dest this)))

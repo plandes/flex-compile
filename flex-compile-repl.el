@@ -1,10 +1,13 @@
-;;; flex-compile-repl.el --- a REPL based compiler  -*- lexical-binding: t; -*-
+;;; flex-compile-repl.el --- A REPL based compiler  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
 ;; Keywords: compilation integration processes
+;; URL: https://github.com/plandes/flex-compile
+;; Package-Requires: ((emacs "26.1"))
+;; Package-Version: 0
 
 ;; This file is not part of GNU Emacs.
 
@@ -75,36 +78,36 @@ The history variable for the eval form history."))
   :documentation "Compiles by evaluating expressions in the REPL.")
 
 (cl-defmethod initialize-instance ((this repl-flex-compiler) &optional slots)
-  (let* ((fn '(lambda (this default prmopt history)
-		(split-string (read-string prompt nil history default))))
-	 (props (list (config-boolean-prop :object-name 'output-clear
-					   :prop-entry this
-					   :prompt "Clear output on compile"
-					   :input-type 'toggle)
-		      (config-boolean-prop :object-name 'prompt-kill-repl-buffer
-					   :prop-entry this
-					   :prompt "Confirm REPL buffer kills"
-					   :input-type 'toggle))))
+  "Initialize instance THIS with arguments SLOTS."
+  (let ((props (list (config-boolean-prop :object-name 'output-clear
+					  :prop-entry this
+					  :prompt "Clear output on compile"
+					  :input-type 'toggle)
+		     (config-boolean-prop :object-name 'prompt-kill-repl-buffer
+					  :prop-entry this
+					  :prompt "Confirm REPL buffer kills"
+					  :input-type 'toggle))))
     (setq slots (plist-put slots
 			   :props (append (plist-get slots :props) props))))
   (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-repl-start ((this repl-flex-compiler))
-  "Start the REPL."
+  "Start the REPL using THIS compiler."
   (config-persistent--unimplemented this "start-repl"))
 
 (cl-defmethod flex-compiler-repl-compile ((this repl-flex-compiler) file)
-  "Invoked by `compile' type messages from the compiler manager.
+  "Invoked by `compile' type messages from THIS compiler.
 
 FILE gets evaluated by the compiler either as a IPC communication or by direct
 insertion in the REPL buffer.
 
 This method is meant to allow for REPL compiles \(really some kind of
 evaluation), while allowing base class compilation features.."
+  (ignore this file)
   (config-persistent--unimplemented this "repl-compile"))
 
 (cl-defmethod flex-compiler-wait-for-buffer ((this repl-flex-compiler))
-  "Wait for the compilation to start.
+  "Wait for the compilation to start using THIS compiler.
 
 The caller raises and error if it doesn't start in time."
   (with-slots (repl-buffer-start-timeout) this
@@ -120,21 +123,22 @@ The caller raises and error if it doesn't start in time."
 	   (sit-for 1)))))))
 
 (cl-defmethod flex-compiler-repl-running-p ((this repl-flex-compiler))
-  "Return whether or not the REPL is currently running."
+  "Return whether or not THIS REPL is currently running."
   (not (null (flex-compiler-buffer this))))
 
 (cl-defmethod flex-compiler-repl-assert-running ((this repl-flex-compiler))
-  "Raise an error if the REPL IS running."
+  "Raise an error if THIS REPL *is* running."
   (unless (flex-compiler-repl-running-p this)
     (error "The REPL for %s isn't started" (config-entry-name this))))
 
 (cl-defmethod flex-compiler-repl-assert-not-running ((this repl-flex-compiler))
-  "Raise an error if the REPL isn't running."
+  "Raise an error if THIS REPL isn't running."
   (if (flex-compiler-repl-running-p this)
       (error "Compiler %s is already running"
 	     (config-entry-name this))))
 
 (cl-defmethod flex-compiler-repl--run-start ((this repl-flex-compiler))
+  "Start THIS compiler's REPL if it isn't already."
   (with-slots (repl-buffer-start-timeout start-directory) this
     (let ((timeout repl-buffer-start-timeout)
 	  buf)
@@ -150,23 +154,23 @@ The caller raises and error if it doesn't start in time."
 
 (cl-defmethod flex-compiler-send-input ((this repl-flex-compiler)
 					&optional command)
-  "Send input/commands to the REPL."
+  "Send a COMMAND \(input) to THIS compiler's REPL."
+  (ignore this)
   (goto-char (point-max))
   (insert command)
   (comint-send-input))
 
 (cl-defmethod flex-compiler-run-command ((this repl-flex-compiler)
 					 &optional command)
-  "Send commands to the REPL to evaluate an expression or start a process."
+  "Send COMMAND to THIS compiler's REPL to evaluate or start a process."
   (flex-compiler-repl-assert-running this)
-  (let ((buf (flex-compiler-buffer this))
-	pos win)
+  (let ((buf (flex-compiler-buffer this)))
     (with-current-buffer buf
       (if command
 	  (flex-compiler-send-input this command)))))
 
 (cl-defmethod flex-compiler-buffer ((this repl-flex-compiler))
-  "Find the first REPL buffer found in the buffer list."
+  "Find THIS compiler's first REPL buffer found in the buffer list."
   (with-slots (repl-buffer-regexp) this
     (cl-block found-buf
       (dolist (buf (buffer-list))
@@ -175,7 +179,7 @@ The caller raises and error if it doesn't start in time."
 	    (cl-return-from found-buf buf)))))))
 
 (cl-defmethod flex-compiler-kill-repl ((this repl-flex-compiler))
-  "Kill the compiler's REPL."
+  "Kill THIS compiler's REPL."
   (with-slots (derived-buffer-names prompt-kill-repl-buffer) this
     (let ((bufs (append (mapcar 'get-buffer derived-buffer-names)
 			(cons (flex-compiler-buffer this) nil)))
@@ -192,6 +196,9 @@ The caller raises and error if it doesn't start in time."
 	       (capitalize (config-entry-name this)) count))))
 
 (cl-defmethod flex-compiler-start-buffer ((this repl-flex-compiler) start-type)
+  "Return a new buffer for THIS compiler with a processing compilation.
+START-TYPE is either symbols `compile', `run', `clean' depending
+  if invoked by `flex-compiler-compile' or `flex-compiler-run'."
   (config-prop-entry-set-required this)
   (with-slots (config-file output-clear) this
     (let ((runningp (flex-compiler-repl-running-p this)))
@@ -217,16 +224,18 @@ The caller raises and error if it doesn't start in time."
 		 'killed-buffer))))))
 
 (cl-defmethod flex-compiler-eval-initial-at-point ((this repl-flex-compiler))
-  "Return the expression at or right behind the current point."
-  nil)
+  "Return the expression at or right before the point for THIS compiler."
+  (ignore this))
 
 (cl-defmethod flex-compiler-eval-form-impl ((this repl-flex-compiler) form)
-  "Evaluate the FORM and return the response of the REPL."
+  "Evaluate the FORM and return the response of the REPL for THIS compiler."
+  (ignore this form)
   (config-persistent--unimplemented this "eval-form-impl"))
 
 (cl-defmethod flex-compiler-query-read-form ((this repl-flex-compiler)
 					     no-input-p)
-  "Read a form, meaningful for the compiler, from the user."
+  "Read a form, meaningful for THIS compiler from the user.
+NO-INPUT-P, if non-nil, use the symbolic expression at the current point."
   (with-slots (form-history) this
     (let ((init (flex-compiler-eval-initial-at-point this)))
       (if no-input-p
@@ -235,8 +244,7 @@ The caller raises and error if it doesn't start in time."
 
 (cl-defmethod flex-compiler-evaluate-form ((this repl-flex-compiler)
 					   &optional form)
-  "Return the evaluation form.
-
+  "Return the evaluation of FORM for THIS compiler.
 See the `:eval-form' slot."
   (let ((res (flex-compiler-eval-form-impl this form)))
     (if (stringp res)

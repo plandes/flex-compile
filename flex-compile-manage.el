@@ -1,10 +1,13 @@
-;;; flex-compile-manage.el --- manager for flexible compilers  -*- lexical-binding: t; -*-
+;;; flex-compile-manage.el --- Manager for flexible compilers  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
 ;; Keywords: compilation integration processes
+;; URL: https://github.com/plandes/flex-compile
+;; Package-Requires: ((emacs "26.1"))
+;; Package-Version: 0
 
 ;; This file is not part of GNU Emacs.
 
@@ -57,17 +60,18 @@ include `make', `script', `xml-validate', `org-mode', `python', `clojure', and
 is set.")
 
 (cl-defmethod initialize-instance ((this flex-compile-manager) &optional slots)
+  "Initialize instance THIS with arguments SLOTS."
   (with-slots (entries) this
     (setq entries (list (no-op-flex-compiler nil))))
   (cl-call-next-method this slots))
 
 (cl-defmethod config-persistable-load ((this flex-compile-manager))
+  "Restore the state of THIS instance persistable object."
   (with-slots (entries) this
     (let ((old-entries entries)
 	  (old-emap (mapcar #'(lambda (entry)
 				(cons (config-entry-name entry) entry))
-			    entries))
-	  new-entries)
+			    entries)))
       (cl-call-next-method this)
       (let ((new-emap (mapcar #'(lambda (entry)
 				  (cons (config-entry-name entry) entry))
@@ -88,11 +92,15 @@ is set.")
 	(setf (slot-value compiler 'manager) this)))))
 
 (cl-defmethod config-manager-entry-default-name ((this flex-compile-manager))
+  "Return `flexible-compiler'.
+THIS is the object instance."
+  (ignore this)
   "flexible-compiler")
 
 (cl-defmethod flex-compile-manager-register ((this flex-compile-manager)
 					     compiler)
-  "Register a compiler instance with the manager \(compilation framework)."
+  "Register COMPILER instance with the manager \(compilation framework).
+THIS is the object instance."
   (with-slots (entries) this
     (setq entries
 	  (cl-delete compiler entries
@@ -104,31 +112,40 @@ is set.")
     (message "Registered %s compiler" (config-entry-name compiler))))
 
 (cl-defmethod config-manager-entry-names ((this flex-compile-manager))
-  "Return the names of all registered compilers."
+  "Return the names of all registered compilers.
+THIS is the object instance."
   (with-slots (entries) this
     (mapcar #'config-entry-name entries)))
 
 (cl-defmethod flex-compile-manager-active ((this flex-compile-manager))
-  "Return the currently selected or active manager."
+  "Return the currently selected or active manager.
+THIS is the object instance."
   (car (slot-value this 'entries)))
 
-(cl-defmethod config-manager-activate ((this flex-compile-manager) name)
-  (let ((compiler (cl-call-next-method this name)))
+(cl-defmethod config-manager-activate ((this flex-compile-manager) criteria)
+  "Switch to a `flex-compiler’ in THIS manager.
+
+CRITERIA, see the `config-manager’ method ‘config-manager-activate’."
+  (let ((compiler (cl-call-next-method this criteria)))
     (message "Active compiler is now %s" (config-entry-name compiler))
     compiler))
 
 (cl-defmethod flex-compile-manager-assert-ready ((this flex-compile-manager))
-  "Make sure the active/selected compiler is ready and libraries loaded."
+  "Make sure the active/selected compiler is ready and libraries loaded.
+THIS is the object instance."
   (let ((active (flex-compile-manager-active this)))
     (flex-compiler-load-libraries active)))
 
 (cl-defmethod config-manager-remove-entry ((this flex-compile-manager) entry)
-  "Disallow entry deletion since it makes no sense for this implementation."
+  "Disallow ENTRY deletion since it is nonsensical for this implementation.
+THIS is the object instance."
+  (ignore this entry)
   (config-persistent--unimplemented this "remove-entry"))
 
 (cl-defmethod flex-compile-clear ((this flex-compile-manager))
   "Clear all compiler's state.
-This is done by simply re-instantiating all current registered compilers."
+This is done by simply re-instantiating all current registered compilers.
+THIS is the object instance."
   (let ((entries (slot-value this 'entries)))
     (setf (slot-value this 'entries) nil)
     (dolist (compiler entries)

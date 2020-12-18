@@ -1,4 +1,4 @@
-;;; flex-compiler.el --- user interactive interface to compilers  -*- lexical-binding: t; -*-
+;;; flex-compiler.el --- User interactive interface to compilers  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 

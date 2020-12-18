@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+Major refactoring: cleaned up compilation and *package-lint* warnings.
+
+### Changed
+- Upgraded to Emacs [zenbuild].
+- Compat with recent *flycheck* and `package-lint`.
+- Minor bug fixes.
+- Script compiler now allows no arguments.
+
 
 ## [0.6] - 2020-05-06
 ### Added

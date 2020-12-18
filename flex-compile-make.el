@@ -1,10 +1,13 @@
-;;; flex-compile-make.el --- compile functions  -*- lexical-binding: t; -*-
+;;; flex-compile-make.el --- Compile functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
 ;; Keywords: make compile flexible processes
+;; URL: https://github.com/plandes/flex-compile
+;; Package-Requires: ((emacs "26.1"))
+;; Package-Version: 0
 
 ;; This file is not part of GNU Emacs.
 
@@ -65,7 +68,9 @@ property, use `\\C-u 0 \\C-u'.
 When setting the configuration file the target property is unset.")
 
 (cl-defmethod initialize-instance ((this make-flex-compiler) &optional slots)
+  "Initialize THIS instance using SLOTS as initial values."
   (let* ((fn #'(lambda (this compiler &rest slots)
+		 (ignore slots)
 		 (flex-compiler-makefile-read compiler this)))
 	 (props (list (config-eval-prop :object-name 'target
 					:prompt "Target"
@@ -89,11 +94,14 @@ When setting the configuration file the target property is unset.")
   (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-load-libraries ((this make-flex-compiler))
+  "Load library `compile' for THIS compiler."
+  (ignore this)
   (require 'compile))
 
-(cl-defmethod flex-compiler-run-make ((this make-flex-compiler) &optional target)
-  "Invoke a make compilation in an async inferior buffer.
-
+(cl-defmethod flex-compiler-run-make ((this make-flex-compiler)
+				      &optional target)
+  "Invoke a make compilation in an async inferior buffer for THIS compiler.
+TARGET is the make file target to run/satisfy.
 This is done by creating a command with `make' found in the executable path."
   (let* ((makefile (slot-value this 'config-file))
 	 (dir (file-name-directory makefile))
@@ -108,6 +116,7 @@ This is done by creating a command with `make' found in the executable path."
     (compile command)))
 
 (cl-defmethod flex-compiler-makefile-targets ((this make-flex-compiler))
+  "Return all targets supported by the set makefile on THIS compiler."
   (let* ((makefile (slot-value this 'config-file))
 	 (dir (file-name-directory makefile))
 	 targets)
@@ -125,6 +134,12 @@ This is done by creating a command with `make' found in the executable path."
 			   (member elt '("run" "clean")))))))
 
 (cl-defmethod flex-compiler-makefile-read ((this make-flex-compiler) prop)
+  "Read target used invoke a make compilation using THIS compiler.
+
+PROP is the `config-eval-prop' instance used to configure the run target.
+
+See the class's `initialize-instance', which is how this method is gets
+invoked."
   (config-prop-entry-set-required this)
   (let ((targets (flex-compiler-makefile-targets this))
 	(history (slot-value prop 'history))
@@ -135,13 +150,20 @@ This is done by creating a command with `make' found in the executable path."
 		      (if (equal none elt) nil elt))))))
 
 (cl-defmethod config-prop-set ((this make-flex-compiler) prop val)
-  ;; reset the target when changing the file
+  "Set property PROP to VAL on THIS compiler.
+
+This resets the target when changing the file."
   (when (eq (config-prop-name prop) 'config-file)
     (setf (slot-value this 'target) nil))
   (cl-call-next-method this prop val))
 
 (cl-defmethod config-prop-entry-configure ((this make-flex-compiler)
 					   config-options)
+  "Special behavior when configuring THIS compiler.
+
+CONFIG-OPTIONS:
+  - when -1 (using \\[universal-argument] with 0) prompt for the target
+  - when nil short cut to setting the make target"
   (->> (cond ((eq config-options -1) nil) ; unversal arg with 0
 	     ;; shortcut to setting the make target
 	     ((null config-options) '(prop-name target))
@@ -150,6 +172,9 @@ This is done by creating a command with `make' found in the executable path."
 
 (cl-defmethod flex-compiler-start-buffer ((this make-flex-compiler)
 					  start-type)
+  "Return a new buffer for THIS compiler with a processing compilation.
+See the `single-buffer-flex-compiler' implementation of
+`flex-compiler-start-buffer' for more information and START-TYPE."
   (with-slots (target run-target start-directory) this
     (let ((default-directory start-directory))
       (cl-case start-type

@@ -1,10 +1,13 @@
-;;; flex-compile-manage.el --- manager for flexible compilers  -*- lexical-binding: t; -*-
+;;; flex-compile-base.el --- Manager for flexible compilers  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
 ;; Keywords: compilation integration processes
+;; URL: https://github.com/plandes/flex-compile
+;; Package-Requires: ((emacs "26.1"))
+;; Package-Version: 0
 
 ;; This file is not part of GNU Emacs.
 
@@ -49,16 +52,19 @@ Instances of this class are also persistable and their state is stored in a
 configuration file.")
 
 (cl-defmethod initialize-instance ((this flex-compiler) &optional slots)
+  "Initialize instance THIS with arguments SLOTS."
   (if (null (plist-get slots :description))
       (setq slots (plist-put slots :description
 			    (capitalize (plist-get slots :object-name)))))
   (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-load-libraries ((this flex-compiler))
-  "Call back for to load and require libraries needed by the compiler.")
+  "Call back for to load and require libraries needed by THIS compiler."
+  (ignore this))
 
 (cl-defmethod flex-compiler-save-config ((this flex-compiler))
-  "Tell the compiler manager to persist the configuration of all compilers."
+  "Tell the compiler manager to persist the configuration of all compilers.
+THIS is the object instance."
   (with-slots (manager) this
     (unless manager
       (error "No manager set in compiler: %S"
@@ -68,44 +74,53 @@ configuration file.")
 
 (cl-defmethod flex-compiler-reset-state ((this flex-compiler))
   "Reset all persistable slots to initial state.
-This implementation sets all slots to nil."
+This implementation sets all slots to nil.
+THIS is the object instance."
   (config-persistent-reset this))
 
 (cl-defmethod flex-compiler-run ((this flex-compiler))
-  "Invoke the run functionality of the compiler."
+  "Invoke the run functionality of the compiler.
+THIS is the object instance."
   (config-persistent--unimplemented this "run"))
 
 (cl-defmethod flex-compiler-compile ((this flex-compiler))
-  "Invoke the compile functionality of the compiler."
+  "Invoke the compile functionality of the compiler.
+THIS is the object instance."
   (config-persistent--unimplemented this "compile"))
 
 (cl-defmethod flex-compiler-clean ((this flex-compiler))
-  "Invoke the clean functionality of the compiler."
+  "Invoke the clean functionality of the compiler.
+THIS is the object instance."
   (config-persistent--unimplemented this "clean"))
 
 (cl-defmethod config-entry-set-name ((this flex-compiler) name)
-  "Disallow renaming from the `config-manage-mode' as it makes no sense."
+  "Disallow renaming with NAME from `config-manage-mode' as it is nonsensical.
+THIS is the object instance."
+  (ignore this name)
   (config-persistent--unimplemented this "set-name"))
 
 (cl-defmethod flex-compiler-display-buffer ((this flex-compiler)
 					    &optional compile-def)
-  "Called to display the compilation buffer \(if any).
+  "Called to display the compilation buffer \(if any) for THIS compiler.
 
 COMPILE-DEF is the compilation definition, which is usually an
 alist of having an alist with `newp' indicating if the buffer is
 new and `buffer' of the buffer just created.  This is also called
 for clean invocations, in which case the value is nil.  The
-value (when non-nil) is dependent on the flex-compiler.")
+value (when non-nil) is dependent on the flex-compiler."
+  (ignore this compile-def))
 
 (cl-defmethod flex-compiler-display-buffer-alist ((this flex-compiler))
-  "Return a value that will be bound to `display-buffer-alist'.
+  "Return a value that will be bound to `display-buffer-alist' in THIS compiler.
 
 This suggests to Emacs libraries to not display buffers via
 `display-buffer'.  This is so a `flex-compiler' can explictly
 control buffer display with `flex-compiler-display-buffer' \(if
 it chooses).."
+  (ignore this)
   ;; `list' takes any number of arguments and has no side effects
   '((list . (list))))
+
 
 
 (defclass no-op-flex-compiler (flex-compiler)
@@ -113,16 +128,20 @@ it chooses).."
   :documentation "A no-op compiler for the disabled state.")
 
 (cl-defmethod initialize-instance ((this no-op-flex-compiler) &optional slots)
+  "Initialize instance THIS with arguments SLOTS."
   (setq slots (plist-put slots :object-name "disable")
 	slots (plist-put slots :description "Do nothing"))
   (cl-call-next-method this slots))
 
 (cl-defmethod config-persistent--unimplemented ((this no-op-flex-compiler)
 						method)
+  "Message that THIS compiler is disabled for persistance \(if tried).
+METHOD is the EIEIO method called that has no implementation."
+  (ignore this)
   (message "Compiler is disabled for %S" method))
 
-(cl-defmethod config-prop-entry-configure ((this no-op-flex-compiler)
-					   config-options)
+(cl-defmethod config-prop-entry-configure ((this no-op-flex-compiler) _)
+  "Raise error for THIS no-op implementation."
   (config-persistent--unimplemented this "configure"))
 
 (provide 'flex-compile-base)

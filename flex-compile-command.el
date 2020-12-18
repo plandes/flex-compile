@@ -1,10 +1,13 @@
-;;; flex-compile-command.el --- convenience compiler that evaluates Emacs Lisp  -*- lexical-binding: t; -*-
+;;; flex-compile-command.el --- Convenience compiler that evaluates Emacs Lisp  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
 ;; Keywords: interactive function command compile flexible processes
+;; URL: https://github.com/plandes/flex-compile
+;; Package-Requires: ((emacs "26.1"))
+;; Package-Version: 0
 
 ;; This file is not part of GNU Emacs.
 
@@ -38,31 +41,35 @@
   :documentation "Property that prompts for a selection of a list of choices.")
 
 (cl-defmethod initialize-instance ((this config-sexp-prop) &optional slots)
+  "Initialize instance THIS with arguments SLOTS."
   (setq slots (plist-put slots :transient t))
   (cl-call-next-method this slots))
 
 (cl-defmethod config-prop-read ((this config-sexp-prop))
-  (list
-   (cl-flet ((read-sexp
-	      (prompt history no-read-p)
-	      (let (sexp ret)
-		(condition-case err
-		    (progn
-		      (setq sexp (thing-at-point 'sexp))
-		      ;; read as sexp and then back to string to make
-		      ;; into one line
-		      (if sexp (setq sexp (prin1-to-string (read sexp)))))
-		  (t))
-		(read (read-string prompt sexp history)))))
-     (with-slots (history choices prompt) this
-       (let* ((cmd (read-command (format "%s (or RET for sexp): " prompt)))
-	      (sexp-prompt (format "%s: " prompt)))
-	 (if (eq '## cmd)
-	     (let ((func (read-sexp sexp-prompt history nil)))
-	       (eval `(defun flex-compiler-function-invoke-command ()
-			(interactive)
-			,func)))
-	   cmd))))))
+  "Read the user input for the property.
+The default reads a string using ‘config-prop-default’ and
+‘config-prop-prompt’ with the history slot.
+THIS is the instance."
+  (list (cl-flet ((read-sexp
+		   (prompt history)
+		   (let (sexp)
+		     (condition-case nil
+			 (progn
+			   (setq sexp (thing-at-point 'sexp))
+			   ;; read as sexp and then back to string to make
+			   ;; into one line
+			   (if sexp (setq sexp (prin1-to-string (read sexp)))))
+		       (t))
+		     (read (read-string prompt sexp history)))))
+	  (with-slots (history choices prompt) this
+	    (let* ((cmd (read-command (format "%s (or RET for sexp): " prompt)))
+		   (sexp-prompt (format "%s: " prompt)))
+	      (if (eq '## cmd)
+		  (let ((func (read-sexp sexp-prompt history)))
+		    (eval `(defun flex-compiler-function-invoke-command ()
+			     (interactive)
+			     ,func)))
+		cmd))))))
 
 
 ;;; func file compiler
@@ -76,7 +83,9 @@ This \"compiler\" is more of a convenience to invoke an Emacs Lisp function or
 form.  This is handy for functions that you end up invoking over and over with
 `M-x` (i.e. `cider-test-run-ns-tests`).  See [motivation](#motivation).")
 
-(cl-defmethod initialize-instance ((this command-flex-compiler) &optional slots)
+(cl-defmethod initialize-instance ((this command-flex-compiler)
+				   &optional slots)
+  "Initialize instance THIS with arguments SLOTS."
   (let ((props (list (config-sexp-prop :object-name 'sexp
 				       :prop-entry this
 				       :prompt "Expression"
@@ -87,10 +96,13 @@ form.  This is handy for functions that you end up invoking over and over with
   (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-display-buffer-alist ((this command-flex-compiler))
-  "Return a do-nothing configuration to allow the function to display bufferes."
-  nil)
+  "Return a do-nothing configuration to allow the function to display bufferes.
+THIS is the object instance."
+  (ignore this))
 
 (cl-defmethod flex-compiler-compile ((this command-flex-compiler))
+  "Evalute the function or symbolic expression stored in THIS instance.
+The result of the evaulation is given to `message' and returned."
   (unless (slot-value this 'sexp)
     (config-prop-entry-configure this nil))
   (with-slots (sexp) this
