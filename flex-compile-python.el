@@ -1,4 +1,4 @@
-;;; flex-compile-python.el --- python compile functions
+;;; flex-compile-python.el --- python compile functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 

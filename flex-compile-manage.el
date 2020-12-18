@@ -1,4 +1,4 @@
-;;; flex-compile-manage.el --- manager for flexible compilers
+;;; flex-compile-manage.el --- manager for flexible compilers  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 

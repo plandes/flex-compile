@@ -1,4 +1,4 @@
-;;; flex-compile-single-buffer.el --- compiler for single buffer management
+;;; flex-compile-single-buffer.el --- compiler for single buffer management  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 

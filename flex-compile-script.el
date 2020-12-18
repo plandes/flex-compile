@@ -1,4 +1,4 @@
-;;; flex-compile-script.el --- script compile functions
+;;; flex-compile-script.el --- script compile functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 

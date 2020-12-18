@@ -1,4 +1,4 @@
-;;; flex-compile-org-export.el --- convenience compiler that evaluates Emacs Lisp
+;;; flex-compile-org-export.el --- convenience compiler that evaluates Emacs Lisp  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 

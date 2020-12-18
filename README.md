@@ -2,7 +2,7 @@
 
 [![MELPA badge][melpa-badge]][melpa-link]
 [![MELPA stable badge][melpa-stable-badge]][melpa-stable-link]
-[![Travis CI Build Status][travis-badge]][travis-link]
+
 
 Run, evaluate and compile functionality for a variety of different languages
 and modes.  The specific "compilation" method is different across each add-on
@@ -390,7 +390,7 @@ GNU Lesser General Public License, Version 2.0
 [melpa-stable-link]: https://stable.melpa.org/#/flex-compile
 [melpa-badge]: https://melpa.org/packages/flex-compile-badge.svg
 [melpa-stable-badge]: https://stable.melpa.org/packages/flex-compile-badge.svg
-[travis-link]: https://travis-ci.org/plandes/flex-compile
-[travis-badge]: https://travis-ci.org/plandes/flex-compile.svg?branch=master
+[build-badge]: https://github.com/plandes/flex-compile/workflows/CI/badge.svg
+[build-link]: https://github.com/plandes/flex-compile/actions
 
 [buffer manage]: https://github.com/plandes/buffer-manage

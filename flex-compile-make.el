@@ -1,4 +1,4 @@
-;;; flex-compile-make.el --- compile functions
+;;; flex-compile-make.el --- compile functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 

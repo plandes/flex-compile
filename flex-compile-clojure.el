@@ -1,4 +1,4 @@
-;;; flex-compile-clojure.el --- clojure compile functions
+;;; flex-compile-clojure.el --- clojure compile functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 

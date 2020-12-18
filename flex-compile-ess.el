@@ -1,4 +1,4 @@
-;;; flex-compile-ess.el --- ess compile functions
+;;; flex-compile-ess.el --- ess compile functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 

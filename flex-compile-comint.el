@@ -1,4 +1,4 @@
-;;; flex-compile-comint.el --- comint compile functions
+;;; flex-compile-comint.el --- comint compile functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 

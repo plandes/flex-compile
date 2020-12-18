@@ -1,4 +1,4 @@
-;;; flex-compile-choice-program.el --- compile functions
+;;; flex-compile-choice-program.el --- compile functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 
@@ -51,6 +51,7 @@ Prompt and more easily invoke choice/action based programs using the
 
 (cl-defmethod initialize-instance ((this choice-program-flex-compiler)
 				   &optional slots)
+  "Initialize the THIS instance with SLOTS."
   (let* ((read-prog '(lambda (this compiler default prompt history)
 		       (flex-compiler-choice-program-read-program
 			compiler default prompt history)))
@@ -69,8 +70,8 @@ Prompt and more easily invoke choice/action based programs using the
 					:func read-action
 					:prop-entry this
 					:required t
-					:order 1
-					:input-type 'last))))
+					:input-type 'last
+					:order 1))))
     (setq slots (plist-put slots :object-name "choice-program")
 	  slots (plist-put slots :description "Choice program")
 	  slots (plist-put slots :buffer-name "Choice Program")
@@ -79,27 +80,36 @@ Prompt and more easily invoke choice/action based programs using the
 			   :props (append (plist-get slots :props) props))))
   (cl-call-next-method this slots))
 
-(cl-defmethod flex-compiler-load-libraries ((this choice-program-flex-compiler))
+(cl-defmethod flex-compiler-load-libraries
+  ((this choice-program-flex-compiler))
+  "Load the `choice-program' library.
+THIS is the instance."
   (require 'choice-program))
 
-(cl-defmethod flex-compiler-choice-program-map ((this choice-program-flex-compiler))
+(cl-defmethod flex-compiler-choice-program-map
+  ((this choice-program-flex-compiler))
+  "Return an alist of name to registered to `choice-program' instances.
+THIS is the instance."
   (->> (choice-program-instances)
        (-map '(lambda (this)
 		(cons (choice-program-name this) this)))))
 
-(cl-defmethod flex-compiler-choice-program-read-program ((this choice-program-flex-compiler)
-							 default prompt history)
+(cl-defmethod flex-compiler-choice-program-read-program
+  ((this choice-program-flex-compiler) default prompt history)
   "Read a `choice-program' from the user.
 DEFAULT, PROMPT and HISTORY are used for user input and come from
-the `flex-compile' framework."
+the `flex-compile' framework.
+THIS is the instance."
   (let ((choices (->> (flex-compiler-choice-program-map this)
 		      (-map #'car)
 		      (-map #'intern))))
     (choice-program-complete prompt choices t t nil history default)))
 
-(cl-defmethod flex-compiler-choice-program-program ((this choice-program-flex-compiler)
-						    &optional expectp)
-  "Read an action for the \(already) selected `choice-program'"
+(cl-defmethod flex-compiler-choice-program-program
+  ((this choice-program-flex-compiler) &optional expectp)
+  "Read an action for the \(already) selected `choice-program'.
+THIS is the instance.
+EXPECTP, if non-nil, raise an exception if the program slot is nil."
   (with-slots (program) this
     (if (and (null program) expectp)
 	(error "No program set"))

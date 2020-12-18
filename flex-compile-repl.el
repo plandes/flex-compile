@@ -1,4 +1,4 @@
-;;; flex-compile-repl.el --- a REPL based compiler
+;;; flex-compile-repl.el --- a REPL based compiler  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 

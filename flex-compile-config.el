@@ -1,4 +1,4 @@
-;;; flex-compile-config.el --- configuration based compiler for flex-compile
+;;; flex-compile-config.el --- configuration based compiler for flex-compile  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 
@@ -100,10 +100,10 @@ which is used as the `default-directory', is unset.")
   (cl-remf slots :validate-modes)
   (cl-call-next-method this slots))
 
-(cl-defmethod object-print ((this conf-file-flex-compiler) &rest strings)
-  (apply #'cl-call-next-method this
-	 (format " config-file: %s" (slot-value this 'config-file))
-	 strings))
+(cl-defmethod eieio-object-name-string ((this conf-file-flex-compiler))
+  "Return a string as a representation of the in memory instance of THIS."
+  (->> (format " config-file=%s" (slot-value this 'config-file))
+       (concat (cl-call-next-method this))))
 
 (cl-defmethod config-prop-entry-configure ((this conf-file-flex-compiler)
 					   config-options)

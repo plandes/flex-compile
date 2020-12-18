@@ -1,4 +1,4 @@
-;;; flex-compile-xml-validate.el --- xml validation
+;;; flex-compile-xml-validate.el --- xml validation  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2020 Paul Landes
 
