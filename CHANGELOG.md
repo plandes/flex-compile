@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+
+## [0.7] - 2020-12-17
 Major refactoring: cleaned up compilation and *package-lint* warnings.
 
 ### Changed
@@ -89,7 +91,8 @@ Major refactoring: cleaned up compilation and *package-lint* warnings.
 First major release.
 
 
-[Unreleased]: https://github.com/plandes/flex-compile/compare/v0.6...HEAD
+[Unreleased]: https://github.com/plandes/flex-compile/compare/v0.7...HEAD
+[0.7]: https://github.com/plandes/flex-compile/compare/v0.6...v0.7
 [0.6]: https://github.com/plandes/flex-compile/compare/v0.5...v0.6
 [0.5]: https://github.com/plandes/flex-compile/compare/v0.4...v0.5
 [0.4]: https://github.com/plandes/flex-compile/compare/v0.3...v0.4
