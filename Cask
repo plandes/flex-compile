@@ -1,6 +1,6 @@
 ;; -*- emacs-lisp -*-
 (source gnu)
-(source melpa)
+(source melpa-stable)
 
 (depends-on "dash" "2.17.0")
 (depends-on "buffer-manage" "0.11")
