@@ -53,12 +53,19 @@ Regular expression to match buffers for functions like killing the session.")
 			 :type list
 			 :documentation "\
 List of buffers for functions (like killing a buffer) when session ends.")
+   (repl-buffer-start-wait :initarg :repl-buffer-start-wait
+			   :initform 0
+			   :type number
+			   :documentation "\
+Number of seconds (as a float) to wait before issuing any first command to the
+REPL.")
    (repl-buffer-start-timeout :initarg :repl-buffer-start-timeout
 			      :initform 1
 			      :type integer
 			      :documentation "\
-Number of seconds to wait to start before giving up (and not displaying).
-If this is 0, don't wait or display the buffer when it comes up.")
+Number of seconds as an integer to wait to start before giving up (and not
+displaying).  If this is 0, don't wait or display the buffer when it comes
+up.")
    (prompt-kill-repl-buffer :initarg :prompt-kill-repl-buffer
 			    :initform t
 			    :type boolean
@@ -79,14 +86,23 @@ The history variable for the eval form history."))
 
 (cl-defmethod initialize-instance ((this repl-flex-compiler) &optional slots)
   "Initialize instance THIS with arguments SLOTS."
-  (let ((props (list (config-boolean-prop :object-name 'output-clear
-					  :prop-entry this
-					  :prompt "Clear output on compile"
-					  :input-type 'toggle)
-		     (config-boolean-prop :object-name 'prompt-kill-repl-buffer
-					  :prop-entry this
-					  :prompt "Confirm REPL buffer kills"
-					  :input-type 'toggle))))
+  (let ((props
+	 (list
+	  (config-boolean-prop :object-name 'output-clear
+			       :prop-entry this
+			       :prompt "Clear output on compile"
+			       :input-type 'toggle)
+	  (config-boolean-prop :object-name 'prompt-kill-repl-buffer
+			       :prop-entry this
+			       :prompt "Confirm REPL buffer kills"
+			       :input-type 'toggle)
+	  (config-number-prop :object-name 'repl-buffer-start-timeout
+			      :prop-entry this
+			      :prompt "Seconds to wait for REPL to start")
+	  (config-number-prop :object-name 'repl-buffer-start-wait
+			      :prop-entry this
+			      :number-type 'float
+			      :prompt "Seconds to wait before starting the REPL"))))
     (setq slots (plist-put slots
 			   :props (append (plist-get slots :props) props))))
   (cl-call-next-method this slots))
@@ -139,7 +155,9 @@ The caller raises and error if it doesn't start in time."
 
 (cl-defmethod flex-compiler-repl--run-start ((this repl-flex-compiler))
   "Start THIS compiler's REPL if it isn't already."
-  (with-slots (repl-buffer-start-timeout start-directory) this
+  (with-slots (repl-buffer-start-timeout
+	       repl-buffer-start-wait
+	       start-directory) this
     (let ((timeout repl-buffer-start-timeout)
 	  buf)
       (unless (flex-compiler-repl-running-p this)
@@ -150,7 +168,9 @@ The caller raises and error if it doesn't start in time."
 	  (setq buf (flex-compiler-wait-for-buffer this))
 	  (unless buf
 	    (error "Couldn't create REPL for compiler %s"
-		   (config-entry-name this))))))))
+		   (config-entry-name this))))
+	(when (> repl-buffer-start-wait 0)
+	  (sit-for repl-buffer-start-wait))))))
 
 (cl-defmethod flex-compiler-send-input ((this repl-flex-compiler)
 					&optional command)
