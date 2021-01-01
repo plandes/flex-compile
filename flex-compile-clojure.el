@@ -95,6 +95,7 @@ not.")
 	  slots (plist-put slots :validate-modes '(clojure-mode))
 	  slots (plist-put slots :repl-buffer-regexp
 			   "^\\(\\*cider-repl \\|nrepl-server\\)")
+	  ;; also see `nrepl-sync-request-timeout'
 	  slots (plist-put slots :repl-buffer-start-timeout 0)
 	  slots (plist-put slots
 			   :props (append (plist-get slots :props) props))))
