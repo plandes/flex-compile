@@ -51,7 +51,19 @@
    (output-directory :initarg :start-directory
 		     :initform nil
 		     :type (or null string)
-		     :documentation "The output directory."))
+		     :documentation "The output directory.")
+   (frame-focus-command
+    :initarg :frame-focus-command
+    :initform
+    "emacsclient -n --eval \"(select-frame-set-input-focus (selected-frame))\"&"
+    :type (or null string)
+    :documentation "
+The command to refocus the Emacs frame after rendering the output \(browser).")
+   (frame-focus-delay :initarg :frame-focus-delay
+		      :initform 1
+		      :type integer
+		      :documentation "\
+Seconds before refocusing the Emacs frame after redering the output."))
   :method-invocation-order :c3
   :documentation "\
 This compiler exports [Org mode](https://orgmode.org) to external formats and
@@ -78,12 +90,23 @@ then shows the output in the browser.  Only HTML is currently supported.")
 		       :object-name 'output-directory
 		       :prop-entry this
 		       :prompt "Output directory"
+		       :input-type 'last)
+		      (config-prop
+		       :object-name 'frame-focus-command
+		       :prop-entry this
+		       :prompt "Command to execute to focus Emacs"
+		       :input-type 'last)
+		      (config-number-prop
+		       :object-name 'frame-focus-delay
+		       :prop-entry this
+		       :prompt "Number of second to wait to focus Emacs"
 		       :input-type 'last))))
     (setq slots (plist-put slots :object-name "org-export")
 	  slots (plist-put slots :description "Org mode")
 	  slots (plist-put slots :validate-modes '(org-mode))
 	  slots (plist-put slots :props
 			   (append (plist-get slots :props) props))))
+
   (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-load-libraries ((this org-export-flex-compiler))
@@ -106,7 +129,7 @@ then shows the output in the browser.  Only HTML is currently supported.")
 (cl-defmethod flex-compiler-org-export-source ((this org-export-flex-compiler))
   "Return the generated target file by the Org system for THIS compiler."
   (with-slots (config-file) this
-    (replace-regexp-in-string "\.org$" ".html" config-file)))
+    (replace-regexp-in-string "\\.org$" ".html" config-file)))
 
 (cl-defmethod flex-compiler-org-export-dest ((this org-export-flex-compiler))
   "Return the user desired location of the output file.
@@ -125,19 +148,21 @@ Todo: make this OS independent as currently the browser only opens on OSX.
 
 THIS is the object instance."
   (config-prop-entry-set-required this)
-  (if nil
-      (shell-command "osascript -e 'tell application \"Emacs\" to activate'"))
   (with-slots (export-fn config-file open-file) this
     (with-current-buffer (flex-compiler-conf-file-buffer this)
       (let* ((open-fn (if open-file
-			 'org-open-file
-		       'identity))
+			  'org-open-file
+			'identity))
 	     (src (funcall export-fn))
 	     (dst (flex-compiler-org-export-dest this)))
 	(rename-file src dst t)
 	(message "Exported file to %s" dst)
 	;; call the function to open the file if configured
-	(funcall open-fn dst)))))
+	(funcall open-fn dst))))
+  (with-slots (frame-focus-command frame-focus-delay) this
+    (when frame-focus-command
+      (sit-for frame-focus-delay)
+      (shell-command frame-focus-command))))
 
 (cl-defmethod flex-compiler-clean ((this org-export-flex-compiler))
   "Invoke the clean functionality of THIS compiler."
