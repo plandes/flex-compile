@@ -95,7 +95,11 @@ currently activated compiler."
 (defun flex-compiler-config-load ()
   "Load all compiler and manager configuration."
   (interactive)
-  (config-persistable-load flex-compile-manage-inst))
+  (condition-case err
+      (config-persistable-load flex-compile-manage-inst)
+    (invalid-slot-name
+     (error "Could not unpersist: %S, repair or delete %s"
+	    err (oref flex-compile-manage-inst :file)))))
 
 ;;;###autoload
 (defun flex-compiler-list ()
