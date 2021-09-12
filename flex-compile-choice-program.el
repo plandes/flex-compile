@@ -133,7 +133,6 @@ This also resets the `action' property when setting the `program' property."
     (setf (slot-value this 'action) nil)
     ;; we need to some how be able to nil out the history when changing the
     ;; program as currently the history carries forward to other programs
-    ;(config-persistent-reset (config-prop-by-name this 'mnemonic))
     (config-persistent-reset (config-prop-by-name this 'action)))
   (cl-call-next-method this prop val))
 
