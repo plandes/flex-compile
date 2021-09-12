@@ -1,6 +1,6 @@
 ;;; flex-compile-choice-program.el --- Compile functions  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2015 - 2020 Paul Landes
+;; Copyright (C) 2015 - 2021 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
@@ -95,8 +95,8 @@ Prompt and more easily invoke choice/action based programs using the
 THIS is the instance."
   (ignore this)
   (->> (choice-program-instances)
-       (-map '(lambda (this)
-		(cons (choice-program-name this) this)))))
+       (-map (lambda (this)
+	       (cons (choice-program-name this) this)))))
 
 (cl-defmethod flex-compiler-choice-program-read-program
   ((this choice-program-flex-compiler) default prompt history)

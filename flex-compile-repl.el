@@ -1,6 +1,6 @@
 ;;; flex-compile-repl.el --- A REPL based compiler  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2015 - 2020 Paul Landes
+;; Copyright (C) 2015 - 2021 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
