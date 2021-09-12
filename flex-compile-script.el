@@ -47,10 +47,10 @@ See [motivation](#motivation).")
 
 (cl-defmethod initialize-instance ((this script-flex-compiler) &optional slots)
   "Initialize THIS instance using SLOTS as initial values."
-  (let* ((fn #'(lambda (this compiler default prompt history)
-		 (ignore this prompt compiler)
-		 (let ((input (read-string prompt nil history default)))
-		   (and input (split-string input)))))
+  (let* ((fn (lambda (this compiler default prompt history)
+	       (ignore this prompt compiler)
+	       (let ((input (read-string prompt nil history default)))
+		 (and input (split-string input)))))
 	 (props (list (config-eval-prop :object-name 'arguments
 					:prompt "Arguments (SPACE RET for none)"
 					:func fn
@@ -93,7 +93,7 @@ See the `single-buffer-flex-compiler' implementation of
 	     buf)
 	 (with-current-buffer
 	     (setq buf
-		   (compilation-start cmd nil #'(lambda (_) buffer-name))))
+		   (compilation-start cmd nil (lambda (_) buffer-name))))
 	 buf)))
     (run (error "No defined run action for scripts"))))
 
