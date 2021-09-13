@@ -273,7 +273,7 @@ If ACTION is non-nil, then return only the metadata for the \(symbol) action."
 		   ;; get the user input now
 		   (config-prop-entry-set-required container)
 		   (with-slots (arg-name type value) container
-		     (let ((value (if (stringp value)
+		     (let ((value (if (or (null value) (stringp value))
 				      value
 				    (prin1-to-string value))))
 		      ;; positional arguments have no (option) long name
