@@ -34,6 +34,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'json)
 (require 'dash)
 (require 'choice-program-complete)
 (require 'flex-compile-manage)
@@ -96,7 +97,7 @@ the arguments.")
 			 compiler default prompt history)))
 	 (read-args (lambda (this compiler &rest args)
 		      (ignore this args)
-		      (flex-compiler-cli-read-arguments compiler)))
+		      (flex-compiler-cli-read-arguments compiler t)))
 	 (props (list (config-eval-prop :object-name 'action
 					:prompt "Action"
 					:func read-action
@@ -119,7 +120,7 @@ the arguments.")
 					   :input-type 'toggle
 					   :order 2))))
     (setq slots (plist-put slots :object-name "cli")
-	  slots (plist-put slots :description "CLI Python file")
+	  slots (plist-put slots :description "CLI Python")
 	  slots (plist-put slots :buffer-name "Command Line Interface")
 	  slots (plist-put slots :kill-buffer-clean t)
 	  slots (plist-put slots :validate-modes '(python-mode))
@@ -135,6 +136,7 @@ the arguments.")
 
 (cl-defmethod config-prop-set ((this cli-flex-compiler) prop val)
   "Set property PROP to VAL on THIS compiler."
+  (message "CLI PROP SET %S %S" prop val)
   (let (wipes)
     (cond ((eq (config-prop-name prop) 'config-file)
 	   (config-persistent-reset (config-prop-by-name this 'action))
@@ -255,45 +257,98 @@ If ACTION is non-nil, then return only the metadata for the \(symbol) action."
 			   (arg-name (cdr (assq 'arg-name elt))))
 		       (append
 			prop
-			`(:prop-entry ,(flex-compile-cli-arg :arg-name arg-name
-					     :type (cdr (assq 'type elt)))
-				      :order ,(cl-incf order)
-				      :input-type 'last)))))
+			`(:prop-entry
+			  ,(flex-compile-cli-arg :arg-name arg-name
+						 :type (cdr (assq 'type elt)))
+			  :order ,(cl-incf order)
+			  :input-type 'last)))))
 	     (-map #'eval)
 	     (-map (lambda (prop)
 		     (let ((container (slot-value prop 'prop-entry)))
 		       (oset container :props (list prop))
 		       prop))))))))
 
-(cl-defmethod flex-compiler-cli-read-arguments ((this cli-flex-compiler))
-  "Read the arguments and return them as a list of strings for THIS compiler."
+(cl-defmethod flex-compiler-cli-argument-plist ((this cli-flex-compiler)
+						&optional resetp)
+  "Read the arguments and return them as a list of strings for THIS compiler.
+If RESETP is non-nil, reset all previously set configuration to force the user
+to add again."
   (with-slots (arg-properties) this
     (setq arg-properties
 	  (or arg-properties (flex-compiler-cli--arg-properties this)))
-    (dolist (prop arg-properties)
-      (oset (slot-value prop 'prop-entry) :value nil))
+    (when resetp
+      (dolist (prop arg-properties)
+	(oset (slot-value prop 'prop-entry) :value nil)))
     ;; create a string command line parameter for each argument (except false
     ;; booleans as they are set as flags/store true)
     (->> arg-properties
 	 (-map (lambda (prop)
-		 (let ((container (slot-value prop 'prop-entry)))
+		 (let ((container (slot-value prop 'prop-entry))
+		       (value-type (config-prop-type prop)))
 		   ;; get the user input now
 		   (config-prop-entry-set-required container)
 		   (with-slots (arg-name type value) container
-		     (let ((value (if (or (null value) (stringp value))
-				      value
-				    (prin1-to-string value))))
-		      ;; positional arguments have no (option) long name
-		      (if (eq type 'position)
-			  (cons value nil)
-			(if (object-of-class-p prop 'config-boolean-prop)
-			    ;; add just the optiona name as flags for booleans
-			    (if value
-				(list (format "--%s" arg-name)))
-			  ;; add the option name and value
-			  (list (format "--%s" arg-name) value))))))))
-	 ;; aggregate the list of argument lists in to a single list
-	 (apply #'append))))
+		     (list :value-type value-type
+			   :arg-name arg-name
+			   :arg-type type
+			   :value value
+			   :str-value
+			   (cond ((eq value-type 'boolean)
+				  (if value "true" "false"))
+				 ((or (null value) (stringp value)) value)
+				 (t (prin1-to-string value)))))))))))
+
+(cl-defmethod flex-compiler-cli-read-arguments ((this cli-flex-compiler)
+						&optional resetp)
+  "Read the arguments and return them as a list of strings for THIS compiler.
+If RESETP is non-nil, reset all previously set configuration to force the user
+to add again."
+  ;; create a string command line parameter for each argument (except false
+  ;; booleans as they are set as flags/store true)
+  (->> (flex-compiler-cli-argument-plist this resetp)
+       (-map (lambda (pl)
+	       (let ((arg-name (plist-get pl :arg-name))
+		     (value (plist-get pl :value))
+		     (value-type (plist-get pl :value-type))
+		     (arg-type (plist-get pl :arg-type)))
+		 (setq value (if (or (null value) (stringp value))
+				 value
+			       (prin1-to-string value)))
+		 ;; positional arguments have no (option) long name
+		 (if (eq arg-type 'position)
+		     (cons value nil)
+		   (if (eq value-type 'boolean)
+		       ;; add just the optiona name as flags for booleans
+		       (if value
+			   (list (format "--%s" arg-name)))
+		     ;; add the option name and value
+		     (list (format "--%s" arg-name) value))))))
+       ;; aggregate the list of argument lists in to a single list
+       (apply #'append)))
+
+(cl-defmethod config-prop-entry-write-configuration ((this cli-flex-compiler)
+						     &optional level header)
+  "Add the command line argument metadata and values to the output for THIS.
+LEVEL is the indentation level.
+HEADER is a string written to describe the property, otherise the description
+is used."
+  (cl-call-next-method this level header)
+  (setq level (or level 0))
+  (with-slots (props) this
+    (let ((space (make-string (* 2 level) ? ))
+	  (space2 (make-string (* 2 (1+ level)) ? )))
+      (insert (format "%sarguments:\n" space))
+      (->> (flex-compiler-cli-argument-plist this)
+	   (-map (lambda (plist)
+		   (apply
+		    #'format "%s%s: \"%s\" (%s, %S)" space2
+		    (-map (lambda (k)
+			    (plist-get plist k))
+			  '(:arg-name :str-value :value-type :arg-type)))))
+	   (funcall (lambda (args)
+		      (mapconcat #'identity args "\n")))
+	   insert))
+    (newline)))
 
 (cl-defmethod flex-compiler-start-buffer ((this cli-flex-compiler)
 					  start-type)
@@ -316,7 +371,8 @@ See the `single-buffer-flex-compiler' implementation of
 	 (with-current-buffer
 	     (setq buf
 		   (compilation-start cmd nil (lambda (_) buffer-name))))
-	 buf)))))
+	 buf)))
+    (run (config-prop-entry-show-configuration this))))
 
 ;; register the compiler
 (flex-compile-manager-register flex-compile-manage-inst
