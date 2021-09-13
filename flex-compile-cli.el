@@ -136,7 +136,6 @@ the arguments.")
 
 (cl-defmethod config-prop-set ((this cli-flex-compiler) prop val)
   "Set property PROP to VAL on THIS compiler."
-  (message "CLI PROP SET %S %S" prop val)
   (let (wipes)
     (cond ((eq (config-prop-name prop) 'config-file)
 	   (config-persistent-reset (config-prop-by-name this 'action))
