@@ -323,6 +323,13 @@ to add again."
        ;; aggregate the list of argument lists in to a single list
        (apply #'append)))
 
+(cl-defmethod flex-compiler-config-help ((this cli-flex-compiler))
+  "Return the command line help from the Python program for THIS compiler."
+  (with-slots (config-file start-directory) this
+    (let ((default-directory start-directory)
+	  (cmd (format "%s --help" config-file)))
+      (shell-command-to-string cmd))))
+
 (cl-defmethod config-prop-entry-write-configuration ((this cli-flex-compiler)
 						     &optional level header)
   "Add the command line argument metadata and values to the output for THIS.
@@ -344,8 +351,14 @@ is used."
 			  '(:arg-name :str-value :value-type :arg-type)))))
 	   (funcall (lambda (args)
 		      (mapconcat #'identity args "\n")))
-	   insert))
-    (newline)))
+	   insert)
+      (newline)
+      (insert (format "%s[Usage]\n" space))
+      (->> (flex-compiler-config-help this)
+	   (replace-regexp-in-string "[']" "’")
+	   (replace-regexp-in-string "[\"]" "”")
+	   insert)
+      (newline))))
 
 (cl-defmethod flex-compiler-start-buffer ((this cli-flex-compiler)
 					  start-type)
