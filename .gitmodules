@@ -1,3 +1,3 @@
 [submodule "zenbuild"]
 	path = zenbuild
-	url = git@github.com:plandes/zenbuild.git
+	url = https://github.com/plandes/zenbuild
