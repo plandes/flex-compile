@@ -309,20 +309,18 @@ to add again."
        (-map (lambda (pl)
 	       (let ((arg-name (plist-get pl :arg-name))
 		     (value (plist-get pl :value))
+		     (str-value (plist-get pl :str-value))
 		     (value-type (plist-get pl :value-type))
 		     (arg-type (plist-get pl :arg-type)))
-		 (setq value (if (or (null value) (stringp value))
-				 value
-			       (prin1-to-string value)))
 		 ;; positional arguments have no (option) long name
 		 (if (eq arg-type 'position)
-		     (cons value nil)
+		     (cons str-value nil)
 		   (if (eq value-type 'boolean)
 		       ;; add just the optiona name as flags for booleans
 		       (if value
 			   (list (format "--%s" arg-name)))
 		     ;; add the option name and value
-		     (list (format "--%s" arg-name) value))))))
+		     (list (format "--%s" arg-name) str-value))))))
        ;; aggregate the list of argument lists in to a single list
        (apply #'append)))
 
