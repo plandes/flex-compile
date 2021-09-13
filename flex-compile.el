@@ -49,6 +49,7 @@
 (require 'flex-compile-clojure)
 (require 'flex-compile-ess)
 (require 'flex-compile-comint)
+(require 'flex-compile-cli)
 (require 'flex-compiler)
 
 (defun flex-compile-key-bindings ()
