@@ -2,12 +2,12 @@
 
 ;; Copyright (C) 2015 - 2021 Paul Landes
 
-;; Version: 0.7
+;; Version: 0.8
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
 ;; Keywords: compilation integration processes
 ;; URL: https://github.com/plandes/flex-compile
-;; Package-Requires: ((emacs "26.1") (dash "2.17.0") (buffer-manage "0.11"))
+;; Package-Requires: ((emacs "26.1") (dash "2.17.0") (buffer-manage "0.13"))
 
 ;; This file is not part of GNU Emacs.
 

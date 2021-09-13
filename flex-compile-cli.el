@@ -73,12 +73,19 @@ Contains user provided arguments that is given to the command line.")
 	      :documentation "The arguments to give to the script.")
    (cache-metadata :initarg :cache-metadata
 		   :initform t
-		   :documentation "Whether or not to cache metadata."))
+		   :documentation "
+Whether or not to cache the Python program's CLI metadata."))
   :method-invocation-order :c3
   :documentation "\
-Prompt and more easily invoke choice/action based programs using the
-\[Zensols action based command line]
-\(https://plandes.github.io/util/doc/command-line.html).")
+Provides support for user input for action mnemonics and options using Python
+programs that use the
+\[Zensols action CLI]\(https://plandes.github.io/util/doc/command-line.html).
+
+This compiler gets the command line metadata as a list of actions and their
+respective positional and option arguments.  It this prompts the user with
+documentation associated, first the action, then the action's arguments.
+Finally, it constructs the command line and executes the Python program with
+the arguments.")
 
 (cl-defmethod initialize-instance ((this cli-flex-compiler)
 				   &optional slots)
@@ -112,7 +119,7 @@ Prompt and more easily invoke choice/action based programs using the
 					   :input-type 'toggle
 					   :order 2))))
     (setq slots (plist-put slots :object-name "cli")
-	  slots (plist-put slots :description "CLI python file")
+	  slots (plist-put slots :description "CLI Python file")
 	  slots (plist-put slots :buffer-name "Command Line Interface")
 	  slots (plist-put slots :kill-buffer-clean t)
 	  slots (plist-put slots :validate-modes '(python-mode))

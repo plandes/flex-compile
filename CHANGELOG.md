@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+## [0.8] - 2021-09-13
+### Added
+- Added interactive [Zensols action command line interface] `cli` compiler
+  (`flex-compile-cli.el`).
+
+### Changed
+- Better markdown compiler documentation generation.
+
+
 ## [0.7] - 2020-12-17
 Major refactoring: cleaned up compilation and *package-lint* warnings.
 
@@ -91,7 +100,8 @@ Major refactoring: cleaned up compilation and *package-lint* warnings.
 First major release.
 
 
-[Unreleased]: https://github.com/plandes/flex-compile/compare/v0.7...HEAD
+[Unreleased]: https://github.com/plandes/flex-compile/compare/v0.8...HEAD
+[0.8]: https://github.com/plandes/flex-compile/compare/v0.7...v0.8
 [0.7]: https://github.com/plandes/flex-compile/compare/v0.6...v0.7
 [0.6]: https://github.com/plandes/flex-compile/compare/v0.5...v0.6
 [0.5]: https://github.com/plandes/flex-compile/compare/v0.4...v0.5
@@ -104,3 +114,4 @@ First major release.
 [Choice Program]: https://github.com/plandes/choice-program
 [Buffer Manage]: https://github.com/plandes/buffer-manage
 [zenbuild]: https://github.com/plandes/zenbuild
+[Zensols action command line interface]: https://plandes.github.io/util/doc/command-line.html

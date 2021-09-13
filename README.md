@@ -25,6 +25,7 @@ started.
     - [Revealing The Interactive Buffer](#revealing-the-interactive-buffer)
 - [Compilers](#compilers)
     - [Choice program](#choice-program)
+    - [CLI](#command-line-interface)
     - [Clojure](#clojure)
     - [Comint](#comint)
     - [Command](#command)
@@ -151,6 +152,7 @@ capability, which include the following:
 
 * [flex-compile-make]
 * [flex-compile-command]
+* [flex-compile-cli]
 * [flex-compile-script]
 * [flex-compile-clojure]
 * [flex-compile-python]
@@ -195,6 +197,13 @@ buffer with `C-u 2 C-x C-i` or `C-u 2 M-x flex-compiler-run-or-set-config`.
 Concrete instances of *flexible* compilers that provide a common interface.
 Each is an implementation of glue code to the respective compilation method.
 
+Note that all compilers that extend from `conf-file-flex-compiler`, which
+include `make`, `script`, `xml-validate`, `org-mode`, `python`, `clojure`, and
+`ess` have their `start-directory` property unset each time the `config-file`
+is set.
+
+This documentation was generated with `M-x flex-compiler-doc-show`.
+
 
 ### Choice program
 
@@ -207,6 +216,30 @@ Properties:
   * Buffer Exists Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-exists-mode`.
   * Buffer New Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-new-mode`.
   * Kill Buffer Clean: If non-nil kill the buffer on clean.
+
+
+### CLI python file
+
+Provides support for user input for action mnemonics and options using Python
+programs that use the
+[Zensols action CLI](https://plandes.github.io/util/doc/command-line.html).
+
+This compiler gets the command line metadata as a list of actions and their
+respective positional and option arguments.  It this prompts the user with
+documentation associated, first the action, then the action's arguments.
+Finally, it constructs the command line and executes the Python program with
+the arguments.
+
+Properties:
+  * Action: The action to invoke on the program.
+  * Config File: The file to use for *configuring* the compiler.
+  * Arguments: The arguments to give to the script.
+  * Cache Metadata: 
+    Whether or not to cache the Python program's CLI metadata.
+  * Buffer Exists Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-exists-mode`.
+  * Buffer New Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-new-mode`.
+  * Kill Buffer Clean: If non-nil kill the buffer on clean.
+  * Start Directory: The directory for starting the compilation.
 
 
 ### Clojure
@@ -224,6 +257,9 @@ switch betwee these two methods with the [given keybindings](#key-bindings):
 See documetation with `M-h f flex-compiler-query-eval` method for more
 inforamtion (and current binding).
 
+Todo: support multiple Cider buffers as this implementation currently does
+not.
+
 Properties:
   * Config File: The file to use for *configuring* the compiler.
   * Buffer Exists Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-exists-mode`.
@@ -233,6 +269,10 @@ Properties:
   * Repl Port: The port running the REPL; default: 32345
   * Output Clear: Whether or not to clear comint buffer after a compilation.
   * Prompt Kill Repl Buffer: If non-`nil` then prompt to kill a REPL buffer on clean.
+  * Repl Buffer Start Timeout: Number of seconds as an integer to wait to start before giving up (and not
+    displaying).
+  * Repl Buffer Start Wait: Number of seconds (as a float) to wait before issuing any first command to the
+    REPL.
   * Start Directory: The directory for starting the compilation.
 
 
@@ -244,8 +284,8 @@ requires switching back and forth between buffers, which is a hassle.
 
 Properties:
   * Config File: The file to use for *configuring* the compiler.
-  * Buffer:
-  * Content:
+  * Buffer: The buffer to insert the `content` slot.
+  * Content: The string to insert in the buffer referred by the `buffer` slot.
   * Start Directory: The directory for starting the compilation.
 
 
@@ -276,6 +316,10 @@ Properties:
   * Kill Buffer Clean: If non-nil kill the buffer on clean.
   * Output Clear: Whether or not to clear comint buffer after a compilation.
   * Prompt Kill Repl Buffer: If non-`nil` then prompt to kill a REPL buffer on clean.
+  * Repl Buffer Start Timeout: Number of seconds as an integer to wait to start before giving up (and not
+    displaying).
+  * Repl Buffer Start Wait: Number of seconds (as a float) to wait before issuing any first command to the
+    REPL.
   * Start Directory: The directory for starting the compilation.
 
 
@@ -289,13 +333,14 @@ commands (see [usage](#usage)).
 This is a special compiler in it's configuration.  Instead of
 setting properties, the default configuration mechanism is to set
 the make target instead.  If you want to set a flex compiler
-property, use `C-u 0 C-u`.
+property, use `\C-u 0 \C-u`.
 
 When setting the configuration file the target property is unset.
 
 Properties:
   * Config File: The file to use for *configuring* the compiler.
   * Target: The make file target to satisfy.
+  * Run Target: The target used to run or test as the secondary compilation functionality.
   * Buffer Exists Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-exists-mode`.
   * Buffer New Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-new-mode`.
   * Kill Buffer Clean: If non-nil kill the buffer on clean.
@@ -310,6 +355,11 @@ then shows the output in the browser.  Only HTML is currently supported.
 Properties:
   * Config File: The file to use for *configuring* the compiler.
   * Export Fn: The Org mode export function.
+  * Open File: Whether to open the file after exported.
+  * Output Directory: The output directory.
+  * Frame Focus Command: 
+    The command to refocus the Emacs frame after rendering the output (browser).
+  * Frame Focus Delay: Seconds before refocusing the Emacs frame after redering the output.
   * Start Directory: The directory for starting the compilation.
 
 
@@ -325,6 +375,10 @@ Properties:
   * Kill Buffer Clean: If non-nil kill the buffer on clean.
   * Output Clear: Whether or not to clear comint buffer after a compilation.
   * Prompt Kill Repl Buffer: If non-`nil` then prompt to kill a REPL buffer on clean.
+  * Repl Buffer Start Timeout: Number of seconds as an integer to wait to start before giving up (and not
+    displaying).
+  * Repl Buffer Start Wait: Number of seconds (as a float) to wait before issuing any first command to the
+    REPL.
   * Start Directory: The directory for starting the compilation.
 
 
@@ -380,6 +434,7 @@ GNU Lesser General Public License, Version 2.0
 <!-- links -->
 [flex-compile-make]: #make
 [flex-compile-command]: #command
+[flex-compile-cli]: #cli-python-file
 [flex-compile-script]: #script
 [flex-compile-clojure]: #clojure
 [flex-compile-python]: #python
