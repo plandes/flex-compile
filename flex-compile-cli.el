@@ -84,9 +84,11 @@ Prompt and more easily invoke choice/action based programs using the
 				   &optional slots)
   "Initialize the THIS instance with SLOTS."
   (let* ((read-action (lambda (this compiler default prompt history)
+			(ignore this)
 			(flex-compiler-cli-read-action
 			 compiler default prompt history)))
-	 (read-args (lambda (this compiler default prompt history)
+	 (read-args (lambda (this compiler &rest args)
+		      (ignore this args)
 		      (flex-compiler-cli-read-arguments compiler)))
 	 (props (list (config-eval-prop :object-name 'action
 					:prompt "Action"
@@ -252,7 +254,7 @@ If ACTION is non-nil, then return only the metadata for the \(symbol) action."
 				      :input-type 'last)))))
 	     (-map #'eval)
 	     (-map (lambda (prop)
-		     (let ((container (oref prop :prop-entry)))
+		     (let ((container (slot-value prop 'prop-entry)))
 		       (oset container :props (list prop))
 		       prop))))))))
 
@@ -262,12 +264,12 @@ If ACTION is non-nil, then return only the metadata for the \(symbol) action."
     (setq arg-properties
 	  (or arg-properties (flex-compiler-cli--arg-properties this)))
     (dolist (prop arg-properties)
-      (oset (oref prop :prop-entry) :value nil))
+      (oset (slot-value prop 'prop-entry) :value nil))
     ;; create a string command line parameter for each argument (except false
     ;; booleans as they are set as flags/store true)
     (->> arg-properties
 	 (-map (lambda (prop)
-		 (let ((container (oref prop :prop-entry)))
+		 (let ((container (slot-value prop 'prop-entry)))
 		   ;; get the user input now
 		   (config-prop-entry-set-required container)
 		   (with-slots (arg-name type value) container
@@ -277,7 +279,7 @@ If ACTION is non-nil, then return only the metadata for the \(symbol) action."
 		      ;; positional arguments have no (option) long name
 		      (if (eq type 'position)
 			  (cons value nil)
-			(if (object-of-class-p prop config-boolean-prop)
+			(if (object-of-class-p prop 'config-boolean-prop)
 			    ;; add just the optiona name as flags for booleans
 			    (if value
 				(list (format "--%s" arg-name)))

@@ -56,9 +56,11 @@ Prompt and more easily invoke choice/action based programs using the
 				   &optional slots)
   "Initialize the THIS instance with SLOTS."
   (let* ((read-prog (lambda (this compiler default prompt history)
+		      (ignore this)
 		      (flex-compiler-choice-program-read-program
 		       compiler default prompt history)))
 	 (read-action (lambda (this compiler default prompt history)
+			(ignore this prompt)
 			(-> (flex-compiler-choice-program-program compiler t)
 			    (choice-program-read-option default history))))
 	 (props (list (config-eval-prop :object-name 'program

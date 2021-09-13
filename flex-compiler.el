@@ -99,7 +99,7 @@ currently activated compiler."
       (config-persistable-load flex-compile-manage-inst)
     (invalid-slot-name
      (error "Could not unpersist: %S, repair or delete %s"
-	    err (oref flex-compile-manage-inst :file)))))
+	    err (slot-value flex-compile-manage-inst 'file)))))
 
 ;;;###autoload
 (defun flex-compiler-list ()

@@ -122,13 +122,14 @@ See `flex-compiler-display-buffer', which does the work to show the buffer."
 See the `single-buffer-flex-compiler' implementation of
 `flex-compiler-display-buffer' for COMPILE-DEF and more information."
   (ignore this)
-  (let ((buf (or (cdr (assq 'buffer compile-def)) (oref this :buffer))))
-    (when (not (buffer-live-p buf))
-      (error "Buffer not active"))
-    (display-buffer buf)
-    (with-current-buffer buf
-      (goto-char (point-max)))
-    (message "Displayed buffer %S" buf)))
+  (with-slots (buffer) this
+    (let ((buf (or (cdr (assq 'buffer compile-def)) buffer)))
+      (when (not (buffer-live-p buf))
+	(error "Buffer not active"))
+      (display-buffer buf)
+      (with-current-buffer buf
+	(goto-char (point-max)))
+      (message "Displayed buffer %S" buf))))
 
 (flex-compile-manager-register flex-compile-manage-inst (comint-flex-compiler))
 
