@@ -164,8 +164,11 @@ THIS is the object instance."
       (sit-for frame-focus-delay)
       (shell-command frame-focus-command))))
 
-(cl-defmethod flex-compiler-clean ((this org-export-flex-compiler))
-  "Invoke the clean functionality of THIS compiler."
+(cl-defmethod flex-compiler-clean ((this org-export-flex-compiler)
+				   &optional allp)
+  "Invoke the clean functionality of THIS compiler.
+if ALLP is non-nil, then invoke a more destructive cleaning when supported."
+  (ignore allp)
   (config-prop-entry-set-required this)
   (with-slots (config-file) this
     (let ((html-file (flex-compiler-org-export-dest this)))

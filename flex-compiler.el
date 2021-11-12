@@ -231,19 +231,20 @@ FORM is the form to evaluate \(if implemented).  If called with
       res)))
 
 ;;;###autoload
-(defun flex-compiler-do-clean ()
-  "Invoke the clean functionality of the compiler."
-  (interactive)
+(defun flex-compiler-do-clean (allp)
+  "Invoke the clean functionality of the compiler.
+if ALLP is non-nil, then invoke a more destructive cleaning when supported."
+  (interactive "P")
   (let* ((this flex-compile-manage-inst)
 	 (active (flex-compile-manager-active this)))
     (condition-case nil
 	(progn
 	  (flex-compile-manager-assert-ready this)
 	  (let (compile-def)
-	   (let ((display-buffer-alist
-		  (flex-compiler-display-buffer-alist active)))
-	     (setq compile-def (flex-compiler-clean active)))
-	   (flex-compiler-display-buffer active compile-def)))
+	    (let ((display-buffer-alist
+		   (flex-compiler-display-buffer-alist active)))
+	      (setq compile-def (flex-compiler-clean active allp)))
+	    (flex-compiler-display-buffer active compile-def)))
       (cl-no-applicable-method
        (message "Compiler `%s' has no ability to clean"
 		(config-entry-name active))))))

@@ -88,9 +88,11 @@ THIS is the object instance."
 THIS is the object instance."
   (config-persistent--unimplemented this "compile"))
 
-(cl-defmethod flex-compiler-clean ((this flex-compiler))
+(cl-defmethod flex-compiler-clean ((this flex-compiler) &optional allp)
   "Invoke the clean functionality of the compiler.
+if ALLP is non-nil, then invoke a more destructive cleaning when supported.
 THIS is the object instance."
+  (ignore allp)
   (config-persistent--unimplemented this "clean"))
 
 (cl-defmethod config-entry-set-name ((this flex-compiler) name)

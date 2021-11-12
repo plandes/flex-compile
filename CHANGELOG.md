@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+### Added
+- A *clean all* functionality for flex compilers (like `make`) that support
+  it.  For the `make` compiler, this calls the `cleanall` target.
+
+
 ## [0.9] - 2021-09-14
 ### Added
 - CLI compiler help and usage.

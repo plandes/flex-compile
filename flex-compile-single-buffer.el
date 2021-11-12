@@ -294,16 +294,20 @@ Return an alist in the following form:
   "Invoke the run functionality of THIS compiler."
   (flex-compiler-single-buffer--flex-comp-def this 'run t))
 
-(cl-defmethod flex-compiler-clean ((this single-buffer-flex-compiler))
-  "Invoke the clean functionality of THIS compiler."
-  (let ((compile-def
-	 (flex-compiler-single-buffer--flex-comp-def this 'clean t)))
+(cl-defmethod flex-compiler-clean ((this single-buffer-flex-compiler)
+				   &optional allp)
+  "Invoke the clean functionality of THIS compiler.
+if ALLP is non-nil, then invoke a more destructive cleaning when supported."
+  (let* ((start-type (if allp 'clean-all 'clean))
+	 (compile-def
+	  (flex-compiler-single-buffer--flex-comp-def this start-type t)))
     (with-slots (kill-buffer-clean) this
       (when kill-buffer-clean
 	(let ((killfn `(lambda
 			 ()
 			 (let ((buf (flex-compiler-buffer ,this)))
-			   (when (buffer-live-p buf)
+			   (if (not (buffer-live-p buf))
+			       (message "No buffer to clean")
 			     (message "Cleaning up buffer %s" buf)
 			     (let ((kill-buffer-query-functions nil))
 			       (kill-buffer buf)))))))

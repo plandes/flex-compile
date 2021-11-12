@@ -180,7 +180,8 @@ See the `single-buffer-flex-compiler' implementation of
       (cl-case start-type
 	(compile (flex-compiler-run-make this target))
 	(run (flex-compiler-run-make this (or run-target "run")))
-	(clean (flex-compiler-run-make this "clean"))))))
+	(clean (flex-compiler-run-make this "clean"))
+	(clean-all (flex-compiler-run-make this "cleanall"))))))
 
 ;; register the compiler
 (flex-compile-manager-register flex-compile-manage-inst (make-flex-compiler))
