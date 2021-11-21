@@ -52,6 +52,17 @@ The string to insert in the buffer referred by the `buffer' slot."))
 This is useful for entering a command in a shell, SQL etc buffer that otherwise
 requires switching back and forth between buffers, which is a hassle.")
 
+(defun flex-compile-comint-grab-line ()
+  "Return the command line at the current point as a string."
+  (interactive)
+  (save-excursion
+    (beginning-of-line)
+    (buffer-substring-no-properties
+     (point)
+     (progn
+       (end-of-line)
+       (point)))))
+
 (cl-defmethod initialize-instance ((this comint-flex-compiler) &optional slots)
   "Initialize THIS instance using SLOTS as initial values."
   (let ((props (list (config-buffer-prop :object-name 'buffer
@@ -63,7 +74,7 @@ requires switching back and forth between buffers, which is a hassle.")
 		     (config-prop :object-name 'content
 				  :prop-entry this
 				  :prompt "Input string"
-				  :input-type 'last))))
+				  :input-type 'flex-compile-comint-grab-line))))
     (setq slots (plist-put slots :object-name "comint")
 	  slots (plist-put slots
 			   :props (append (plist-get slots :props) props)))
