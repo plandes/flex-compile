@@ -1,13 +1,13 @@
 ;;; flex-compile.el --- Run, evaluate and compile across many languages  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2015 - 2021 Paul Landes
+;; Copyright (C) 2015 - 2022 Paul Landes
 
-;; Version: 0.9
+;; Version: 0.10
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
 ;; Keywords: compilation integration processes
 ;; URL: https://github.com/plandes/flex-compile
-;; Package-Requires: ((emacs "26.1") (dash "2.17.0") (buffer-manage "1.0"))
+;; Package-Requires: ((emacs "26.1") (dash "2.17.0") (buffer-manage "1.1"))
 
 ;; This file is not part of GNU Emacs.
 

@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - A *clean all* functionality for flex compilers (like `make`) that support
   it.  For the `make` compiler, this calls the `cleanall` target.
 
+### Changed
+- Version bump.
 
 ## [0.9] - 2021-09-14
 ### Added
@@ -102,9 +104,6 @@ Major refactoring: cleaned up compilation and *package-lint* warnings.
 
 ### Changed
 - More documentation.
-
-
-### Changed
 - Optionally prompt for evaluate form using `flex-compile-eval`.  Before this
   function would obligate the user to provide a confirmed for to execute.
 - Fix native order for the Python compiler setup on compile.
