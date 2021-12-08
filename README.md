@@ -25,7 +25,7 @@ started.
     - [Revealing The Interactive Buffer](#revealing-the-interactive-buffer)
 - [Compilers](#compilers)
     - [Choice program](#choice-program)
-    - [CLI](#command-line-interface)
+    - [CLI python file](#cli-python-file)
     - [Clojure](#clojure)
     - [Comint](#comint)
     - [Command](#command)
@@ -36,6 +36,7 @@ started.
     - [Python](#python)
     - [Script](#script)
     - [XML](#xml)
+- [Invoking a Compiler Programmatically](#invoking-a-compiler-programmatically)
 - [Writing Your Own Compiler](#writing-your-own-compiler)
 - [Changelog](#changelog)
 - [License](#license)
@@ -408,6 +409,23 @@ Properties:
   * Buffer New Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-new-mode`.
   * Kill Buffer Clean: If non-nil kill the buffer on clean.
   * Start Directory: The directory for starting the compilation.
+
+
+## Invoking a Compiler Programmatically
+
+There might be instances where it's necessary to execute other actions along
+with a compilation.  If you know Emacs Lisp, you can create your own function
+to invoke other compilers, and then use the [Command](#command) compiler to
+invoke it as a command (an interactive function), such as:
+
+```lisp
+(defun clean-and-call-python-compiler ()
+  "Invoke `make clean', then call the Python compiler."
+  (interactive)
+  (shell-command "make clean")
+  (let ((this (flex-compiler-by-name "python")))
+    (flex-compiler-compile this)))
+```
 
 
 ## Writing Your Own Compiler
