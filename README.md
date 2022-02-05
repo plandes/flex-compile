@@ -184,7 +184,9 @@ the compiler level properties can be set to one of:
 * **Next Frame Skip Display** means to do nothing there are multiple frames,
   otherwise display the buffer.
 * **Never** means to never show the buffer.
-
+* **Only If Error** means to display the buffer if at least one error was
+  detected such a compilation error with the [make](#make) compiler.  **Note**:
+  and not all compilers support this option.
 
 The decision of where to show a buffer (or not) happens either when the
 interative buffer is created or during a compilation.  In many cases you might

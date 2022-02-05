@@ -73,7 +73,7 @@ frames, otherwise display the buffer.
 
 `Never' means to never show the buffer.
 
-`Only If Error' means to display the buffer if at least one error was detected
+`Only If Error' means to display the buffer if at least one error was detected.
 Note: and not all compilers support this option."
   :type flex-compile-single-buffer-display-mode-options
   :group 'flex-compile)
