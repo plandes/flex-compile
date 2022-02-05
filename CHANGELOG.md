@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+
+## [0.11] - 2022-02-04
 ### Added
 - A Feature to the make compiler that will display the compilation buffer only
   on errors when configured to do so.
@@ -118,7 +120,8 @@ Major refactoring: cleaned up compilation and *package-lint* warnings.
 First major release.
 
 
-[Unreleased]: https://github.com/plandes/flex-compile/compare/v0.10...HEAD
+[Unreleased]: https://github.com/plandes/flex-compile/compare/v0.11...HEAD
+[0.11]: https://github.com/plandes/flex-compile/compare/v0.10...v0.11
 [0.10]: https://github.com/plandes/flex-compile/compare/v0.9...v0.10
 [0.9]: https://github.com/plandes/flex-compile/compare/v0.8...v0.9
 [0.8]: https://github.com/plandes/flex-compile/compare/v0.7...v0.8
