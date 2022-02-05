@@ -93,10 +93,44 @@ When setting the configuration file the target property is unset.")
 			   :props (append (plist-get slots :props) props))))
   (cl-call-next-method this slots))
 
+(defun flex-compiler-make-compiler-handle-finish (buffer status)
+  "Notify the make flex compiler instance of completion of the make compile.
+The `flex-compiler-make-compiler-finish' is called with STATUS.
+
+BUFFER, ignored."
+  (if (and (stringp status)
+	   (string-match "^exited abnormally with code \\([0-9]+\\)" status))
+      (setq status (string-to-number (match-string 1 status))))
+  (if (and (stringp status)
+	   (equal "finished" (string-trim status)))
+      (setq status 0))
+  (flex-compiler-make-compiler-finish (flex-compiler-by-name "make") status))
+
 (cl-defmethod flex-compiler-load-libraries ((this make-flex-compiler))
   "Load library `compile' for THIS compiler."
   (ignore this)
-  (require 'compile))
+  (require 'compile)
+  (add-hook 'compilation-finish-functions
+	    'flex-compiler-make-compiler-handle-finish))
+
+(cl-defmethod flex-compiler-make-compiler-finish ((this make-flex-compiler)
+						  status)
+  "Display the compliation buffer based on 0 a STATUS for THIS compiler.
+The compilation buffer is displayed when an error is detected, and the
+corresponding compiler display mode property `buffer-new-mode'
+`buffer-exists-mode' are set to `only-on-error'."
+  (with-slots (buffer-new-mode buffer-exists-mode last-displayed-context) this
+    (let* ((buf (cdr (assq 'buffer last-displayed-context)))
+	   (display-mode (-> (cdr (assq 'newp last-displayed-context))
+			     (if 'new 'exists)
+			     (assq (flex-compiler-display-modes this))
+			     cdr))
+	   (pop-buffer (and (eq 'only-if-error display-mode)
+			    (null (get-buffer-window buf))
+			    (not (eq status 0)))))
+      (when pop-buffer
+	(message "Compilation error with status: %S" status)
+	(display-buffer buf)))))
 
 (cl-defmethod flex-compiler-run-make ((this make-flex-compiler)
 				      &optional target)

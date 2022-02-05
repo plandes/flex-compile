@@ -46,7 +46,8 @@
 	   (const :tag "Next Frame Otherwise Display" next-frame-display)
 	   (const :tag "Next Frame Skip Switch" next-frame-skip-switch)
 	   (const :tag "Next Frame Skip Display" next-frame-skip-display)
-	   (const :tag "Never" never))
+	   (const :tag "Never" never)
+	   (const :tag "Only If Error" only-if-error))
   "Customize system's metadata for options displaying the single buffer.")
 
 (defcustom flex-compile-single-buffer-display-buffer-new-mode
@@ -70,7 +71,10 @@ multiple frames, otherwise pop and switch to the buffer.
 `Next Frame Skip Display' means to do nothing there are multiple
 frames, otherwise display the buffer.
 
-`Never' means to never show the buffer."
+`Never' means to never show the buffer.
+
+`Only If Error' means to display the buffer if at least one error was detected
+Note: and not all compilers support this option."
   :type flex-compile-single-buffer-display-mode-options
   :group 'flex-compile)
 
@@ -130,7 +134,11 @@ or `global' to use the value of
 		      :type (or integer boolean)
 		      :documentation "\
 If non-nil kill the buffer on clean.
-If this is an integer, wait the value in seconds and then kill."))
+If this is an integer, wait the value in seconds and then kill.")
+   (last-displayed-context :initarg :last-displayed-context
+			   :type cons
+			   :documentation "\
+The buffer and new status of the last displayed buffer"))
   :abstract t
   :method-invocation-order :c3
   :documentation "A flex compiler that has a single buffer.")
@@ -189,7 +197,7 @@ This implementation returns:
   - `flex-compile-single-buffer-display-buffer-new-mode', and
   - `flex-compile-single-buffer-display-buffer-exists-mode'
 in the following form:
-  ((newp . <t if the buffer is new and jsut created, nil otherwise>
+  ((newp . <t if the buffer is new and just created, nil otherwise>
    (buffer . <the of single buffer object>)))"
   (with-slots (buffer-new-mode buffer-exists-mode) this
     (let ((new-mode (if (eq buffer-new-mode 'global)
@@ -228,6 +236,7 @@ MODE is either `flex-compile-single-buffer-display-buffer-new-mode' or
 					  ((inhibit-switch-frame . t)))))))))
       (cl-case mode
 	(never void-fn)
+	(only-if-error void-fn)
 	(switch #'switch-to-buffer)
 	(display display-fn)
 	(next-frame-switch (display-nf 'pop-to-buffer nil))
@@ -241,7 +250,7 @@ MODE is either `flex-compile-single-buffer-display-buffer-new-mode' or
   "Display buffer based on values returned from `flex-compiler-display-modes'.
 
 COMPILE-DEF is an alias in the following form:
-  ((newp . <t if the buffer is new and jsut created, nil otherwise>
+  ((newp . <t if the buffer is new and just created, nil otherwise>
    (buffer . <the of single buffer object>)))
 
 THIS is the object instance."
@@ -269,8 +278,8 @@ THIS is the object instance."
   ((this single-buffer-flex-compiler) start-type startp)
   "Return a default compilation definition for THIS compiler.
 
-START-TYPE is either symbols `compile', `run', `clean' depending
-  if invoked by `flex-compiler-compile' or `flex-compiler-run'.
+START-TYPE is either symbols `compile', `run', `clean' depending if invoked by
+`flex-compiler-compile' or `flex-compiler-run'.
 
 If STARTP is non-nil, start the buffer using `flex-compiler-start-buffer'.
 
@@ -283,8 +292,9 @@ Return an alist in the following form:
 	(if (child-of-class-p (eieio-object-class this) 'conf-flex-compiler)
 	    (config-prop-entry-set-required this))
 	(setq buf (flex-compiler-start-buffer this start-type)))
-    `((newp . ,(not has-buffer-p))
-      (buffer . ,buf))))
+    (oset this :last-displayed-context
+	  `((newp . ,(not has-buffer-p))
+	    (buffer . ,buf)))))
 
 (cl-defmethod flex-compiler-compile ((this single-buffer-flex-compiler))
   "Invoke the compile functionality of THIS compiler."

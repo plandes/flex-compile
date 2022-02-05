@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- A Feature to the make compiler that will display the compilation buffer only
+  on errors when configured to do so.
+
 
 ## [0.10] - 2021-12-03
 ### Added
