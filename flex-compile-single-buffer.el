@@ -136,7 +136,8 @@ or `global' to use the value of
 If non-nil kill the buffer on clean.
 If this is an integer, wait the value in seconds and then kill.")
    (last-displayed-context :initarg :last-displayed-context
-			   :type cons
+			   :initform nil
+			   :type (or null cons)
 			   :documentation "\
 The buffer and new status of the last displayed buffer"))
   :abstract t
