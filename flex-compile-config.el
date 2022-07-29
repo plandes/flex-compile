@@ -40,6 +40,15 @@
 (require 'config-manage-prop)
 (require 'flex-compile-base)
 
+(defcustom flex-compile-conf-file-disply-mode 'pop-to-buffer
+  "The function used to display the config file.
+This is used by `flex-compiler-conf-file-display'."
+  :type '(choice :tag "Display mode"
+		 (const :tag "Pop Buffer" pop-to-buffer)
+		 (const :tag "Display Buffer" display-buffer)
+		 (const :tag "Switch Buffer" switch-to-buffer))
+  :group 'flex-compile)
+
 (defclass conf-flex-compiler (flex-compiler)
   ()
   :abstract true
@@ -133,8 +142,8 @@ See `config-manage-prop' class's method documentation."
 
 (cl-defmethod flex-compiler-conf-file-display ((this conf-file-flex-compiler))
   "Pop THIS compilers' configuration file buffer to the current buffer/window."
-  (pop-to-buffer (flex-compiler-conf-file-buffer this)))
-
+  (funcall flex-compile-conf-file-disply-mode
+	   (flex-compiler-conf-file-buffer this)))
 
 (provide 'flex-compile-config)
 
