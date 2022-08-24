@@ -37,6 +37,8 @@
 (require 'dash)
 (require 'flex-compile-manage)
 
+(eval-when-compile (require 'subr-x))
+
 (defclass comint-flex-compiler (conf-file-flex-compiler)
   ((buffer :initarg :buffer
 	   :initform nil
@@ -53,28 +55,37 @@ This is useful for entering a command in a shell, SQL etc buffer that otherwise
 requires switching back and forth between buffers, which is a hassle.")
 
 (defun flex-compile-comint-grab-line ()
-  "Return the command line at the current point as a string."
+  "Get the text of the last prompt in the comint buffer.
+If there is no last prompt found, return the command line at the current point
+as a string"
   (interactive)
   (save-excursion
-    (beginning-of-line)
-    (buffer-substring-no-properties
-     (point)
-     (progn
-       (end-of-line)
-       (point)))))
+    (or (let ((prev-prompt-point (comint-previous-prompt 1))
+	      (end (progn (end-of-line) (point))))
+	  (when prev-prompt-point
+	    (goto-char prev-prompt-point)
+	    (buffer-substring-no-properties (point) end)))
+	(save-excursion
+	  (beginning-of-line)
+	  (buffer-substring-no-properties
+	   (point)
+	   (progn
+	     (end-of-line)
+	     (point)))))))
 
 (cl-defmethod initialize-instance ((this comint-flex-compiler) &optional slots)
   "Initialize THIS instance using SLOTS as initial values."
-  (let ((props (list (config-buffer-prop :object-name 'buffer
+  (let ((props (list (config-prop :object-name 'content
+				  :prop-entry this
+				  :required t
+				  :prompt "Command or SPACE for config file"
+				  :input-type 'flex-compile-comint-grab-line)
+		     (config-buffer-prop :object-name 'buffer
 					 :prop-entry this
 					 :required t
 					 :transient t
 					 :prompt "Buffer"
-					 :input-type 'last)
-		     (config-prop :object-name 'content
-				  :prop-entry this
-				  :prompt "Input string"
-				  :input-type 'flex-compile-comint-grab-line))))
+					 :input-type 'last))))
     (setq slots (plist-put slots :object-name "comint")
 	  slots (plist-put slots
 			   :props (append (plist-get slots :props) props)))
@@ -97,6 +108,29 @@ requires switching back and forth between buffers, which is a hassle.")
   (insert form)
   (comint-send-input))
 
+(cl-defmethod config-prop-set ((this comint-flex-compiler) prop val)
+  "Set property PROP to VAL on THIS compiler.
+
+This resets the target when changing the file."
+  (when (and (eq (config-prop-name prop) 'content)
+	     (eq (derived-mode-p 'comint-mode) 'comint-mode))
+    (setf (slot-value this 'buffer) (current-buffer))
+    (message "Setting buffer %s" (buffer-name)))
+  (cl-call-next-method this prop val))
+
+(cl-defmethod config-prop-entry-configure ((this comint-flex-compiler)
+					   config-options)
+  "Special behavior when configuring THIS compiler.
+
+CONFIG-OPTIONS:
+  - when -1 (using \\[universal-argument] with 0) prompt for the content
+  - when nil short cut to setting the make content"
+  (->> (cond ((eq config-options -1) nil) ; unversal arg with 0
+	     ;; shortcut to setting the make content
+	     ((null config-options) '(prop-name content))
+	     (t config-options))
+       (cl-call-next-method this)))
+
 (cl-defmethod flex-compiler-compile ((this comint-flex-compiler))
   "Insert the `content' slot value set on THIS compiler in comint buffer.
 
@@ -108,7 +142,8 @@ After the value is set, use `comint-send-input' to have `comint' process it."
     (with-slots (config-file content) this
       (if (and (null config-file) (null content))
 	  (error "Either property `config-file' or `content' needs to be set"))
-      (let ((contents (->> (or content
+      (let ((contents (->> (or (and (> (length (string-trim content)) 0)
+				    content)
 			       (with-temp-buffer
 				 (insert-file-contents config-file)
 				 (buffer-string)))
