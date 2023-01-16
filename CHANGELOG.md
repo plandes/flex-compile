@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+## [1.1] - 2023-01-16
+### Changed
+- Bug fixes.
+- Comint compiler uses faster make compiler like content prompting.
+- Make compiler toggles previous target.
+
+
 ## [1.0] - 2022-02-04
 ### Added
 - A Feature to the make compiler that will display the compilation buffer only
@@ -120,7 +127,8 @@ Major refactoring: cleaned up compilation and *package-lint* warnings.
 First major release.
 
 
-[Unreleased]: https://github.com/plandes/flex-compile/compare/v1.0...HEAD
+[Unreleased]: https://github.com/plandes/flex-compile/compare/v1.1...HEAD
+[1.1]: https://github.com/plandes/flex-compile/compare/v1.0...v1.1
 [1.0]: https://github.com/plandes/flex-compile/compare/v0.10...v1.0
 [0.10]: https://github.com/plandes/flex-compile/compare/v0.9...v0.10
 [0.9]: https://github.com/plandes/flex-compile/compare/v0.8...v0.9
