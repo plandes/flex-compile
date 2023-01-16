@@ -175,11 +175,18 @@ PROP is the `config-eval-prop' instance used to configure the run target.
 See the class's `initialize-instance', which is how this method is gets
 invoked."
   (config-prop-entry-set-required this)
-  (let ((targets (flex-compiler-makefile-targets this))
-	(history (slot-value prop 'history))
-	(none "<none>"))
+  (let* ((none "<none>")
+	 (targets (append (flex-compiler-makefile-targets this) (list none)))
+	 (history (slot-value prop 'history))
+	 (init (or (->> history
+			symbol-value
+			delete-dups
+			(-filter (lambda (elt) (not (equal none elt))))
+			cl-second)
+		   none)))
     (->> (choice-program-complete
-	  "Target" targets t nil nil history none nil nil t)
+	  (format "Target or %s for none" none)
+	  targets t nil nil history init nil nil t)
 	 (funcall #'(lambda (elt)
 		      (if (equal none elt) nil elt))))))
 
