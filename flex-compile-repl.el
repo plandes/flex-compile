@@ -198,6 +198,19 @@ The caller raises and error if it doesn't start in time."
 	  (when (string-match repl-buffer-regexp buf-name)
 	    (cl-return-from found-buf buf)))))))
 
+(cl-defmethod flex-compiler--kill-buffer ((this repl-flex-compiler) buffer)
+  "Kill THIS compiler's BUFFER.
+It kills the buffer without prompting  However, in some cases, it might raise
+an erorr."
+  (ignore this)
+  (with-slots (prompt-kill-repl-buffer) this
+    (when (buffer-live-p buffer)
+      (let ((kill-buffer-query-functions
+	     (if prompt-kill-repl-buffer
+		 kill-buffer-query-functions
+	       nil)))
+	(kill-buffer buffer)))))
+
 (cl-defmethod flex-compiler-kill-repl ((this repl-flex-compiler))
   "Kill THIS compiler's REPL."
   (with-slots (derived-buffer-names prompt-kill-repl-buffer) this
@@ -205,15 +218,16 @@ The caller raises and error if it doesn't start in time."
 			(cons (flex-compiler-buffer this) nil)))
 	  (count 0))
       (dolist (buf bufs)
-	(when (buffer-live-p buf)
-	  (let ((kill-buffer-query-functions
-		 (if prompt-kill-repl-buffer
-		     kill-buffer-query-functions
-		   nil)))
-	    (kill-buffer buf))
+	(when (and buf (buffer-live-p buf))
+	  (flex-compiler--kill-buffer this buf)
 	  (cl-incf count)))
       (message "%s killed %d buffer(s)"
 	       (capitalize (config-entry-name this)) count))))
+
+(cl-defmethod flex-compiler-clear-buffer ((this repl-flex-compiler))
+  "Clear THIS compiler's REPL buffer."
+  (with-current-buffer (flex-compiler-buffer this)
+    (comint-clear-buffer)))
 
 (cl-defmethod flex-compiler-start-buffer ((this repl-flex-compiler) start-type)
   "Return a new buffer for THIS compiler with a processing compilation.
@@ -229,8 +243,7 @@ START-TYPE is either symbols `compile', `run', `clean' depending
 		   (if (flex-compiler-repl-running-p this)
 		       (progn
 			 (when output-clear
-			   (with-current-buffer (flex-compiler-buffer this)
-			     (comint-clear-buffer)))
+			   (flex-compiler-clear-buffer this))
 			 (flex-compiler-repl-compile this config-file))
 		     (if runningp
 			 (error "REPL hasn't started")
