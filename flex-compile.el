@@ -47,6 +47,7 @@
 (require 'flex-compile-xml-validate)
 (require 'flex-compile-python)
 (require 'flex-compile-clojure)
+(require 'flex-compile-slime)
 (require 'flex-compile-ess)
 (require 'flex-compile-comint)
 (require 'flex-compile-cli)
