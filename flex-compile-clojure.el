@@ -128,7 +128,7 @@ This also sets `cider-repl-display-in-current-window' to nil"
     (or (nrepl-dict-get res "err")
 	(nrepl-dict-get res "value"))))
 
-(cl-defmethod flex-compiler-repl-compile ((this repl-flex-compiler) file)
+(cl-defmethod flex-compiler-repl-compile ((this clojure-flex-compiler) file)
   "Send the contents of FILE to the Cider REPL buffer of THIS compiler."
   (ignore this)
   (save-excursion
