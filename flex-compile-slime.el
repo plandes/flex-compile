@@ -70,7 +70,9 @@ expressions using [slime](https://github.com/slime/slime).")
 	  slots (plist-put slots :validate-modes '(lisp-mode))
 	  slots (plist-put slots :repl-buffer-regexp "^\\**slime-repl .+\\*$")
 	  slots (plist-put slots :derived-buffer-names
-			   '("*slime-events*" "*inferior-lisp*"))
+			   '("*slime-events*"
+			     "*slime-compilation*"
+			     "*inferior-lisp*"))
 	  slots (plist-put slots :repl-buffer-start-timeout 0)
 	  slots (plist-put slots
 			   :props (append (plist-get slots :props) props))))
@@ -112,7 +114,11 @@ expressions using [slime](https://github.com/slime/slime).")
       (slime-repl-clear-buffer))))
 
 (defun flex-compiler-slime-connected ()
-  "Called by `slime-connected-hook' after the REPL has started."
+  "Called by `slime-connected-hook' after the REPL has started.
+Because slime pops a new buffer after the REPL starts, the default buffer
+display logic isn't called after `flex-compiler-repl-start'.  This is called
+by `slime-connected-hook' to execute the default buffer display behavior by
+calling `flex-compiler-display-buffer'."
   (unwind-protect
       (let* ((this (cdr (assq 'this flex-compiler-slime-window-context)))
 	     (cfg (cdr (assq 'win-cfg flex-compiler-slime-window-context)))
