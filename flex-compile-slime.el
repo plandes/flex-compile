@@ -38,6 +38,7 @@
 (config-manage-declare-functions
  slime
  slime-interactive-eval
+ slime-load-file
  slime-compile-and-load-file
  slime-last-expression
  slime-repl-clear-buffer
@@ -47,7 +48,11 @@
   "Used to restore windows in `flex-compiler-slime-connected'.")
 
 (defclass slime-flex-compiler (repl-flex-compiler)
-  ()
+  ((compile-on-load :initarg :compile-on-load
+		    :initform nil
+		    :type boolean
+		    :documentation "\
+Whether to also compile when loading the source file."))
   :method-invocation-order :c3
   :documentation "\
 This is a REPL based compiler that allows for evaluation Lisp buffers and
@@ -55,12 +60,20 @@ expressions using [slime](https://github.com/slime/slime).")
 
 (cl-defmethod initialize-instance ((this slime-flex-compiler) &optional slots)
   "Initialize instance THIS with arguments SLOTS."
-  (setq slots (plist-put slots :object-name "slime")
-	slots (plist-put slots :validate-modes '(lisp-mode))
-	slots (plist-put slots :repl-buffer-regexp "^\\**slime-repl .+\\*$")
-	slots (plist-put slots :derived-buffer-names
-			 '("*slime-events*" "*inferior-lisp*"))
-	slots (plist-put slots :repl-buffer-start-timeout 0))
+  (let ((props
+	 (list
+	  (config-boolean-prop :object-name 'compile-on-load
+			       :prop-entry this
+			       :prompt "Compile when loading"
+			       :input-type 'toggle))))
+    (setq slots (plist-put slots :object-name "slime")
+	  slots (plist-put slots :validate-modes '(lisp-mode))
+	  slots (plist-put slots :repl-buffer-regexp "^\\**slime-repl .+\\*$")
+	  slots (plist-put slots :derived-buffer-names
+			   '("*slime-events*" "*inferior-lisp*"))
+	  slots (plist-put slots :repl-buffer-start-timeout 0)
+	  slots (plist-put slots
+			   :props (append (plist-get slots :props) props))))
   (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-load-libraries ((this slime-flex-compiler))
@@ -76,9 +89,12 @@ expressions using [slime](https://github.com/slime/slime).")
 (cl-defmethod flex-compiler-repl-compile ((this slime-flex-compiler) file)
   "Send the contents of FILE to the Slime REPL buffer of THIS compiler."
   (ignore this)
-  (save-excursion
-    (apply #'set-buffer (list (find-file-noselect file)))
-    (slime-compile-and-load-file)))
+  (with-slots (compile-on-load) this
+    (save-excursion
+      (apply #'set-buffer (list (find-file-noselect file)))
+      (if compile-on-load
+	  (slime-compile-and-load-file)
+	(slime-load-file file)))))
 
 (cl-defmethod flex-compiler-eval-initial-at-point ((this slime-flex-compiler))
   "Return the Lisp form at the current point to the REPL for THIS compiler."
