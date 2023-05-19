@@ -43,6 +43,9 @@
  slime-repl-clear-buffer
  slime-quit-lisp)
 
+(defvar flex-compiler-slime-window-context nil
+  "Used to restore windows in `flex-compiler-slime-connected'.")
+
 (defclass slime-flex-compiler (repl-flex-compiler)
   ()
   :method-invocation-order :c3
@@ -55,6 +58,8 @@ expressions using [slime](https://github.com/slime/slime).")
   (setq slots (plist-put slots :object-name "slime")
 	slots (plist-put slots :validate-modes '(lisp-mode))
 	slots (plist-put slots :repl-buffer-regexp "^\\**slime-repl .+\\*$")
+	slots (plist-put slots :derived-buffer-names
+			 '("*slime-events*" "*inferior-lisp*"))
 	slots (plist-put slots :repl-buffer-start-timeout 0))
   (cl-call-next-method this slots))
 
@@ -90,19 +95,31 @@ expressions using [slime](https://github.com/slime/slime).")
 		 (goto-char (point-max)))))
       (slime-repl-clear-buffer))))
 
+(defun flex-compiler-slime-connected ()
+  "Called by `slime-connected-hook' after the REPL has started."
+  (unwind-protect
+      (let* ((this (cdr (assq 'this flex-compiler-slime-window-context)))
+	     (cfg (cdr (assq 'win-cfg flex-compiler-slime-window-context)))
+	     (compile-def `((newp . t)
+			    (buffer . ,(flex-compiler-buffer this)))))
+	(set-window-configuration cfg)
+	(flex-compiler-display-buffer this compile-def))
+    (setq flex-compiler-slime-window-context nil)))
+
+(add-hook 'slime-connected-hook #'flex-compiler-slime-connected 100)
+
 (cl-defmethod flex-compiler-repl-start ((this slime-flex-compiler))
   "Start the REPL using THIS compiler."
   (ignore this)
+  (setq flex-compiler-slime-window-context
+	`((this . ,this)
+	  (win-cfg . ,(current-window-configuration))))
   (slime))
 
 (cl-defmethod flex-compiler-kill-repl ((this slime-flex-compiler))
   "Use `cider-quit' to stop the Cider REPL for THIS compiler."
   (condition-case err
-      (progn
-	(slime-quit-lisp t)
-	(dolist (buf-name '("*inferior-lisp*" "*slime-events*"))
-	  (let ((buf (get-buffer buf-name)))
-	    (flex-compiler--kill-buffer this buf))))
+      (slime-quit-lisp t)
     (error "Warning: %S" err))
   (cl-call-next-method this))
 
