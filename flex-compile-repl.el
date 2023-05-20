@@ -232,7 +232,7 @@ an erorr."
 (cl-defmethod flex-compiler-start-buffer ((this repl-flex-compiler) start-type)
   "Return a new buffer for THIS compiler with a processing compilation.
 START-TYPE is either symbols `compile', `run', `clean' depending
-  if invoked by `flex-compiler-compile' or `flex-compiler-run'."
+if invoked by `flex-compiler-compile' or `flex-compiler-run'."
   (config-prop-entry-set-required this)
   (with-slots (config-file output-clear) this
     (let ((runningp (flex-compiler-repl-running-p this)))
