@@ -37,6 +37,7 @@
 
 (config-manage-declare-functions
  slime
+ slime-setup
  slime-interactive-eval
  slime-load-file
  slime-compile-and-load-file
@@ -69,10 +70,7 @@ expressions using [slime](https://github.com/slime/slime).")
     (setq slots (plist-put slots :object-name "slime")
 	  slots (plist-put slots :validate-modes '(lisp-mode))
 	  slots (plist-put slots :repl-buffer-regexp "^\\**slime-repl .+\\*$")
-	  slots (plist-put slots :derived-buffer-names
-			   '("*slime-events*"
-			     "*slime-compilation*"
-			     "*inferior-lisp*"))
+	  slots (plist-put slots :derived-buffer-names '("*inferior-lisp*"))
 	  slots (plist-put slots :repl-buffer-start-timeout 0)
 	  slots (plist-put slots
 			   :props (append (plist-get slots :props) props))))
@@ -81,7 +79,8 @@ expressions using [slime](https://github.com/slime/slime).")
 (cl-defmethod flex-compiler-load-libraries ((this slime-flex-compiler))
   "Load the `slime' library for THIS compiler."
   (ignore this)
-  (require 'slime))
+  (require 'slime)
+  (slime-setup))
 
 (cl-defmethod flex-compiler-eval-form-impl ((this slime-flex-compiler) form)
   "Evaluate the FORM and return the response of the REPL for THIS compiler."
@@ -142,6 +141,10 @@ if invoked by `flex-compiler-compile' or `flex-compiler-run'."
   (condition-case err
       (slime-quit-lisp t)
     (error "Warning: %S" err))
+  (dolist (buf (buffer-list))
+    (when (string-match "^\\**\\(?:slime-\\|sldb \\).+\\*$" (buffer-name buf))
+      (message "killing buffer %S" buf)
+      (flex-compiler--kill-buffer this buf)))
   (cl-call-next-method this))
 
 (defun flex-compiler-slime-connected ()
@@ -160,6 +163,8 @@ calling `flex-compiler-display-buffer'."
 	(set-window-configuration cfg)
 	(flex-compiler-display-buffer this compile-def)
 	(when needs-compile-p
+	  ;; put any output on a separate (new)line
+	  (flex-compiler-eval-form-impl this "(format t \"~%\")")
 	  (with-slots (config-file) this
 	    (flex-compiler-repl-compile this config-file))))
     (setq flex-compiler-slime-window-context nil)))
