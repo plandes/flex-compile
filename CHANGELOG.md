@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+## [1.2] - 2023-05-22
+### Changed
+- Add Lisp with Slime interaction flex compiler.
+
+
 ## [1.1] - 2023-01-16
 ### Changed
 - Bug fixes.
@@ -127,7 +132,8 @@ Major refactoring: cleaned up compilation and *package-lint* warnings.
 First major release.
 
 
-[Unreleased]: https://github.com/plandes/flex-compile/compare/v1.1...HEAD
+[Unreleased]: https://github.com/plandes/flex-compile/compare/v1.2...HEAD
+[1.2]: https://github.com/plandes/flex-compile/compare/v1.1...v1.2
 [1.1]: https://github.com/plandes/flex-compile/compare/v1.0...v1.1
 [1.0]: https://github.com/plandes/flex-compile/compare/v0.10...v1.0
 [0.10]: https://github.com/plandes/flex-compile/compare/v0.9...v0.10
