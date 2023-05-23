@@ -45,8 +45,8 @@
  slime-repl-clear-buffer
  slime-quit-lisp)
 
-(defvar flex-compiler-slime-window-context nil
-  "Used to restore windows in `flex-compiler-slime-connected'.")
+(defvar flex-compile-slime-window-context nil
+  "Used to restore windows in `flex-compile-slime-connected'.")
 
 (defclass slime-flex-compiler (repl-flex-compiler)
   ((compile-on-load :initarg :compile-on-load
@@ -115,7 +115,7 @@ expressions using [slime](https://github.com/slime/slime).")
 (cl-defmethod flex-compiler-repl-start ((this slime-flex-compiler))
   "Start the REPL using THIS compiler."
   (ignore this)
-  (setq flex-compiler-slime-window-context
+  (setq flex-compile-slime-window-context
 	`((this . ,this)
 	  (win-cfg . ,(current-window-configuration))))
   (slime))
@@ -128,11 +128,11 @@ if invoked by `flex-compiler-compile' or `flex-compiler-run'."
   (let ((needs-run-p (and (eq start-type 'compile)
 			  (not (flex-compiler-repl-running-p this))))
 	(ret (cl-call-next-method this start-type)))
-    ;; tell `flex-compiler-slime-connected' to invoke compilation after the
+    ;; tell `flex-compile-slime-connected' to invoke compilation after the
     ;; REPL has started if started as a compile rather than a run
     (if needs-run-p
-	(setq flex-compiler-slime-window-context
-	      (append flex-compiler-slime-window-context
+	(setq flex-compile-slime-window-context
+	      (append flex-compile-slime-window-context
 		      '((needs-compile-p . t)))))
     ret))
 
@@ -147,17 +147,17 @@ if invoked by `flex-compiler-compile' or `flex-compiler-run'."
       (flex-compiler--kill-buffer this buf)))
   (cl-call-next-method this))
 
-(defun flex-compiler-slime-connected ()
+(defun flex-compile-slime-connected ()
   "Called by `slime-connected-hook' after the REPL has started.
 Because slime pops a new buffer after the REPL starts, the default buffer
 display logic isn't called after `flex-compiler-repl-start'.  This is called
 by `slime-connected-hook' to execute the default buffer display behavior by
 calling `flex-compiler-display-buffer'."
   (unwind-protect
-      (let* ((this (cdr (assq 'this flex-compiler-slime-window-context)))
-	     (cfg (cdr (assq 'win-cfg flex-compiler-slime-window-context)))
+      (let* ((this (cdr (assq 'this flex-compile-slime-window-context)))
+	     (cfg (cdr (assq 'win-cfg flex-compile-slime-window-context)))
 	     (needs-compile-p (cdr (assq 'needs-compile-p
-					 flex-compiler-slime-window-context)))
+					 flex-compile-slime-window-context)))
 	     (compile-def `((newp . t)
 			    (buffer . ,(flex-compiler-buffer this)))))
 	(set-window-configuration cfg)
@@ -167,9 +167,9 @@ calling `flex-compiler-display-buffer'."
 	  (flex-compiler-eval-form-impl this "(format t \"~%\")")
 	  (with-slots (config-file) this
 	    (flex-compiler-repl-compile this config-file))))
-    (setq flex-compiler-slime-window-context nil)))
+    (setq flex-compile-slime-window-context nil)))
 
-(add-hook 'slime-connected-hook #'flex-compiler-slime-connected 100)
+(add-hook 'slime-connected-hook #'flex-compile-slime-connected 100)
 
 (flex-compile-manager-register flex-compile-manage-inst (slime-flex-compiler))
 

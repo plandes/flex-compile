@@ -20,7 +20,8 @@
   "Test registration of compilers."
   (should (equal
 	   '("choice-program" "cli" "clojure" "comint" "command" "disable"
-	     "ess" "make" "org-export" "python" "script" "xml-validate")
+	     "ess" "make" "org-export" "python" "script" "slime"
+	     "xml-validate")
 	   (->> (slot-value flex-compile-manage-inst 'entries)
 		(-map 'config-entry-name)
 		(funcall #'(lambda (elt) (sort elt 'string<)))))))
