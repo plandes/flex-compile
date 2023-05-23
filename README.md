@@ -221,7 +221,7 @@ Properties:
   * Kill Buffer Clean: If non-nil kill the buffer on clean.
 
 
-### CLI python file
+### CLI Python
 
 Provides support for user input for action mnemonics and options using Python
 programs that use the
@@ -287,8 +287,8 @@ requires switching back and forth between buffers, which is a hassle.
 
 Properties:
   * Config File: The file to use for *configuring* the compiler.
-  * Buffer: The buffer to insert the `content` slot.
   * Content: The string to insert in the buffer referred by the `buffer` slot.
+  * Buffer: The buffer to insert the `content` slot.
   * Start Directory: The directory for starting the compilation.
 
 
@@ -317,6 +317,26 @@ Properties:
   * Buffer Exists Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-exists-mode`.
   * Buffer New Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-new-mode`.
   * Kill Buffer Clean: If non-nil kill the buffer on clean.
+  * Output Clear: Whether or not to clear comint buffer after a compilation.
+  * Prompt Kill Repl Buffer: If non-`nil` then prompt to kill a REPL buffer on clean.
+  * Repl Buffer Start Timeout: Number of seconds as an integer to wait to start before giving up (and not
+    displaying).
+  * Repl Buffer Start Wait: Number of seconds (as a float) to wait before issuing any first command to the
+    REPL.
+  * Start Directory: The directory for starting the compilation.
+
+
+### Lisp
+
+This is a REPL based compiler that allows for evaluation Lisp buffers and
+expressions using [slime](https://github.com/slime/slime).
+
+Properties:
+  * Config File: The file to use for *configuring* the compiler.
+  * Buffer Exists Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-exists-mode`.
+  * Buffer New Mode: Compiler instance of `flex-compile-single-buffer-display-buffer-new-mode`.
+  * Kill Buffer Clean: If non-nil kill the buffer on clean.
+  * Compile On Load: Whether to also compile when loading the source file.
   * Output Clear: Whether or not to clear comint buffer after a compilation.
   * Prompt Kill Repl Buffer: If non-`nil` then prompt to kill a REPL buffer on clean.
   * Repl Buffer Start Timeout: Number of seconds as an integer to wait to start before giving up (and not
