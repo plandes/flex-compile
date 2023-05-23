@@ -11,7 +11,7 @@
 (require 'flex-compile-make)
 
 (ert-deftest test-manager-instance ()
-  "Test successful evaluation of flex-compile"
+  "Test successful evaluation of flex-compile."
   (let ((this flex-compile-manage-inst))
     (should (eq t (eieio-object-p this)))
     (should (eq 'flex-compile-manager (eieio-object-class this)))))
@@ -20,7 +20,7 @@
   "Test registration of compilers."
   (should (equal
 	   '("choice-program" "cli" "clojure" "comint" "command" "disable"
-	     "ess" "make" "org-export" "python" "script" "slime"
+	     "ess" "lisp" "make" "org-export" "python" "script"
 	     "xml-validate")
 	   (->> (slot-value flex-compile-manage-inst 'entries)
 		(-map 'config-entry-name)
@@ -28,4 +28,4 @@
 
 (provide 'flex-compile-test)
 
-;;; flex-compile-test ends here
+;;; flex-compile-test.el ends here

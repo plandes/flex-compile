@@ -1,4 +1,4 @@
-;;; flex-compile-slime.el --- Lisp compile functions  -*- lexical-binding: t; -*-
+;;; flex-compile-lisp.el --- Lisp compile functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2021 Paul Landes
 
@@ -45,10 +45,10 @@
  slime-repl-clear-buffer
  slime-quit-lisp)
 
-(defvar flex-compile-slime-window-context nil
-  "Used to restore windows in `flex-compile-slime-connected'.")
+(defvar flex-compile-lisp-window-context nil
+  "Used to restore windows in `flex-compile-lisp-connected'.")
 
-(defclass slime-flex-compiler (repl-flex-compiler)
+(defclass lisp-flex-compiler (repl-flex-compiler)
   ((compile-on-load :initarg :compile-on-load
 		    :initform nil
 		    :type boolean
@@ -59,7 +59,7 @@ Whether to also compile when loading the source file."))
 This is a REPL based compiler that allows for evaluation Lisp buffers and
 expressions using [slime](https://github.com/slime/slime).")
 
-(cl-defmethod initialize-instance ((this slime-flex-compiler) &optional slots)
+(cl-defmethod initialize-instance ((this lisp-flex-compiler) &optional slots)
   "Initialize instance THIS with arguments SLOTS."
   (let ((props
 	 (list
@@ -67,7 +67,7 @@ expressions using [slime](https://github.com/slime/slime).")
 			       :prop-entry this
 			       :prompt "Compile when loading"
 			       :input-type 'toggle))))
-    (setq slots (plist-put slots :object-name "slime")
+    (setq slots (plist-put slots :object-name "lisp")
 	  slots (plist-put slots :validate-modes '(lisp-mode))
 	  slots (plist-put slots :repl-buffer-regexp "^\\**slime-repl .+\\*$")
 	  slots (plist-put slots :derived-buffer-names '("*inferior-lisp*"))
@@ -76,18 +76,18 @@ expressions using [slime](https://github.com/slime/slime).")
 			   :props (append (plist-get slots :props) props))))
   (cl-call-next-method this slots))
 
-(cl-defmethod flex-compiler-load-libraries ((this slime-flex-compiler))
+(cl-defmethod flex-compiler-load-libraries ((this lisp-flex-compiler))
   "Load the `slime' library for THIS compiler."
   (ignore this)
   (require 'slime)
   (slime-setup))
 
-(cl-defmethod flex-compiler-eval-form-impl ((this slime-flex-compiler) form)
+(cl-defmethod flex-compiler-eval-form-impl ((this lisp-flex-compiler) form)
   "Evaluate the FORM and return the response of the REPL for THIS compiler."
   (ignore this)
   (slime-interactive-eval form))
 
-(cl-defmethod flex-compiler-repl-compile ((this slime-flex-compiler) file)
+(cl-defmethod flex-compiler-repl-compile ((this lisp-flex-compiler) file)
   "Send the contents of FILE to the Slime REPL buffer of THIS compiler."
   (ignore this)
   (with-slots (compile-on-load) this
@@ -97,12 +97,12 @@ expressions using [slime](https://github.com/slime/slime).")
 	  (slime-compile-and-load-file)
 	(slime-load-file file)))))
 
-(cl-defmethod flex-compiler-eval-initial-at-point ((this slime-flex-compiler))
+(cl-defmethod flex-compiler-eval-initial-at-point ((this lisp-flex-compiler))
   "Return the Lisp form at the current point to the REPL for THIS compiler."
   (ignore this)
   (slime-last-expression))
 
-(cl-defmethod flex-compiler-clear-buffer ((this slime-flex-compiler))
+(cl-defmethod flex-compiler-clear-buffer ((this lisp-flex-compiler))
   "Clear THIS compiler's REPL buffer."
   (with-current-buffer (flex-compiler-buffer this)
     ;; temporarily redefine `recenter' to avoid current window warnings
@@ -112,15 +112,15 @@ expressions using [slime](https://github.com/slime/slime).")
 		 (goto-char (point-max)))))
       (slime-repl-clear-buffer))))
 
-(cl-defmethod flex-compiler-repl-start ((this slime-flex-compiler))
+(cl-defmethod flex-compiler-repl-start ((this lisp-flex-compiler))
   "Start the REPL using THIS compiler."
   (ignore this)
-  (setq flex-compile-slime-window-context
+  (setq flex-compile-lisp-window-context
 	`((this . ,this)
 	  (win-cfg . ,(current-window-configuration))))
   (slime))
 
-(cl-defmethod flex-compiler-start-buffer ((this slime-flex-compiler)
+(cl-defmethod flex-compiler-start-buffer ((this lisp-flex-compiler)
 					  start-type)
   "Return a new buffer for THIS compiler with a processing compilation.
 START-TYPE is either symbols `compile', `run', `clean' depending
@@ -128,15 +128,15 @@ if invoked by `flex-compiler-compile' or `flex-compiler-run'."
   (let ((needs-run-p (and (eq start-type 'compile)
 			  (not (flex-compiler-repl-running-p this))))
 	(ret (cl-call-next-method this start-type)))
-    ;; tell `flex-compile-slime-connected' to invoke compilation after the
+    ;; tell `flex-compile-lisp-connected' to invoke compilation after the
     ;; REPL has started if started as a compile rather than a run
     (if needs-run-p
-	(setq flex-compile-slime-window-context
-	      (append flex-compile-slime-window-context
+	(setq flex-compile-lisp-window-context
+	      (append flex-compile-lisp-window-context
 		      '((needs-compile-p . t)))))
     ret))
 
-(cl-defmethod flex-compiler-kill-repl ((this slime-flex-compiler))
+(cl-defmethod flex-compiler-kill-repl ((this lisp-flex-compiler))
   "Use `cider-quit' to stop the Cider REPL for THIS compiler."
   (condition-case err
       (slime-quit-lisp t)
@@ -147,17 +147,17 @@ if invoked by `flex-compiler-compile' or `flex-compiler-run'."
       (flex-compiler--kill-buffer this buf)))
   (cl-call-next-method this))
 
-(defun flex-compile-slime-connected ()
+(defun flex-compile-lisp-connected ()
   "Called by `slime-connected-hook' after the REPL has started.
 Because slime pops a new buffer after the REPL starts, the default buffer
 display logic isn't called after `flex-compiler-repl-start'.  This is called
 by `slime-connected-hook' to execute the default buffer display behavior by
 calling `flex-compiler-display-buffer'."
   (unwind-protect
-      (let* ((this (cdr (assq 'this flex-compile-slime-window-context)))
-	     (cfg (cdr (assq 'win-cfg flex-compile-slime-window-context)))
+      (let* ((this (cdr (assq 'this flex-compile-lisp-window-context)))
+	     (cfg (cdr (assq 'win-cfg flex-compile-lisp-window-context)))
 	     (needs-compile-p (cdr (assq 'needs-compile-p
-					 flex-compile-slime-window-context)))
+					 flex-compile-lisp-window-context)))
 	     (compile-def `((newp . t)
 			    (buffer . ,(flex-compiler-buffer this)))))
 	(set-window-configuration cfg)
@@ -167,12 +167,12 @@ calling `flex-compiler-display-buffer'."
 	  (flex-compiler-eval-form-impl this "(format t \"~%\")")
 	  (with-slots (config-file) this
 	    (flex-compiler-repl-compile this config-file))))
-    (setq flex-compile-slime-window-context nil)))
+    (setq flex-compile-lisp-window-context nil)))
 
-(add-hook 'slime-connected-hook #'flex-compile-slime-connected 100)
+(add-hook 'slime-connected-hook #'flex-compile-lisp-connected 100)
 
-(flex-compile-manager-register flex-compile-manage-inst (slime-flex-compiler))
+(flex-compile-manager-register flex-compile-manage-inst (lisp-flex-compiler))
 
-(provide 'flex-compile-slime)
+(provide 'flex-compile-lisp)
 
-;;; flex-compile-slime.el ends here
+;;; flex-compile-lisp.el ends here

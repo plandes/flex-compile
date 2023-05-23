@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2015 - 2023 Paul Landes
 
-;; Version: 1.2
+;; Version: 1.3
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
 ;; Keywords: compilation integration processes
@@ -47,7 +47,7 @@
 (require 'flex-compile-xml-validate)
 (require 'flex-compile-python)
 (require 'flex-compile-clojure)
-(require 'flex-compile-slime)
+(require 'flex-compile-lisp)
 (require 'flex-compile-ess)
 (require 'flex-compile-comint)
 (require 'flex-compile-cli)
