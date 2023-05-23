@@ -2,7 +2,7 @@
 
 ;; Copyright (C) 2015 - 2023 Paul Landes
 
-;; Version: 1.1
+;; Version: 1.2
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
 ;; Keywords: compilation integration processes
