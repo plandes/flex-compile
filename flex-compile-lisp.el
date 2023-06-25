@@ -53,7 +53,16 @@
 		    :initform nil
 		    :type boolean
 		    :documentation "\
-Whether to also compile when loading the source file."))
+Whether to also compile when loading the source file.")
+   (mode :initarg :mode
+	 :initform 'file
+	 :type symbol
+	 :documentation "\
+Whether to run the test suite using the `slite' library (must be installed)
+instead of evaluate the `config-file'.")
+   (test-file :initarg :test-file
+	      :initform nil
+	      :type (or null string)))
   :method-invocation-order :c3
   :documentation "\
 This is a REPL based compiler that allows for evaluation Lisp buffers and
@@ -66,7 +75,19 @@ expressions using [slime](https://github.com/slime/slime).")
 	  (config-boolean-prop :object-name 'compile-on-load
 			       :prop-entry this
 			       :prompt "Compile when loading"
-			       :input-type 'toggle))))
+			       :input-type 'toggle)
+	  (config-file-prop :object-name 'test-file
+			    :prompt "Test file"
+			    :prop-entry this
+			    :validate-modes (plist-get slots :validate-modes)
+			    :input-type 'last
+			    :required nil
+			    :order 0)
+	  (config-choice-prop :object-name 'mode
+			      :prompt "Run tests"
+			      :prop-entry this
+			      :input-type 'toggle
+			      :choices '(file test)))))
     (setq slots (plist-put slots :object-name "lisp")
 	  slots (plist-put slots :validate-modes '(lisp-mode))
 	  slots (plist-put slots :repl-buffer-regexp "^\\**slime-repl .+\\*$")
@@ -80,6 +101,10 @@ expressions using [slime](https://github.com/slime/slime).")
   "Load the `slime' library for THIS compiler."
   (ignore this)
   (require 'slime)
+  (condition-case nil
+      (require 'slite)
+    (error
+     (message "Package `slite' is not found--skipping test functionality")))
   (slime-setup))
 
 (cl-defmethod flex-compiler-eval-form-impl ((this lisp-flex-compiler) form)
@@ -125,16 +150,43 @@ expressions using [slime](https://github.com/slime/slime).")
   "Return a new buffer for THIS compiler with a processing compilation.
 START-TYPE is either symbols `compile', `run', `clean' depending
 if invoked by `flex-compiler-compile' or `flex-compiler-run'."
-  (let ((needs-run-p (and (eq start-type 'compile)
-			  (not (flex-compiler-repl-running-p this))))
-	(ret (cl-call-next-method this start-type)))
-    ;; tell `flex-compile-lisp-connected' to invoke compilation after the
-    ;; REPL has started if started as a compile rather than a run
-    (if needs-run-p
-	(setq flex-compile-lisp-window-context
-	      (append flex-compile-lisp-window-context
-		      '((needs-compile-p . t)))))
-    ret))
+  (with-slots (mode test-file) this
+    (let ((needs-run-p (and (eq start-type 'compile)
+			    (not (flex-compiler-repl-running-p this))))
+	  (ret (cl-call-next-method this start-type)))
+      ;; tell `flex-compile-lisp-connected' to invoke compilation after the
+      ;; REPL has started if started as a compile rather than a run
+      (if needs-run-p
+	  (setq flex-compile-lisp-window-context
+		(append flex-compile-lisp-window-context
+			'((needs-compile-p . t)))))
+      ret)))
+
+(cl-defmethod flex-compiler-single-buffer--flex-comp-def
+  ((this lisp-flex-compiler) start-type startp)
+"Return a default compilation definition for THIS compiler.
+
+START-TYPE is either symbols `compile', `run', `clean' depending if invoked by
+`flex-compiler-compile' or `flex-compiler-run'.
+
+If STARTP is non-nil, start the buffer using `flex-compiler-start-buffer'.
+
+Return an alist in the following form:
+  ((newp . <t if the buffer is new and jsut created, nil otherwise>
+   (buffer . <the of single buffer object>)))"
+  (with-slots (mode test-file) this
+    ;; override for testing functionality
+    (if (and (eq start-type 'compile) (eq mode 'test))
+	(when (fboundp 'slite-run)
+	  (message "Running tests...")
+	  (unless test-file
+	    (let ((prop (config-prop-by-name this 'test-file)))
+	      (config-prop-set this prop (config-prop-read prop))))
+	  (flex-compiler-evaluate-form this (format "(load \"%s\")" test-file))
+	  (call-interactively 'slite-run)
+	  '((newp . nil)
+	    (buffer . nil))))
+    (cl-call-next-method this start-type startp)))
 
 (cl-defmethod flex-compiler-kill-repl ((this lisp-flex-compiler))
   "Use `cider-quit' to stop the Cider REPL for THIS compiler."
