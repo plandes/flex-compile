@@ -285,7 +285,7 @@ START-TYPE is either symbols `compile', `run', `clean' depending if invoked by
 If STARTP is non-nil, start the buffer using `flex-compiler-start-buffer'.
 
 Return an alist in the following form:
-  ((newp . <t if the buffer is new and jsut created, nil otherwise>
+  ((newp . <t if the buffer is new and just created, nil otherwise>
    (buffer . <the of single buffer object>)))"
   (let* ((has-buffer-p (flex-compiler-buffer this))
 	 (buf (flex-compiler-buffer this)))
