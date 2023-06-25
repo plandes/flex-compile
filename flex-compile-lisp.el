@@ -59,7 +59,8 @@ Whether to also compile when loading the source file.")
 	 :type symbol
 	 :documentation "\
 Whether to run the test suite using the `slite' library (must be installed)
-instead of evaluate the `config-file'.")
+instead of evaluate the `config-file'.  Available at:
+https://github.com/tdrhq/slite")
    (test-file :initarg :test-file
 	      :initform nil
 	      :type (or null string)))
