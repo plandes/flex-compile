@@ -30,10 +30,16 @@
 
 ;; Compiler that exports Org mode to external formats and then shows the
 ;; output in the browser.  Only HTML is currently supported.
+;;
+;; The `Show File' functionality for the `open-file' property needs the Python
+;; program at `https://github.com/plandes/showfile', which is installed with
+;; `pip install zensols.showfile'.
 
 ;;; Code:
 
 (require 'flex-compile-manage)
+
+
 
 (config-manage-declare-functions
  org-open-file
@@ -42,12 +48,12 @@
 ;;; func file compiler
 (defclass org-export-flex-compiler (conf-file-flex-compiler)
   ((export-fn :initarg :export-fn
-	      :initform org-twbs-export-to-html
+	      :initform 'org-twbs-export-to-html
 	      :documentation "The Org mode export function.")
    (open-file :initarg :open-file
-	      :initform t
-	      :type boolean
-	      :documentation "Whether to open the file after exported.")
+	      :initform 'default-org-mode
+	      :type symbol
+	      :documentation "The method to open the file after exported.")
    (output-directory :initarg :start-directory
 		     :initform nil
 		     :type (or null string)
@@ -72,35 +78,41 @@ then shows the output in the browser.  Only HTML is currently supported.")
 (cl-defmethod initialize-instance ((this org-export-flex-compiler)
 				   &optional slots)
   "Initialize instance THIS with arguments SLOTS."
-  (let* ((choices '(("Plain HTML" . org-html-export-to-html)
-		    ("Bootstrap HTML" . org-twbs-export-to-html)))
-	 (props (list (config-choice-description-prop
-		       :object-name 'export-fn
-		       :prompt "Export format"
-		       :prop-entry this
-		       :choices choices
-		       :required t
-		       :input-type 'toggle)
-		      (config-boolean-prop
-		       :object-name 'open-file
-		       :prop-entry this
-		       :prompt "Open file after generated"
-		       :input-type 'toggle)
-		      (config-directory-prop
-		       :object-name 'output-directory
-		       :prop-entry this
-		       :prompt "Output directory"
-		       :input-type 'last)
-		      (config-prop
-		       :object-name 'frame-focus-command
-		       :prop-entry this
-		       :prompt "Command to execute to focus Emacs"
-		       :input-type 'last)
-		      (config-number-prop
-		       :object-name 'frame-focus-delay
-		       :prop-entry this
-		       :prompt "Number of second to wait to focus Emacs"
-		       :input-type 'last))))
+  (let* ((export-choices '(("Plain HTML" . org-html-export-to-html)
+			   ("Bootstrap HTML" . org-twbs-export-to-html)))
+	 (open-file-choices '(("Default Org Mode" . default-org-mode)
+			      ("Show File" . show-file)
+			      ("Do not open file" . none)))
+	 (props (list
+		 (config-choice-description-prop
+		  :object-name 'export-fn
+		  :prompt "Export format"
+		  :prop-entry this
+		  :choices export-choices
+		  :required t
+		  :input-type 'toggle)
+		 (config-choice-description-prop
+		  :object-name 'open-file
+		  :prompt "Open file after generated"
+		  :prop-entry this
+		  :choices open-file-choices
+		  :required t
+		  :input-type 'toggle)
+		 (config-directory-prop
+		  :object-name 'output-directory
+		  :prop-entry this
+		  :prompt "Output directory"
+		  :input-type 'last)
+		 (config-prop
+		  :object-name 'frame-focus-command
+		  :prop-entry this
+		  :prompt "Command to execute to focus Emacs (or RET for None)"
+		  :input-type 'last)
+		 (config-number-prop
+		  :object-name 'frame-focus-delay
+		  :prop-entry this
+		  :prompt "Number of second to wait to focus Emacs"
+		  :input-type 'last))))
     (setq slots (plist-put slots :object-name "org-export")
 	  slots (plist-put slots :description "Org mode")
 	  slots (plist-put slots :validate-modes '(org-mode))
@@ -148,19 +160,24 @@ Todo: make this OS independent as currently the browser only opens on OSX.
 
 THIS is the object instance."
   (config-prop-entry-set-required this)
-  (with-slots (export-fn config-file open-file) this
-    (with-current-buffer (flex-compiler-conf-file-buffer this)
-      (let* ((open-fn (if open-file
-			  'org-open-file
-			'identity))
-	     (src (funcall export-fn))
-	     (dst (flex-compiler-org-export-dest this)))
-	(rename-file src dst t)
-	(message "Exported file to %s" dst)
-	;; call the function to open the file if configured
-	(funcall open-fn dst))))
+  (cl-flet ((om-show-file
+	     (file-name)
+	     (message "Showing file %s" file-name)
+	     (shell-command (format "showfile show %s &" file-name))))
+    (with-slots (export-fn config-file open-file) this
+      (with-current-buffer (flex-compiler-conf-file-buffer this)
+	(let* ((open-fn (cl-case open-file
+			  (default-org-mode #'org-open-file)
+			  (show-file #'om-show-file)
+			  (none #'identity)))
+	       (src (funcall export-fn))
+	       (dst (flex-compiler-org-export-dest this)))
+	  (rename-file src dst t)
+	  (message "Exported file to %s" dst)
+	  ;; call the function to open the file if configured
+	  (funcall open-fn dst)))))
   (with-slots (frame-focus-command frame-focus-delay) this
-    (when frame-focus-command
+    (when (and frame-focus-command (> (length frame-focus-command) 0))
       (sit-for frame-focus-delay)
       (shell-command frame-focus-command))))
 
