@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+## [1.4] - 2023-08-05
+### Changed
+- Better Common Lisp REPL startup flow.
+- Integrate [zensols.showfile] into Org Mode export.
+
+
 ## [1.3] - 2023-05-23
 ### Changed
 - Rename `slime` compiler to `lisp` for comparability with other compilers.
@@ -139,7 +145,8 @@ Major refactoring: cleaned up compilation and *package-lint* warnings.
 First major release.
 
 
-[Unreleased]: https://github.com/plandes/flex-compile/compare/v1.3...HEAD
+[Unreleased]: https://github.com/plandes/flex-compile/compare/v1.4...HEAD
+[1.4]: https://github.com/plandes/flex-compile/compare/v1.3...v1.4
 [1.3]: https://github.com/plandes/flex-compile/compare/v1.2...v1.3
 [1.2]: https://github.com/plandes/flex-compile/compare/v1.1...v1.2
 [1.1]: https://github.com/plandes/flex-compile/compare/v1.0...v1.1
@@ -160,3 +167,4 @@ First major release.
 [Buffer Manage]: https://github.com/plandes/buffer-manage
 [zenbuild]: https://github.com/plandes/zenbuild
 [Zensols action command line interface]: https://plandes.github.io/util/doc/command-line.html
+[zensols.showfile]: https://github.com/plandes/showfile
