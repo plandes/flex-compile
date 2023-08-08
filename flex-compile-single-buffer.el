@@ -299,10 +299,12 @@ Return an alist in the following form:
 
 (cl-defmethod flex-compiler-compile ((this single-buffer-flex-compiler))
   "Invoke the compile functionality of THIS compiler."
+  (save-some-buffers)
   (flex-compiler-single-buffer--flex-comp-def this 'compile t))
 
 (cl-defmethod flex-compiler-run ((this single-buffer-flex-compiler))
   "Invoke the run functionality of THIS compiler."
+  (save-some-buffers)
   (flex-compiler-single-buffer--flex-comp-def this 'run t))
 
 (cl-defmethod flex-compiler-clean ((this single-buffer-flex-compiler)
