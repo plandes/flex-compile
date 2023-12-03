@@ -33,6 +33,7 @@
 ;;; Code:
 
 (require 'subr-x)
+(require 'python)
 (require 'flex-compile-manage)
 (require 'flex-compile-repl)
 
