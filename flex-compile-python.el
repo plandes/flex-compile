@@ -33,19 +33,18 @@
 ;;; Code:
 
 (require 'subr-x)
-(require 'python)
 (require 'flex-compile-manage)
 (require 'flex-compile-repl)
 
-(config-manage-declare-functions
- python-nav-backward-statement
- python-nav-forward-statement
- python-shell-calculate-command
- python-shell-completion-native-setup
- python-shell-parse-command
- python-shell-send-buffer
- python-shell-send-string
- run-python)
+(declare-function python-nav-backward-statement "python")
+(declare-function python-nav-forward-statement "python")
+(declare-function python-shell-calculate-command "python")
+(declare-function python-shell-completion-native-setup "python")
+(declare-function python-shell-parse-command "python")
+(declare-function python-shell-send-buffer "python")
+(declare-function python-shell-send-string "python")
+(declare-function run-python "python")
+
 (config-manage-declare-variables
  python-shell-completion-native-enable)
 

@@ -39,8 +39,6 @@
 
 (require 'flex-compile-manage)
 
-
-
 (config-manage-declare-functions
  org-open-file
  org-twbs-export-to-html)

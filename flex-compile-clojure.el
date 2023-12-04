@@ -35,11 +35,17 @@
 (require 'dash)
 (require 'flex-compile-manage)
 
-(config-manage-declare-functions
- cider-repl-return cider-connect
- nrepl-dict-get nrepl-sync-request:eval
- cider-current-connection cider-current-session cider-current-ns
- cider-load-file cider-last-sexp cider-quit cider-jack-in)
+(declare-function cider-repl-return "cider")
+(declare-function cider-connect "cider")
+(declare-function cider-current-connection "cider")
+(declare-function cider-current-session "cider")
+(declare-function cider-current-ns "cider")
+(declare-function cider-load-file "cider")
+(declare-function cider-last-sexp "cider")
+(declare-function cider-quit "cider")
+(declare-function cider-jack-in "cider")
+(declare-function nrepl-dict-get "nrepl-dict")
+(declare-function nrepl-sync-request:eval "nrepl-client")
 
 (config-manage-declare-variables
  cider-repl-display-in-current-window)
@@ -132,7 +138,7 @@ This also sets `cider-repl-display-in-current-window' to nil"
   "Send the contents of FILE to the Cider REPL buffer of THIS compiler."
   (ignore this)
   (save-excursion
-    (apply #'set-buffer (list (find-file-noselect file)))
+    (set-buffer (list (find-file-noselect file)))
     (cider-load-file file)))
 
 (cl-defmethod flex-compiler-eval-initial-at-point

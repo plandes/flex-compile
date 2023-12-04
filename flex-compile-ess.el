@@ -34,7 +34,8 @@
 
 (require 'flex-compile-manage)
 
-(config-manage-declare-functions ess-eval-region R)
+(declare-function R "ess")
+(declare-function ess-eval-region "ess")
 
 (defclass ess-flex-compiler (repl-flex-compiler)
   ()
@@ -55,6 +56,7 @@ This is a REPL based compiler to evaluate R code with
 (cl-defmethod flex-compiler-load-libraries ((this ess-flex-compiler))
   "Load library `ess-site' for THIS compielr."
   (ignore this)
+  (require 'ess)
   (require 'ess-site))
 
 (cl-defmethod flex-compiler-repl-start ((this ess-flex-compiler))

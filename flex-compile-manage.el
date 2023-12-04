@@ -47,6 +47,16 @@
 (require 'flex-compile-single-buffer)
 (require 'flex-compile-repl)
 
+;;; compiler shared configuration
+(defcustom flex-compile-manage-load-libraries-entry 'activate
+  "When to load the compiler's libraries.
+
+This invokes a method that `require's all the libraries needed for the compiler
+to run."
+  :type '(choice (const :tag "When the compiler is activated" activate)
+		 (const :tag "When the compiler is accessed" assert-ready))
+  :group 'flex-compile)
+
 ;;; compiler manager/orchestration
 (defclass flex-compile-manager (config-manager config-persistable)
   ()
@@ -128,13 +138,16 @@ THIS is the object instance."
 CRITERIA, see the `config-manager’ method ‘config-manager-activate’."
   (let ((compiler (cl-call-next-method this criteria)))
     (message "Active compiler is now %s" (config-entry-name compiler))
+    (when (eq flex-compile-manage-load-libraries-entry 'activate)
+      (flex-compiler-load-libraries compiler))
     compiler))
 
 (cl-defmethod flex-compile-manager-assert-ready ((this flex-compile-manager))
   "Make sure the active/selected compiler is ready and libraries loaded.
 THIS is the object instance."
   (let ((active (flex-compile-manager-active this)))
-    (flex-compiler-load-libraries active)))
+    (when (eq flex-compile-manage-load-libraries-entry 'assert-ready)
+      (flex-compiler-load-libraries active))))
 
 (cl-defmethod config-manager-remove-entry ((this flex-compile-manager) entry)
   "Disallow ENTRY deletion since it is nonsensical for this implementation.
@@ -152,7 +165,6 @@ THIS is the object instance."
       (->> (eieio-object-class compiler)
 	   funcall
 	   (flex-compile-manager-register this)))))
-
 
 ;; library configuration
 (defvar flex-compile-manage-inst
