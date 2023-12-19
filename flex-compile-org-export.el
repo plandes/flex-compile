@@ -174,7 +174,8 @@ THIS is the object instance."
   (with-slots (frame-focus-command frame-focus-delay) this
     (when (and frame-focus-command (> (length frame-focus-command) 0))
       (sit-for frame-focus-delay)
-      (shell-command frame-focus-command))))
+      (with-temp-buffer
+	(shell-command frame-focus-command (current-buffer))))))
 
 (cl-defmethod flex-compiler-clean ((this org-export-flex-compiler)
 				   &optional allp)
