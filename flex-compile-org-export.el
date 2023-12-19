@@ -31,9 +31,9 @@
 ;; Compiler that exports Org mode to external formats and then shows the
 ;; output in the browser.  Only HTML is currently supported.
 ;;
-;; The `Show File' functionality for the `open-file' property needs the Python
-;; program at `https://github.com/plandes/showfile', which is installed with
-;; `pip install zensols.showfile'.
+;; The `Render File' functionality for the `open-file' property needs the Python
+;; program at `https://github.com/plandes/rend', which is installed with
+;; `pip install zensols.rend'.
 
 ;;; Code:
 
@@ -79,7 +79,7 @@ then shows the output in the browser.  Only HTML is currently supported.")
   (let* ((export-choices '(("Plain HTML" . org-html-export-to-html)
 			   ("Bootstrap HTML" . org-twbs-export-to-html)))
 	 (open-file-choices '(("Default Org Mode" . default-org-mode)
-			      ("Show File" . show-file)
+			      ("Render File" . render-file)
 			      ("Do not open file" . none)))
 	 (props (list
 		 (config-choice-description-prop
@@ -158,15 +158,14 @@ Todo: make this OS independent as currently the browser only opens on OSX.
 
 THIS is the object instance."
   (config-prop-entry-set-required this)
-  (cl-flet ((om-show-file
-	     (file-name)
-	     (message "Showing file %s" file-name)
-	     (shell-command (format "showfile show %s &" file-name))))
+  (cl-flet ((om-render-file (file-name)
+	      (message "Showing file %s" file-name)
+	      (shell-command (format "showfile show %s &" file-name))))
     (with-slots (export-fn config-file open-file) this
       (with-current-buffer (flex-compiler-conf-file-buffer this)
 	(let* ((open-fn (cl-case open-file
 			  (default-org-mode #'org-open-file)
-			  (show-file #'om-show-file)
+			  (render-file #'om-render-file)
 			  (none #'identity)))
 	       (src (funcall export-fn))
 	       (dst (flex-compiler-org-export-dest this)))
