@@ -154,13 +154,11 @@ THIS is the object instance."
 
 By default, this uses `org-twbs-export-to-html' set on the `export-fn' slot.
 
-Todo: make this OS independent as currently the browser only opens on OSX.
-
 THIS is the object instance."
   (config-prop-entry-set-required this)
   (cl-flet ((om-render-file (file-name)
 	      (message "Showing file %s" file-name)
-	      (shell-command (format "showfile show %s &" file-name))))
+	      (shell-command (format "rend show %s &" file-name))))
     (with-slots (export-fn config-file open-file) this
       (with-current-buffer (flex-compiler-conf-file-buffer this)
 	(let* ((open-fn (cl-case open-file
