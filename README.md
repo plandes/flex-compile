@@ -468,7 +468,7 @@ Other Emacs Lisp snippets that do things with compilers:
 (let ((this (flex-compiler-by-name "python")))
   (with-slots (config-file start-directory) this
     (setq config-file "~/work/src/example.py"
-      start-directory "~/work")))
+          start-directory "~/work")))
 
 ;; run the compiler
 (let ((this (flex-compiler-by-name "python")))
