@@ -461,14 +461,14 @@ Other Emacs Lisp snippets that do things with compilers:
 (let* ((this flex-compile-manage-inst)
        (active (flex-compile-manager-active this)))
   (format "Current compiler: %s (desc: %s)"
-	  (slot-value active 'object-name)
-	  (slot-value active 'description)))
+      (slot-value active 'object-name)
+      (slot-value active 'description)))
 
 ;; get a compiler by name and it's set configuration file
 (let ((this (flex-compiler-by-name "python")))
   (with-slots (config-file start-directory) this
     (setq config-file "~/work/src/example.py"
-	  start-directory "~/work")))
+      start-directory "~/work")))
 
 ;; run the compiler
 (let ((this (flex-compiler-by-name "python")))
