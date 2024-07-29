@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased]
 
+### Added
+- Support for LaTeX PDF export in the `org-export` flex compiler.
+
 
 ## [1.4] - 2023-08-05
 ### Changed
