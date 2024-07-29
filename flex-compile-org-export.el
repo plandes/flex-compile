@@ -77,7 +77,8 @@ then shows the output in the browser.  Only HTML is currently supported.")
 				   &optional slots)
   "Initialize instance THIS with arguments SLOTS."
   (let* ((export-choices '(("Plain HTML" . org-html-export-to-html)
-			   ("Bootstrap HTML" . org-twbs-export-to-html)))
+			   ("Bootstrap HTML" . org-twbs-export-to-html)
+			   ("Latex PDF" . org-latex-export-to-pdf)))
 	 (open-file-choices '(("Default Org Mode" . default-org-mode)
 			      ("Render File" . render-file)
 			      ("Do not open file" . none)))
@@ -136,10 +137,16 @@ then shows the output in the browser.  Only HTML is currently supported.")
 	(setq output-directory (file-name-directory val))))
   (cl-call-next-method this prop val))
 
+(cl-defmethod flex-compiler--replace-ext ((this org-export-flex-compiler) ext)
+  "Replace the extension of the configuration file of THIS compiler with EXT."
+  (with-slots (config-file) this
+    (replace-regexp-in-string "\\.org$" (format ".%s" ext) config-file)))
+
 (cl-defmethod flex-compiler-org-export-source ((this org-export-flex-compiler))
   "Return the generated target file by the Org system for THIS compiler."
-  (with-slots (config-file) this
-    (replace-regexp-in-string "\\.org$" ".html" config-file)))
+  (with-slots (config-file export-fn) this
+    (let ((ext (if (eq 'org-latex-export-to-pdf export-fn) "pdf" "html")))
+      (flex-compiler--replace-ext this ext))))
 
 (cl-defmethod flex-compiler-org-export-dest ((this org-export-flex-compiler))
   "Return the user desired location of the output file.
@@ -165,7 +172,7 @@ THIS is the object instance."
 			  (default-org-mode #'org-open-file)
 			  (render-file #'om-render-file)
 			  (none #'identity)))
-	       (src (funcall export-fn))
+	       (src (save-excursion (call-interactively export-fn)))
 	       (dst (flex-compiler-org-export-dest this)))
 	  (rename-file src dst t)
 	  (message "Exported file to %s" dst)
@@ -183,12 +190,16 @@ THIS is the object instance."
 if ALLP is non-nil, then invoke a more destructive cleaning when supported."
   (ignore allp)
   (config-prop-entry-set-required this)
-  (with-slots (config-file) this
-    (let ((html-file (flex-compiler-org-export-dest this)))
-      (if (not (file-exists-p html-file))
-	  (message "File %s doesn't exist" html-file)
-	(delete-file html-file t)
-	(message "Deleted %s" html-file)))))
+  (with-slots (config-file export-fn) this
+    (let* ((view-file (flex-compiler-org-export-dest this))
+	   (derived (when (eq 'org-latex-export-to-pdf export-fn)
+		      (list (flex-compiler--replace-ext this "tex"))))
+	   (files (append (list view-file) derived)))
+      (dolist (file files)
+	(if (not (file-exists-p file))
+	    (message "File %s doesn't exist" file)
+	  (delete-file file t)
+	  (message "Deleted %s" file))))))
 
 (flex-compile-manager-register flex-compile-manage-inst
 			       (org-export-flex-compiler))
