@@ -38,7 +38,7 @@
 (require 'config-manage-prop)
 
 (defgroup flex-compile nil
-  "Compile Helper Functions"
+  "Compile Helper Functions."
   :group 'tools
   :group 'compilation
   :prefix '"flex-compile")
