@@ -45,7 +45,7 @@
 
 ;;; func file compiler
 (defclass org-export-flex-compiler (conf-file-flex-compiler)
-  ((export-fn :initarg :export-fn
+  ((export-format :initarg :export-format
 	      :initform 'org-twbs-export-to-html
 	      :documentation "The Org mode export function.")
    (open-file :initarg :open-file
@@ -84,7 +84,7 @@ then shows the output in the browser.  Only HTML is currently supported.")
 			      ("Do not open file" . none)))
 	 (props (list
 		 (config-choice-description-prop
-		  :object-name 'export-fn
+		  :object-name 'export-format
 		  :prompt "Export format"
 		  :prop-entry this
 		  :choices export-choices
@@ -144,8 +144,8 @@ then shows the output in the browser.  Only HTML is currently supported.")
 
 (cl-defmethod flex-compiler-org-export-source ((this org-export-flex-compiler))
   "Return the generated target file by the Org system for THIS compiler."
-  (with-slots (config-file export-fn) this
-    (let ((ext (if (eq 'org-latex-export-to-pdf export-fn) "pdf" "html")))
+  (with-slots (config-file export-format) this
+    (let ((ext (if (eq 'org-latex-export-to-pdf export-format) "pdf" "html")))
       (flex-compiler--replace-ext this ext))))
 
 (cl-defmethod flex-compiler-org-export-dest ((this org-export-flex-compiler))
@@ -159,20 +159,20 @@ THIS is the object instance."
 (cl-defmethod flex-compiler-compile ((this org-export-flex-compiler))
   "Export the Org mode file and open the resulting file in a browser.
 
-By default, this uses `org-twbs-export-to-html' set on the `export-fn' slot.
+By default, this uses `org-twbs-export-to-html' set on the `export-format' slot.
 
 THIS is the object instance."
   (config-prop-entry-set-required this)
   (cl-flet ((om-render-file (file-name)
 	      (message "Showing file %s" file-name)
 	      (shell-command (format "rend show %s &" file-name))))
-    (with-slots (export-fn config-file open-file) this
+    (with-slots (export-format config-file open-file) this
       (with-current-buffer (flex-compiler-conf-file-buffer this)
 	(let* ((open-fn (cl-case open-file
 			  (default-org-mode #'org-open-file)
 			  (render-file #'om-render-file)
 			  (none #'identity)))
-	       (src (save-excursion (call-interactively export-fn)))
+	       (src (save-excursion (call-interactively export-format)))
 	       (dst (flex-compiler-org-export-dest this)))
 	  (rename-file src dst t)
 	  (message "Exported file to %s" dst)
@@ -190,9 +190,9 @@ THIS is the object instance."
 if ALLP is non-nil, then invoke a more destructive cleaning when supported."
   (ignore allp)
   (config-prop-entry-set-required this)
-  (with-slots (config-file export-fn) this
+  (with-slots (config-file export-format) this
     (let* ((view-file (flex-compiler-org-export-dest this))
-	   (derived (when (eq 'org-latex-export-to-pdf export-fn)
+	   (derived (when (eq 'org-latex-export-to-pdf export-format)
 		      (list (flex-compiler--replace-ext this "tex"))))
 	   (files (append (list view-file) derived)))
       (dolist (file files)
