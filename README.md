@@ -64,12 +64,21 @@ keybindings and finger muscle memory to invoke them.
 
 ## Configuration
 
-Add the following to your `~/.emacs` file:
+To install the package from [MELPA], add the following to your `~/.emacs` file:
 ```emacs-lisp
-(require 'flex-compile)
-(flex-compile-init)
-;; recommended to bind functions globally but not necessary
-(flex-compile-key-bindings)
+(unless (assoc-default "melpa-stable" package-archives)
+  (add-to-list 'package-archives
+               '("melpa-stable" . "https://stable.melpa.org/packages/") t))
+
+(use-package flex-compile
+  :ensure t
+  ;; recommended global key bindings
+  :bind (("C-x C-p" . flex-compiler-do-activate)
+         ("C-x C-u" . flex-compiler-do-compile)
+         ("C-x C-y" . flex-compiler-do-clean)
+         ("C-x C-i" . flex-compiler-do-run-or-set-config)
+         ;; clobbers `delete-blank-lines'
+         ("C-x C-o" . flex-compiler-do-eval)))
 ```
 This loads the library and creates global key bindings.
 
@@ -518,5 +527,7 @@ GNU Lesser General Public License, Version 2.0
 [melpa-stable-badge]: https://stable.melpa.org/packages/flex-compile-badge.svg
 [build-badge]: https://github.com/plandes/flex-compile/workflows/CI/badge.svg
 [build-link]: https://github.com/plandes/flex-compile/actions
+
+[MELPA]: https://melpa.org/
 
 [buffer manage]: https://github.com/plandes/buffer-manage
