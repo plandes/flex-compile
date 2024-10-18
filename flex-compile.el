@@ -1,8 +1,8 @@
 ;;; flex-compile.el --- Run, evaluate and compile across many languages  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2015 - 2023 Paul Landes
+;; Copyright (C) 2015 - 2024 Paul Landes
 
-;; Version: 1.4
+;; Version: 1.5
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
 ;; Keywords: compilation integration processes
