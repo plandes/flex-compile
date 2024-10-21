@@ -40,8 +40,7 @@
 (defgroup flex-compile nil
   "Compile Helper Functions."
   :group 'tools
-  :group 'compilation
-  :prefix '"flex-compile")
+  :group 'compilation)
 
 (defclass flex-compiler (config-prop-entry)
   ()
