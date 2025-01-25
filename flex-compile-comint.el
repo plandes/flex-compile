@@ -1,6 +1,6 @@
 ;;; flex-compile-comint.el --- Comint compile functions  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2015 - 2023 Paul Landes
+;; Copyright (C) 2015 - 2025 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes

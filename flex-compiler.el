@@ -1,6 +1,6 @@
 ;;; flex-compiler.el --- User interactive interface to compilers  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2015 - 2023 Paul Landes
+;; Copyright (C) 2015 - 2025 Paul Landes
 
 ;; Version: 0.7
 ;; Author: Paul Landes

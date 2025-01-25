@@ -1,6 +1,6 @@
 ;;; flex-compile-make.el --- Compile functions  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2015 - 2023 Paul Landes
+;; Copyright (C) 2015 - 2025 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
