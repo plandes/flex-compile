@@ -137,8 +137,7 @@ This also sets `cider-repl-display-in-current-window' to nil"
 (cl-defmethod flex-compiler-repl-compile ((this clojure-flex-compiler) file)
   "Send the contents of FILE to the Cider REPL buffer of THIS compiler."
   (ignore this)
-  (save-excursion
-    (set-buffer (list (find-file-noselect file)))
+  (with-current-buffer (find-file-noselect file)
     (cider-load-file file)))
 
 (cl-defmethod flex-compiler-eval-initial-at-point
