@@ -59,7 +59,7 @@ See [motivation](#motivation).")
     (setq slots (plist-put slots :object-name "script")
 	  slots (plist-put slots :description "Script")
 	  slots (plist-put slots :validate-modes
-			  '(sh-mode cperl-mode python-mode))
+			  '(sh-mode cperl-mode python-mode clojure-mode))
 	  slots (plist-put slots :buffer-name "Script Compile")
 	  slots (plist-put slots :kill-buffer-clean t)
 	  slots (plist-put slots :props
