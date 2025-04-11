@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+## [1.6] - 2025-04-11
+### Added
+- Script compiler: add Clojure mode for babashka.
+
+### Changed
+- Compatibility updates for customization.
+
+
 ## [1.5] - 2024-10-18
 ### Added
 - Support for LaTeX PDF export in the `org-export` flex compiler.
@@ -150,7 +158,8 @@ Major refactoring: cleaned up compilation and *package-lint* warnings.
 First major release.
 
 
-[Unreleased]: https://github.com/plandes/flex-compile/compare/v1.5...HEAD
+[Unreleased]: https://github.com/plandes/flex-compile/compare/v1.6...HEAD
+[1.6]: https://github.com/plandes/flex-compile/compare/v1.5...v1.6
 [1.5]: https://github.com/plandes/flex-compile/compare/v1.4...v1.5
 [1.4]: https://github.com/plandes/flex-compile/compare/v1.3...v1.4
 [1.3]: https://github.com/plandes/flex-compile/compare/v1.2...v1.3
