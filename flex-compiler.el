@@ -38,6 +38,7 @@
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'flex-compile-manage)
 
 (defvar flex-compiler-read-history nil
@@ -248,6 +249,56 @@ if ALLP is non-nil, then invoke a more destructive cleaning when supported."
       (cl-no-applicable-method
        (message "Compiler `%s' has no ability to clean"
 		(config-entry-name active))))))
+
+(defmacro with-flex-compiler (spec &rest body)
+  "Eval BODY forms like `progn' and set `this' to a flex compiler.
+During the evaluation of BODY the specified compiler is activated.
+
+SPEC is either the compiler string or a form (<compiler name> <options>).
+The options, if given, is a plist form of the following:
+    `:slots': a list of slots to using `with-slots'
+    `:activate': leave the compiler activated afterward
+
+Functions `compile', `run' and `clean' are mapped to (flex-compiler-* this)
+respectively to provide convenience to mapping.
+
+Examples:
+
+  Return the `config-file' slot value from the `script-flex-compiler' compiler:
+    (with-flex-compiler (\"script\" :slots (config-file))
+      config-file)
+
+  Configure the compiler and leave it activated:
+    (with-flex-compiler (\"script\" :slots (config-file) :activate t)
+      (setq config-file \"~/test.sh\"))
+
+  Run `script-flex-compiler' on a script in a path, then restore configuration:
+    (with-flex-compiler (\"script\")
+      (cl-letf (((oref this :config-file) \"~/test.sh\")
+		((oref this :start-directory) \"~/dir1\"))
+	(compile)))"
+  (let* ((config
+	  (cond ((consp spec) (cons (car spec) (cdr spec)))
+		((stringp spec) (cons spec nil))
+		(t (-> "Expecting: <compiler> or (<compiler> (option plist))"
+		       error))))
+	 (compiler-name (car config))
+	 (opts (cdr config))
+	 (slots (plist-get opts :slots))
+	 (activatep (plist-get opts :activate))
+	 (mng flex-compile-manage-inst)
+	 (org-active (flex-compile-manager-active mng)))
+    `(unwind-protect
+	 (let ((this (config-manager-activate ,mng ,compiler-name)))
+	   (cl-labels ((compile () (flex-compiler-compile this))
+		       (run () (flex-compiler-run this))
+		       (clean () (flex-compiler-run this)))
+	     (with-slots ,slots this
+	       (progn ,@body))))
+       (unless ,activatep
+	 (config-manager-activate ,mng ,org-active)))))
+
+(put 'with-flex-compiler 'lisp-indent-function 1)
 
 (provide 'flex-compiler)
 

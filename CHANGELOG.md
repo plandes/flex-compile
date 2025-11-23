@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+## [1.7] - 2025-11-23
+### Added
+- Macro `with-flex-compiler` to simplify compiler automation programmatically.
+
+
 ## [1.6] - 2025-04-11
 ### Added
 - Script compiler: add Clojure mode for babashka.
@@ -158,7 +163,8 @@ Major refactoring: cleaned up compilation and *package-lint* warnings.
 First major release.
 
 
-[Unreleased]: https://github.com/plandes/flex-compile/compare/v1.6...HEAD
+[Unreleased]: https://github.com/plandes/flex-compile/compare/v1.7...HEAD
+[1.7]: https://github.com/plandes/flex-compile/compare/v1.6...v1.7
 [1.6]: https://github.com/plandes/flex-compile/compare/v1.5...v1.6
 [1.5]: https://github.com/plandes/flex-compile/compare/v1.4...v1.5
 [1.4]: https://github.com/plandes/flex-compile/compare/v1.3...v1.4

@@ -446,44 +446,58 @@ Properties:
 ## Invoking a Compiler Programmatically
 
 There might be instances where it's necessary to execute other actions along
-with a compilation.  If you know Emacs Lisp, you can create your own function
-to invoke other compilers, and then use the [Command](#command) compiler to
-invoke it as a command (an interactive function), such as:
-
+with a compilation.  You can create your own function to invoke compilers
+programmatically using idiomatic object oriented Emacs Lisp, which extends the
+`eieio` library.  For example, the following runs the Python compiler on script
+`~/foo.py` in directory `~/bar`:
 ```lisp
-(defun clean-and-call-python-compiler ()
-  "Invoke `make clean', then call the Python compiler."
-  (interactive)
-  (shell-command "make clean")
-  (let ((this (flex-compiler-by-name "python")))
-    (flex-compiler-compile this)))
+(let ((this (flex-compiler-by-name "python")))
+  (with-slots (config-file start-directory) this
+    (setq config-file "~/foo.py"
+          start-directory "~/bar")))
+```
+
+However, a cleaner, more robust way to do this is with the `with-flex-compiler`
+macro.  For example to temporarily activate a compiler with a configuration
+file and start directory:
+```lisp
+(with-flex-compiler "python"
+  (cl-letf (((oref this :config-file) "~/foo.py")
+             (oref this :start-directory) "~/bar"))
+    (compile))
+```
+
+To configure a compiler and leave it activated:
+```lisp
+(with-flex-compiler ("python" :slots (config-file start-directory)
+                              :activate t)
+  (setq config-file "~/foo.py"
+        start-directory "~/bar"))
 ```
 
 Other Emacs Lisp snippets that do things with compilers:
 ```lisp
 ;; names of compilers
-(let* ((this flex-compile-manage-inst)
-       (names (config-manager-entry-names this)))
-  names)
+(let ((this flex-compile-manage-inst))
+  (config-manager-entry-names this))
 
 ;; the currently set compiler's name and descriptor
-(let* ((this flex-compile-manage-inst)
-       (active (flex-compile-manager-active this)))
+(let ((this (flex-compile-manager-active flex-compile-manage-inst)))
   (format "Current compiler: %s (desc: %s)"
-      (slot-value active 'object-name)
-      (slot-value active 'description)))
+    (slot-value this 'object-name)
+    (slot-value this 'description)))
 
-;; get a compiler by name and set its configuration file
+;; get a compiler by name and set its configuration file using OO Emacs Lisp
 (let ((this (flex-compiler-by-name "python")))
   (with-slots (config-file start-directory) this
     (setq config-file "~/work/src/example.py"
           start-directory "~/work")))
 
-;; run the compiler
+;; run the compiler using OO Emacs Lisp
 (let ((this (flex-compiler-by-name "python")))
   (flex-compiler-compile this))
 
-;; set the active compilerby name
+;; set the active compiler by name using OO Emacs Lisp
 (let ((this flex-compile-manage-inst))
   (config-manager-activate this "python"))
 ```
