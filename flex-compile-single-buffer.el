@@ -290,9 +290,9 @@ Return an alist in the following form:
   (let* ((has-buffer-p (flex-compiler-buffer this))
 	 (buf (flex-compiler-buffer this)))
     (when (or startp (null buf))
-	(if (child-of-class-p (eieio-object-class this) 'conf-flex-compiler)
-	    (config-prop-entry-set-required this))
-	(setq buf (flex-compiler-start-buffer this start-type)))
+      (if (child-of-class-p (eieio-object-class this) 'conf-flex-compiler)
+	  (config-prop-entry-set-required this))
+      (setq buf (flex-compiler-start-buffer this start-type)))
     (oset this :last-displayed-context
 	  `((newp . ,(not has-buffer-p))
 	    (buffer . ,buf)))))
