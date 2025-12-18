@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+## [1.7.1] - 2025-12-17
+### Added
+- Option to restart REPLs with option `repl-restart` for every compile.
+
+
 ## [1.7.0] - 2025-11-23
 ### Added
 - Macro `with-flex-compiler` to simplify compiler automation programmatically.
@@ -163,7 +168,8 @@ Major refactoring: cleaned up compilation and *package-lint* warnings.
 First major release.
 
 
-[Unreleased]: https://github.com/plandes/flex-compile/compare/v1.7.0...HEAD
+[Unreleased]: https://github.com/plandes/flex-compile/compare/v1.7.1...HEAD
+[1.7.1]: https://github.com/plandes/flex-compile/compare/v1.7.0...v1.7.1
 [1.7.0]: https://github.com/plandes/flex-compile/compare/v1.6.0...v1.7.0
 [1.6.0]: https://github.com/plandes/flex-compile/compare/v1.5...v1.6.0
 [1.5]: https://github.com/plandes/flex-compile/compare/v1.4...v1.5

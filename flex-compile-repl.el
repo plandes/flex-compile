@@ -54,7 +54,7 @@ Regular expression to match buffers for functions like killing the session.")
 			 :documentation "\
 List of buffers for functions (like killing a buffer) when session ends.")
    (repl-buffer-start-wait :initarg :repl-buffer-start-wait
-			   :initform 0
+			   :initform 0.1
 			   :type number
 			   :documentation "\
 Number of seconds (as a float) to wait before issuing any first command to the
@@ -71,6 +71,11 @@ up.")
 			    :type boolean
 			    :documentation "\
 If non-`nil' then prompt to kill a REPL buffer on clean.")
+   (repl-restart :initarg :repl-restart
+		 :initform nil
+		 :type boolean
+		 :documentation "\
+Whether to restart the REPL after each compilation invocation.")
    (output-clear :initarg :output-clear
 		 :initform nil
 		 :type boolean
@@ -80,7 +85,10 @@ Whether or not to clear comint buffer after a compilation.")
 		 :initform (gensym "config-repl-form-history")
 		 :type symbol
 		 :documentation "\
-The history variable for the eval form history."))
+The history variable for the eval form history.")
+   (--run-depth :initarg :run-depth
+		:initform 0
+		:accessor nil))
   :method-invocation-order :c3
   :documentation "Compiles by evaluating expressions in the REPL.")
 
@@ -102,7 +110,11 @@ The history variable for the eval form history."))
 	  (config-number-prop :object-name 'repl-buffer-start-wait
 			      :prop-entry this
 			      :number-type 'float
-			      :prompt "Seconds to wait before starting the REPL"))))
+			      :prompt "Seconds to wait before starting the REPL")
+	  (config-boolean-prop :object-name 'repl-restart
+			       :prop-entry this
+			       :prompt "Restart REPL after each compile"
+			       :input-type 'toggle))))
     (setq slots (plist-put slots
 			   :props (append (plist-get slots :props) props))))
   (cl-call-next-method this slots))
@@ -234,14 +246,28 @@ an erorr."
 START-TYPE is either symbols `compile', `run', `clean' depending
 if invoked by `flex-compiler-compile' or `flex-compiler-run'."
   (config-prop-entry-set-required this)
-  (with-slots (config-file output-clear) this
+  (with-slots (config-file output-clear repl-restart) this
+    (setf (slot-value this '--run-depth)
+	  (cond ((eq start-type 'compile) (+ (slot-value this '--run-depth) 1))
+		((eq start-type 'run) 0)
+		(t (slot-value this '--run-depth))))
     (let ((runningp (flex-compiler-repl-running-p this)))
       (cl-case start-type
-	(compile (progn
+	(compile (let ((prompt-kill 'prompt-kill-repl-buffer))
 		   (unless runningp
 		     (flex-compiler-run this))
 		   (if (flex-compiler-repl-running-p this)
 		       (progn
+			 (when (and repl-restart
+				    (eq start-type 'compile)
+				    (> (slot-value this '--run-depth) 1))
+			   (let ((prev (slot-value this prompt-kill)))
+			     (unwind-protect
+				 (progn
+				   (setf (slot-value this prompt-kill) nil)
+				   (flex-compiler-kill-repl this)
+				   (flex-compiler-repl--run-start this))
+			       (setf (slot-value this prompt-kill) prev))))
 			 (when output-clear
 			   (flex-compiler-clear-buffer this))
 			 (flex-compiler-repl-compile this config-file))
