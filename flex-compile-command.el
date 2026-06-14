@@ -96,7 +96,7 @@ form.  This is handy for functions that you end up invoking over and over with
   (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-display-buffer-alist ((this command-flex-compiler))
-  "Return a do-nothing configuration to allow the function to display bufferes.
+  "Return a do-nothing configuration to allow the function to display buffers.
 THIS is the object instance."
   (ignore this))
 
