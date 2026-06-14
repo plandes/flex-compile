@@ -145,6 +145,10 @@ See `config-manage-prop' class's method documentation."
   (funcall flex-compile-conf-file-disply-mode
 	   (flex-compiler-conf-file-buffer this)))
 
+(cl-defmethod flex-compiler-find ((this conf-file-flex-compiler))
+  "Invoke THIS compiler's functionality to find a resource."
+  (flex-compiler-conf-file-display this))
+
 (provide 'flex-compile-config)
 
 ;;; flex-compile-config.el ends here

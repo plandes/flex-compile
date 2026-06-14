@@ -73,19 +73,21 @@ THIS is the object instance."
 
 (cl-defmethod flex-compiler-reset-state ((this flex-compiler))
   "Reset all persistable slots to initial state.
-This implementation sets all slots to nil.
-THIS is the object instance."
+This implementation sets all slots to nil on THIS compiler."
   (config-persistent-reset this))
 
 (cl-defmethod flex-compiler-run ((this flex-compiler))
-  "Invoke the run functionality of the compiler.
-THIS is the object instance."
+  "Invoke the run functionality of THIS compiler."
   (config-persistent--unimplemented this "run"))
 
 (cl-defmethod flex-compiler-compile ((this flex-compiler))
-  "Invoke the compile functionality of the compiler.
-THIS is the object instance."
+  "Invoke the compile functionality of THIS compiler."
   (config-persistent--unimplemented this "compile"))
+
+(cl-defmethod flex-compiler-find ((this flex-compiler))
+  "Invoke THIS compiler's functionality to find a resource.
+The `conf-file-flex-compiler' compiler displays the configuration file."
+  (config-persistent--unimplemented this "find"))
 
 (cl-defmethod flex-compiler-clean ((this flex-compiler) &optional allp)
   "Invoke the clean functionality of the compiler.

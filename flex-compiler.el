@@ -205,9 +205,7 @@ ACTION is the interactive argument given by the read function."
 			  (setq compile-def (append (flex-compiler-run active)
 						    '((force-show . t)))))
 		 (flex-compiler-display-buffer active compile-def)))
-	  (find (if (child-of-class-p (eieio-object-class active)
-				      'conf-file-flex-compiler)
-		    (flex-compiler-conf-file-display active)))
+	  (find (flex-compiler-find active))
 	  (set-config (config-prop-entry-configure active 'immediate))
 	  (t (error "Unknown action: %S" action)))
       (cl-no-applicable-method
