@@ -39,6 +39,7 @@
 ;;; Code:
 
 (require 'cl-lib)
+(require 'markdown-mode)
 (require 'flex-compile-manage)
 
 (defvar flex-compiler-read-history nil
@@ -132,17 +133,44 @@ currently activated compiler."
   "Create a buffer with the configuration of the current compiler."
   (interactive)
   (let* ((this flex-compile-manage-inst)
-	 (active (flex-compile-manager-active this)))
-    (config-prop-entry-show-configuration active)))
+	 (active (flex-compile-manager-active this))
+	 (buf (config-prop-entry-show-configuration active))
+	 (window-config (current-window-configuration)))
+    (with-current-buffer buf
+      (markdown-mode)
+      ;; add a quit key to only this buffer
+      (let ((local-map (make-sparse-keymap)))
+	(set-keymap-parent local-map (current-local-map))
+	(define-key local-map (kbd "q")
+		    (lambda ()
+		      (interactive)
+		      (kill-buffer (current-buffer))
+		      (set-window-configuration window-config)))
+	(use-local-map local-map))
+      ;; massage the configuration text into markdown
+      (goto-char (point-min))
+      (delete-region (line-beginning-position) (line-beginning-position 2))
+      (config-persistent-doc active 1)
+      (insert "\n\n# Configuration\n\n")
+      (while (re-search-forward "^\\([^:]+\\): \\(.*\\)$" nil t)
+	(replace-match "* `\\1`: \\2"))
+      (insert "\n\n**Press q to quit**")
+      (setq buffer-read-only t))
+    (set-window-configuration window-config)
+    (pop-to-buffer buf)))
 
 ;;;###autoload
 (defun flex-compiler-do-activate (compiler-name)
   "Activate/select a compiler.
 
 COMPILER-NAME the name of the compiler to activate."
-  (interactive (list (flex-compiler-read current-prefix-arg)))
-  (let ((this flex-compile-manage-inst))
-    (config-manager-activate this compiler-name)))
+  (interactive
+   (list (if (equal current-prefix-arg 1)
+	     (progn (flex-compiler-show-configuration) nil)
+	   (flex-compiler-read current-prefix-arg))))
+  (when compiler-name
+    (let ((this flex-compile-manage-inst))
+      (config-manager-activate this compiler-name))))
 
 ;;;###autoload
 (defun flex-compiler-do-compile (config-options)
