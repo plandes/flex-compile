@@ -39,7 +39,6 @@
 ;;; Code:
 
 (require 'cl-lib)
-(require 'markdown-mode)
 (require 'flex-compile-manage)
 
 (defvar flex-compiler-read-history nil
@@ -137,7 +136,7 @@ currently activated compiler."
 	 (buf (config-prop-entry-show-configuration active))
 	 (window-config (current-window-configuration)))
     (with-current-buffer buf
-      (markdown-mode)
+      (and (fboundp 'markdown-mode) (markdown-mode))
       ;; add a quit key to only this buffer
       (let ((local-map (make-sparse-keymap)))
 	(set-keymap-parent local-map (current-local-map))
