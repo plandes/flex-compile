@@ -81,20 +81,26 @@ In addition, set the `arguments' `config-prop' to nil."
 (cl-defmethod flex-compiler-start-buffer ((this script-flex-compiler)
 					  start-type)
   "Return a new buffer for THIS compiler with a processing compilation.
+
 See the `single-buffer-flex-compiler' implementation of
 `flex-compiler-start-buffer' for more information and START-TYPE."
   (cl-case start-type
     (compile
      (with-slots (config-file start-directory arguments) this
-       (let ((default-directory start-directory)
-	     (buffer-name (flex-compiler-buffer-name this))
-	     (cmd (concat config-file " "
-			  (mapconcat #'identity arguments " ")))
-	     buf)
-	 (with-current-buffer
-	     (setq buf
-		   (compilation-start cmd nil (lambda (_) buffer-name))))
-	 buf)))
+       (let* ((default-directory start-directory)
+              (buffer-name (flex-compiler-buffer-name this))
+              (script-file
+               (if (file-remote-p config-file)
+                   (file-local-name config-file)
+                 config-file))
+              (cmd (mapconcat #'shell-quote-argument
+			      (cons script-file arguments) " "))
+              buf)
+         (with-current-buffer
+             (setq buf
+                   (compilation-start
+                    cmd nil (lambda (_) buffer-name))))
+         buf)))
     (run (error "No defined run action for scripts"))))
 
 (flex-compile-manager-register flex-compile-manage-inst (script-flex-compiler))
