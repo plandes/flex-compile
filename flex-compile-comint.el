@@ -39,6 +39,8 @@
 
 (eval-when-compile (require 'subr-x))
 
+(declare-function eshell-send-input "esh-mode")
+
 (defclass comint-flex-compiler (conf-file-flex-compiler)
   ((buffer :initarg :buffer
 	   :initform nil
@@ -84,6 +86,8 @@ as a string"
 					 :prop-entry this
 					 :required t
 					 :transient t
+					 :require-process nil
+					 :valid-modes '(shell-mode eshell-mode)
 					 :prompt "Buffer"
 					 :input-type 'last))))
     (setq slots (plist-put slots :object-name "comint")
@@ -150,8 +154,15 @@ After the value is set, use `comint-send-input' to have `comint' process it."
 			   string-trim)))
 	(with-current-buffer buffer
 	  (goto-char (point-max))
-	  (insert contents)
-	  (comint-send-input))))))
+	  (cond ((derived-mode-p 'comint-mode)
+		 (goto-char (point-max))
+		 (insert contents)
+		 (comint-send-input))
+		((derived-mode-p 'eshell-mode)
+		 (goto-char (point-max))
+		 (insert contents)
+		 (eshell-send-input))
+		(t (error "Buffer is neither Eshell nor Comint"))))))))
 
 (cl-defmethod flex-compiler-run ((this comint-flex-compiler))
   "Show the comint buffer set in THIS compiler.

@@ -8,13 +8,14 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+### Added
+- Support for remote script execution (via TRAMP).
+- Support for eshell in `flex-compile-comint`.
+
 ### Changed
 - Upgrade `buffer-manage` so compilers (`config-persistent` instances) recovery
   during un-persisting.  Library will load if a single compiler is not
   configured correctly or missing.
-
-### Added
-- Support for remote script execution (via TRAMP).
 
 
 ## [1.7.1] - 2025-12-17
