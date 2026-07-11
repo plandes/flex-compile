@@ -168,7 +168,8 @@ THIS is the object instance."
 
 ;; library configuration
 (defvar flex-compile-manage-inst
-  (flex-compile-manager :object-name "compiler")
+  (flex-compile-manager :object-name "compiler"
+			:unpersist-error-policy 'warn)
   "The singleton manager instance.")
 
 (defcustom flex-compile-manage-persistency-file-name

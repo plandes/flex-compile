@@ -8,6 +8,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+### Changed
+- Upgrade `buffer-manage` so compilers (`config-persistent` instances) recovery
+  during un-persisting.  Library will load if a single compiler is not
+  configured correctly or missing.
+
 ### Added
 - Support for remote script execution (via TRAMP).
 

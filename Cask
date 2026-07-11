@@ -3,7 +3,7 @@
 (source melpa-stable)
 
 (depends-on "dash" "2.17.0")
-(depends-on "buffer-manage" "1.1")
+(depends-on "buffer-manage" "1.2.0")
 
 (package-file "flex-compile.el")
 

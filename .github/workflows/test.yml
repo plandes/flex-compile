@@ -3,38 +3,88 @@ name: CI
 on:
   pull_request:
   push:
-    paths-ignore:
-    - '**.md'
-    - 'doc/*'
     branches:
-    - master
+      - master
+    paths-ignore:
+      - "**.md"
+      - "doc/*"
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        emacs_version:
-          - 27.1
     steps:
-    - name: Checkout reposistory
-      uses: actions/checkout@v2.4.0
-      with:
-        submodules: recursive
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-    - uses: actions/setup-python@v2
-      with:
-        python-version: '3.10'
-        architecture: 'x64'
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
 
-    - uses: purcell/setup-emacs@master
-      with:
-        version: ${{ matrix.emacs_version }}
+      - name: Setup Emacs
+        uses: purcell/setup-emacs@v7.0
+        with:
+          version: "29.4"
 
-    - name: Setup Cask
-      uses: conao3/setup-cask@master
-      with:
-        version: 'snapshot'
+      # Install Cask deterministically (no deprecated installer; no action that runs cask internally).
+      - name: Install Cask (clone)
+        run: |
+          git clone https://github.com/cask/cask ~/.cask
+          git -C ~/.cask checkout c2d79d3
+          echo "$HOME/.cask/bin" >> $GITHUB_PATH
 
-    - name: Run tests
-      run: 'make test'
+      # Patch Cask so legacy EIEIO macros (defmethod/defgeneric) exist under Emacs 29+
+      # before Cask loads bootstrap packages like package-build.
+      - name: Patch Cask for Emacs 29 (require eieio-compat)
+        run: |
+          python3 - <<'PY'
+          import pathlib, re
+
+          path = pathlib.Path.home() / ".cask" / "cask-cli.el"
+          s = path.read_text(encoding="utf-8")
+
+          needle = "(require 'eieio-compat)\n"
+          if needle in s:
+              print("eieio-compat already required in cask-cli.el")
+          else:
+              m = re.search(r"\(require 'cl-lib\)\s*\n", s)
+              if m:
+                  i = m.end()
+                  s = s[:i] + needle + s[i:]
+              else:
+                  s = needle + s
+              path.write_text(s, encoding="utf-8")
+              print(f"Patched {path}")
+          PY
+
+      - name: Cask sanity check
+        run: |
+          which cask
+          cask --version
+
+      # Optional but helpful: cache Cask/ELPA to speed up CI and reduce transient failures.
+      - name: Cache Emacs packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.emacs.d/.cask
+            .cask
+            elpa
+          key: ${{ runner.os }}-emacs-${{ hashFiles('Cask') }}
+
+      - name: Install dependencies
+        run: |
+          cask install
+
+      - name: Debug Cask / ert-runner
+        run: |
+          echo "PATH=$PATH"
+          cask --version
+          cask exec which ert-runner || true
+          cask exec ert-runner --version || true
+
+      - name: Run tests
+        run: |
+          make test
