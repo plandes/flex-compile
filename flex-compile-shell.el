@@ -1,10 +1,10 @@
-;;; flex-compile-comint.el --- Comint compile functions  -*- lexical-binding: t; -*-
+;;; flex-compile-shell.el --- Shell compile functions  -*- lexical-binding: t; -*-
 
 ;; Copyright (C) 2015 - 2025 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
-;; Keywords: comint integration compilation processes
+;; Keywords: processes terminals unix
 ;; URL: https://github.com/plandes/flex-compile
 ;; Package-Requires: ((emacs "26.1"))
 ;; Package-Version: 0
@@ -29,7 +29,7 @@
 ;;; Commentary:
 
 ;;; Implementation compiler for comint integration.  See class
-;;; `comint-flex-compiler' documentation for more information and motivation.
+;;; `shell-flex-compiler' documentation for more information and motivation.
 
 ;;; Code:
 
@@ -41,7 +41,7 @@
 
 (declare-function eshell-send-input "esh-mode")
 
-(defclass comint-flex-compiler (conf-file-flex-compiler)
+(defclass shell-flex-compiler (conf-file-flex-compiler)
   ((buffer :initarg :buffer
 	   :initform nil
 	   :type (or null buffer)
@@ -56,7 +56,7 @@ The string to insert in the buffer referred by the `buffer' slot."))
 This is useful for entering a command in a shell, SQL etc buffer that otherwise
 requires switching back and forth between buffers, which is a hassle.")
 
-(defun flex-compile-comint-grab-line ()
+(defun flex-compile-shell-grab-line ()
   "Get the text of the last prompt in the comint buffer.
 If there is no last prompt found, return the command line at the current point
 as a string"
@@ -75,13 +75,13 @@ as a string"
 	     (end-of-line)
 	     (point)))))))
 
-(cl-defmethod initialize-instance ((this comint-flex-compiler) &optional slots)
+(cl-defmethod initialize-instance ((this shell-flex-compiler) &optional slots)
   "Initialize THIS instance using SLOTS as initial values."
   (let ((props (list (config-prop :object-name 'content
 				  :prop-entry this
 				  :required t
 				  :prompt "Command or SPACE for config file"
-				  :input-type 'flex-compile-comint-grab-line)
+				  :input-type 'flex-compile-shell-grab-line)
 		     (config-buffer-prop :object-name 'buffer
 					 :prop-entry this
 					 :required t
@@ -90,7 +90,7 @@ as a string"
 					 :valid-modes '(shell-mode eshell-mode)
 					 :prompt "Buffer"
 					 :input-type 'last))))
-    (setq slots (plist-put slots :object-name "comint")
+    (setq slots (plist-put slots :object-name "shell")
 	  slots (plist-put slots
 			   :props (append (plist-get slots :props) props)))
     (cl-call-next-method this slots)
@@ -100,29 +100,30 @@ as a string"
       (setf (slot-value prop 'prompt) "Insert file"
 	    (slot-value prop 'required) nil))))
 
-(cl-defmethod flex-compiler-load-libraries ((this comint-flex-compiler))
+(cl-defmethod flex-compiler-load-libraries ((this shell-flex-compiler))
   "Load the `comint' library for THIS compiler."
   (ignore this)
   (require 'comint))
 
-(cl-defmethod flex-compiler-eval-form-impl ((this comint-flex-compiler) form)
+(cl-defmethod flex-compiler-eval-form-impl ((this shell-flex-compiler) form)
   "Evaluate the FORM and return the response of the REPL for THIS compiler."
   (ignore this)
   (goto-char (point-max))
   (insert form)
   (comint-send-input))
 
-(cl-defmethod config-prop-set ((this comint-flex-compiler) prop val)
+(cl-defmethod config-prop-set ((this shell-flex-compiler) prop val)
   "Set property PROP to VAL on THIS compiler.
 
 This resets the target when changing the file."
   (when (and (eq (config-prop-name prop) 'content)
-	     (eq (derived-mode-p 'comint-mode) 'comint-mode))
+	     (or (eq (derived-mode-p 'comint-mode) 'comint-mode)
+		 (eq (derived-mode-p 'eshell-mode) 'eshell-mode)))
     (setf (slot-value this 'buffer) (current-buffer))
     (message "Setting buffer %s" (buffer-name)))
   (cl-call-next-method this prop val))
 
-(cl-defmethod config-prop-entry-configure ((this comint-flex-compiler)
+(cl-defmethod config-prop-entry-configure ((this shell-flex-compiler)
 					   config-options)
   "Special behavior when configuring THIS compiler.
 
@@ -135,10 +136,11 @@ CONFIG-OPTIONS:
 	     (t config-options))
        (cl-call-next-method this)))
 
-(cl-defmethod flex-compiler-compile ((this comint-flex-compiler))
+(cl-defmethod flex-compiler-compile ((this shell-flex-compiler))
   "Insert the `content' slot value set on THIS compiler in comint buffer.
 
-After the value is set, use `comint-send-input' to have `comint' process it."
+After the value is set, use `comint-send-input' to have Comint process it or
+`eshell-send-input' if an Eshell buffer."
   (with-slots (buffer) this
     (when (not (buffer-live-p buffer))
       (setq buffer nil))
@@ -162,19 +164,19 @@ After the value is set, use `comint-send-input' to have `comint' process it."
 		 (goto-char (point-max))
 		 (insert contents)
 		 (eshell-send-input))
-		(t (error "Buffer is neither Eshell nor Comint"))))))))
+		(t (error "Buffer is neither Eshell nor Shell"))))))))
 
-(cl-defmethod flex-compiler-run ((this comint-flex-compiler))
-  "Show the comint buffer set in THIS compiler.
+(cl-defmethod flex-compiler-run ((this shell-flex-compiler))
+  "Show the buffer set in THIS compiler.
 
 See `flex-compiler-display-buffer', which does the work to show the buffer."
   (with-slots (buffer) this
     `((newp . nil)
       (buffer . ,buffer))))
 
-(cl-defmethod flex-compiler-display-buffer ((this comint-flex-compiler)
+(cl-defmethod flex-compiler-display-buffer ((this shell-flex-compiler)
 					    &optional compile-def)
-  "Display the comint buffer using `display-buffer' for THIS compiler.
+  "Display the buffer using `display-buffer' for THIS compiler.
 
 See the `single-buffer-flex-compiler' implementation of
 `flex-compiler-display-buffer' for COMPILE-DEF and more information."
@@ -188,8 +190,8 @@ See the `single-buffer-flex-compiler' implementation of
 	(goto-char (point-max)))
       (message "Displayed buffer %S" buf))))
 
-(flex-compile-manager-register flex-compile-manage-inst (comint-flex-compiler))
+(flex-compile-manager-register flex-compile-manage-inst (shell-flex-compiler))
 
-(provide 'flex-compile-comint)
+(provide 'flex-compile-shell)
 
-;;; flex-compile-comint.el ends here
+;;; flex-compile-shell.el ends here

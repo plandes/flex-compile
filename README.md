@@ -17,26 +17,26 @@ started.
 ## Table of Contents
 
 - [Introduction](#introduction)
-    - [Motivation](#motivation)
+  - [Motivation](#motivation)
 - [Configuration](#configuration)
 - [Usage](#usage)
-    - [Special Cases](#special-cases)
+  - [Special Cases](#special-cases)
 - [Compiler Configuration](#compiler-configuration)
-    - [Revealing The Interactive Buffer](#revealing-the-interactive-buffer)
+  - [Revealing The Interactive Buffer](#revealing-the-interactive-buffer)
 - [Compilers](#compilers)
-    - [Choice program](#choice-program)
-    - [CLI Python](#cli-python)
-    - [Clojure](#clojure)
-    - [Comint](#comint)
-    - [Command](#command)
-    - [Do nothing](#do-nothing)
-    - [Emacs speaks statistics](#emacs-speaks-statistics)
-    - [Lisp](#lisp)
-    - [Make](#make)
-    - [Org mode](#org-mode)
-    - [Python](#python)
-    - [Script](#script)
-    - [XML](#xml)
+  - [Choice program](#choice-program)
+  - [CLI Python](#cli-python)
+  - [Clojure](#clojure)
+  - [Shell](#shell)
+  - [Command](#command)
+  - [Do nothing](#do-nothing)
+  - [Emacs speaks statistics](#emacs-speaks-statistics)
+  - [Lisp](#lisp)
+  - [Make](#make)
+  - [Org mode](#org-mode)
+  - [Python](#python)
+  - [Script](#script)
+  - [XML](#xml)
 - [Invoking a Compiler Programmatically](#invoking-a-compiler-programmatically)
 - [Writing Your Own Compiler](#writing-your-own-compiler)
 - [Changelog](#changelog)
@@ -289,9 +289,9 @@ Properties:
   * Start Directory: The directory for starting the compilation.
 
 
-### Comint
+### Shell
 
-Send text to any running `comint` buffer.
+Send text to any running `comint` or `shell` buffer.
 This is useful for entering a command in a shell, SQL etc buffer that otherwise
 requires switching back and forth between buffers, which is a hassle.
 

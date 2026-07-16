@@ -7,7 +7,7 @@
 ;; Maintainer: Paul Landes
 ;; Keywords: compilation integration processes
 ;; URL: https://github.com/plandes/flex-compile
-;; Package-Requires: ((emacs "26.1") (dash "2.17.0") (buffer-manage "1.2.0"))
+;; Package-Requires: ((emacs "26.1") (dash "2.17.0") (buffer-manage "1.2.1"))
 
 ;; This file is not part of GNU Emacs.
 
@@ -49,7 +49,7 @@
 (require 'flex-compile-clojure)
 (require 'flex-compile-lisp)
 (require 'flex-compile-ess)
-(require 'flex-compile-comint)
+(require 'flex-compile-shell)
 (require 'flex-compile-cli)
 (require 'flex-compiler)
 
