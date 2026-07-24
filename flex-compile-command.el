@@ -45,28 +45,42 @@
   (setq slots (plist-put slots :transient t))
   (cl-call-next-method this slots))
 
+(defconst flex-compiler-eval-command
+  'flex-compiler-function-invoke-command
+  "Used to bind temporary lambda forms into executable commands on compile.")
+
 (cl-defmethod config-prop-read ((this config-sexp-prop))
   "Read the user input for the property.
 The default reads a string using ‘config-prop-default’ and
 ‘config-prop-prompt’ with the history slot.
 THIS is the instance."
   (list (cl-flet ((read-sexp
-		   (prompt history)
-		   (let (sexp)
-		     (condition-case nil
-			 (progn
-			   (setq sexp (thing-at-point 'sexp))
-			   ;; read as sexp and then back to string to make
-			   ;; into one line
-			   (if sexp (setq sexp (prin1-to-string (read sexp)))))
-		       (t))
-		     (read (read-string prompt sexp history)))))
+		    (prompt history)
+		    (let (sexp)
+		      (condition-case nil
+			  (progn
+			    (setq sexp (thing-at-point 'sexp))
+			    ;; read as sexp and then back to string to make
+			    ;; into one line
+			    (if sexp (setq sexp (prin1-to-string (read sexp)))))
+			(t))
+		      (read (read-string prompt sexp history)))))
 	  (with-slots (history choices prompt) this
-	    (let* ((cmd (read-command (format "%s (or RET for sexp): " prompt)))
-		   (sexp-prompt (format "%s: " prompt)))
+	    (let* ((sym (thing-at-point 'symbol))
+		   (default (when (and (eq major-mode 'emacs-lisp-mode)
+				       (commandp (intern sym)))
+			      (intern sym)))
+		   (cmd-prompt (if default
+				   (format "%s (default %S or `sexp'): "
+					   prompt default)
+				 (format "%s (or RET for sexp): " prompt)))
+		   (cmd (if default
+			    (read-command cmd-prompt sym)
+			  (read-command cmd-prompt))))
 	      (if (eq '## cmd)
-		  (let ((func (read-sexp sexp-prompt history)))
-		    (eval `(defun flex-compiler-function-invoke-command ()
+		  (let* ((sexp-prompt (format "%s: " prompt))
+			 (func (read-sexp sexp-prompt history)))
+		    (eval `(defun ,flex-compiler-eval-command ()
 			     (interactive)
 			     ,func)))
 		cmd))))))
@@ -106,9 +120,15 @@ The result of the evaulation is given to `message' and returned."
   (unless (slot-value this 'sexp)
     (config-prop-entry-configure this nil))
   (with-slots (sexp) this
-    (let ((res (apply sexp)))
-      (message "%S "res)
-      res)))
+    (if (and (consp sexp)
+	     (= 1 (length sexp))
+	     (symbolp (car sexp))
+	     (commandp (car sexp))
+	     (not (eq flex-compiler-eval-command (car sexp))))
+	(call-interactively (car sexp))
+      (let ((res (apply sexp)))
+	(message "%S "res)
+	res))))
 
 (flex-compile-manager-register flex-compile-manage-inst
 			       (command-flex-compiler))

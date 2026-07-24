@@ -8,9 +8,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+## [1.8.0] - 2026-07-23
 ### Changed
 - Fix `clean` function binding and active compiler reset in the
   `with-flex-compiler` macro.
+- Fix interactive command invocations in `command` compiler.
+- Default to the command at point for the `command` compiler.
 
 
 ## [1.7.2] - 2026-07-16
@@ -185,7 +188,8 @@ Major refactoring: cleaned up compilation and *package-lint* warnings.
 First major release.
 
 
-[Unreleased]: https://github.com/plandes/flex-compile/compare/v1.7.2...HEAD
+[Unreleased]: https://github.com/plandes/flex-compile/compare/v1.8.0...HEAD
+[1.8.0]: https://github.com/plandes/flex-compile/compare/v1.7.2...v1.8.0
 [1.7.2]: https://github.com/plandes/flex-compile/compare/v1.7.1...v1.7.2
 [1.7.1]: https://github.com/plandes/flex-compile/compare/v1.7.0...v1.7.1
 [1.7.0]: https://github.com/plandes/flex-compile/compare/v1.6.0...v1.7.0
