@@ -276,52 +276,68 @@ if ALLP is non-nil, then invoke a more destructive cleaning when supported."
 		(config-entry-name active))))))
 
 (defmacro with-flex-compiler (spec &rest body)
-  "Eval BODY forms like `progn' and set `this' to a flex compiler.
-During the evaluation of BODY the specified compiler is activated.
+  "Evaluate BODY forms like `progn' with `this' bound to a flex compiler.
 
-SPEC is either the compiler string or a form (<compiler name> <options>).
-The options, if given, is a plist form of the following:
-    `:slots': a list of slots to using `with-slots'
-    `:activate': leave the compiler activated afterward
+During evaluation of BODY, activate the compiler specified by SPEC.
 
-Functions `compile', `run' and `clean' are mapped to (flex-compiler-* this)
-respectively to provide convenience to mapping.
+SPEC is either a compiler name string or a form:
+
+    (COMPILER-NAME OPTIONS...)
+
+Supported options are:
+
+    :slots     List of slots to bind using `with-slots'.
+    :activate  When non-nil, leave the selected compiler active afterward.
+
+Within BODY, the local functions `compile', `run', and `clean' invoke
+`flex-compiler-compile', `flex-compiler-run', and
+`flex-compiler-clean', respectively, on `this'.
 
 Examples:
 
-  Return the `config-file' slot value from the `script-flex-compiler' compiler:
+  Return the `config-file' slot from the \"script\" compiler:
+
     (with-flex-compiler (\"script\" :slots (config-file))
       config-file)
 
-  Configure the compiler and leave it activated:
-    (with-flex-compiler (\"script\" :slots (config-file) :activate t)
+  Configure the compiler and leave it active:
+
+    (with-flex-compiler (\"script\"
+                         :slots (config-file)
+                         :activate t)
       (setq config-file \"~/test.sh\"))
 
-  Run `script-flex-compiler' on a script in a path, then restore configuration:
+  Temporarily change compiler slots and compile:
+
     (with-flex-compiler (\"script\")
       (cl-letf (((oref this :config-file) \"~/test.sh\")
-		((oref this :start-directory) \"~/dir1\"))
-	(compile)))"
-  (let* ((config
-	  (cond ((consp spec) (cons (car spec) (cdr spec)))
-		((stringp spec) (cons spec nil))
-		(t (-> "Expecting: <compiler> or (<compiler> (option plist))"
-		       error))))
-	 (compiler-name (car config))
-	 (opts (cdr config))
-	 (slots (plist-get opts :slots))
-	 (activatep (plist-get opts :activate))
-	 (mng flex-compile-manage-inst)
-	 (org-active (flex-compile-manager-active mng)))
-    `(unwind-protect
-	 (let ((this (config-manager-activate ,mng ,compiler-name)))
-	   (cl-labels ((compile () (flex-compiler-compile this))
-		       (run () (flex-compiler-run this))
-		       (clean () (flex-compiler-run this)))
-	     (with-slots ,slots this
-	       (progn ,@body))))
-       (unless ,activatep
-	 (config-manager-activate ,mng ,org-active)))))
+                ((oref this :start-directory) \"~/dir1\"))
+        (compile)))"
+  (declare (indent 1) (debug (form body)))
+  (let* ((config (cond ((consp spec) spec)
+		       ((stringp spec) (list spec))
+		       (t (error
+			   "Expecting a compiler name or (COMPILER-NAME OPTIONS...): %S"
+			   spec))))
+         (compiler-name (car config))
+         (opts (cdr config))
+         (slots (plist-get opts :slots))
+         (activatep (plist-get opts :activate))
+         (mng-sym (gensym "manager-"))
+         (org-active-sym (gensym "original-active-")))
+    `(let* ((,mng-sym flex-compile-manage-inst)
+            (,org-active-sym (flex-compile-manager-active ,mng-sym)))
+       (unwind-protect
+           (let ((this (config-manager-activate ,mng-sym ,compiler-name)))
+             (cl-labels ((compile () (flex-compiler-compile this))
+			 (run () (flex-compiler-run this))
+			 (clean () (flex-compiler-clean this)))
+               (with-slots ,slots this
+                 ,@body)))
+         (unless ,activatep
+           (config-manager-activate
+            ,mng-sym
+            ,org-active-sym))))))
 
 (put 'with-flex-compiler 'lisp-indent-function 1)
 

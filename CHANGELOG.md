@@ -8,15 +8,21 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## [Unreleased]
 
 
+### Changed
+- Fix `clean` function binding and active compiler reset in the
+  `with-flex-compiler` macro.
+
+
 ## [1.7.2] - 2026-07-16
 ### Added
 - Support for remote script execution (via TRAMP).
-- Support for eshell in `flex-compile-comint`.
+- Support for eshell in `comint` compiler (now `shell` compiler).
 
 ### Changed
 - Upgrade `buffer-manage` so compilers (`config-persistent` instances) recovery
   during un-persisting.  Library will load if a single compiler is not
   configured correctly or missing.
+- Rename `comint` compiler to `shell`.
 
 
 ## [1.7.1] - 2025-12-17
