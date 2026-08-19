@@ -89,8 +89,9 @@ if invoked by `flex-compiler-compile' or `flex-compiler-run'."
 	  (let ((do-native-p python-shell-completion-native-enable)
 		(python-shell-completion-native-enable nil))
 	    (flex-compiler-run this)
-	    (if do-native-p
-		(python-shell-completion-native-setup)))))
+	    (when do-native-p
+	      (with-current-buffer (flex-compiler-buffer this)
+		(python-shell-completion-native-setup))))))
     (or ret (cl-call-next-method this start-type))))
 
 (cl-defmethod flex-compiler-repl-compile ((this python-flex-compiler) file)
