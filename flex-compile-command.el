@@ -67,7 +67,8 @@ THIS is the instance."
 		      (read (read-string prompt sexp history)))))
 	  (with-slots (history choices prompt) this
 	    (let* ((sym (thing-at-point 'symbol))
-		   (default (when (and (eq major-mode 'emacs-lisp-mode)
+		   (default (when (and sym
+				       (eq major-mode 'emacs-lisp-mode)
 				       (commandp (intern sym)))
 			      (intern sym)))
 		   (cmd-prompt (if default
