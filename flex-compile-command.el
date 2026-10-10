@@ -72,7 +72,7 @@ THIS is the instance."
 				       (commandp (intern sym)))
 			      (intern sym)))
 		   (cmd-prompt (if default
-				   (format "%s (default %S or `sexp'): "
+				   (format "%s (default %S): "
 					   prompt default)
 				 (format "%s (or RET for sexp): " prompt)))
 		   (cmd (if default
