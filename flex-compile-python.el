@@ -1,6 +1,6 @@
 ;;; flex-compile-python.el --- Python compile functions  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2015 - 2025 Paul Landes
+;; Copyright (C) 2015 - 2026 Paul Landes
 
 ;; Author: Paul Landes
 ;; Maintainer: Paul Landes
@@ -29,6 +29,11 @@
 ;;; Commentary:
 
 ;;; Implementation compiler for python integration
+;;;
+;;; Troubleshooting: If readline completion delimiters appear in the Python
+;;; REPL on startup, flex-compile is sending commands before Python finishes
+;;; initializing.  Increasing :repl-buffer-start-wait from 0.1 to 0.2 seconds
+;;; resolves this startup race condition.
 
 ;;; Code:
 
