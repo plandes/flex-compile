@@ -61,7 +61,7 @@ Number of seconds (as a float) to wait before issuing any first command to the
 REPL.")
    (repl-buffer-start-timeout :initarg :repl-buffer-start-timeout
 			      :initform 1
-			      :type integer
+			      :type number
 			      :documentation "\
 Number of seconds as an integer to wait to start before giving up (and not
 displaying).  If this is 0, don't wait or display the buffer when it comes
