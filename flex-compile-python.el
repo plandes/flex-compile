@@ -69,7 +69,7 @@ expressions using [python mode](https://github.com/fgallina/python.el).")
   (setq slots (plist-put slots :object-name "python")
 	slots (plist-put slots :validate-modes '(python-mode))
 	slots (plist-put slots :repl-buffer-regexp "^\\*Python\\*$")
-	slots (plist-put slots :repl-buffer-start-timeout 0))
+	slots (plist-put slots :repl-buffer-start-timeout 0.2))
   (cl-call-next-method this slots))
 
 (cl-defmethod flex-compiler-load-libraries ((this python-flex-compiler))
